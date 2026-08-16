@@ -7,7 +7,10 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./src/tests/setup.ts"],
-    include: ["src/tests/unit/**/*.test.{ts,tsx}"],
+    include: ["src/tests/unit/**/*.test.{ts,tsx}", "src/tests/integration/**/*.test.{ts,tsx}"],
+    // Integration tests spin up a fresh embedded Postgres (PGlite) and
+    // apply real migrations — slower than a pure unit test.
+    testTimeout: 30_000,
   },
   resolve: {
     alias: {
