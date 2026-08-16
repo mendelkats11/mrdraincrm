@@ -1,0 +1,19 @@
+# Netlify deployment configuration.
+#
+# Next.js itself is zero-config on Netlify: Netlify auto-detects the
+# framework and provisions the OpenNext-based Next.js runtime/adapter
+# automatically. Per docs/ARCHITECTURE.md §21, the adapter is deliberately
+# NOT pinned as an explicit dependency or plugin here so Netlify can keep it
+# up to date with new Next.js releases.
+#
+# Two custom domains will be attached to this one site in Phase 19:
+#   mrdrainsk.com      -> public marketing site
+#   app.mrdrainsk.com  -> private application
+# Both are served by this single build; the split is handled in-app by
+# hostname-aware middleware (introduced in Phase 2), not by Netlify config.
+
+[build]
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "24"
