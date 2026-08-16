@@ -1,3 +1,4 @@
+import { pathToFileURL } from "node:url";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { appSettings, sequences, serviceAreas, services } from "./schema";
 
@@ -88,7 +89,16 @@ export async function seedDatabase<TQueryResult extends PgQueryResultHKT>(
 
 // CLI entry point — only runs when this file is executed directly
 // (`npm run db:seed`), not when seedDatabase is imported for tests.
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Compares via pathToFileURL rather than a plain `file://${argv[1]}`
+// string, which silently mismatches on Windows (backslashes, drive-letter
+// URL encoding) and would make this whole block a no-op.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  try {
+    process.loadEnvFile(".env.local");
+  } catch {
+    // No .env.local present — fall through to getDb()'s own
+    // missing-DATABASE_URL error, which is a clearer message.
+  }
   const { getDb } = await import("./client");
   seedDatabase(getDb())
     .then((summary) => {
