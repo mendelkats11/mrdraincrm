@@ -4,6 +4,7 @@ import {
   contactEmails,
   contactPhones,
   contacts,
+  jobs,
   leads,
   organizations,
   properties,
@@ -13,7 +14,7 @@ import {
 type Db<TQueryResult extends PgQueryResultHKT> = PgDatabase<TQueryResult, any, any>;
 
 export interface SearchResult {
-  type: "contact" | "organization" | "property" | "lead";
+  type: "contact" | "organization" | "property" | "lead" | "job";
   id: string;
   title: string;
   subtitle: string | null;
@@ -97,6 +98,30 @@ export async function searchCrm<TQueryResult extends PgQueryResultHKT>(
     )
     .limit(RESULTS_PER_TYPE);
 
+  // Jobs have their own searchable identifier (the job number) in addition
+  // to matching via the linked contact, unlike leads.
+  const jobRows = await db
+    .select({
+      id: jobs.id,
+      jobNumber: jobs.jobNumber,
+      contactName: contacts.displayName,
+    })
+    .from(jobs)
+    .leftJoin(contacts, eq(jobs.contactId, contacts.id))
+    .where(
+      and(
+        ne(jobs.status, "cancelled"),
+        or(
+          ilike(jobs.jobNumber, term),
+          ilike(jobs.issueDescription, term),
+          sql`exists (select 1 from ${contacts} where ${contacts.id} = ${jobs.contactId} and ${contacts.displayName} ilike ${term})`,
+          sql`exists (select 1 from ${contactPhones} where ${contactPhones.contactId} = ${jobs.contactId} and ${contactPhones.phoneNormalized} ilike ${term})`,
+          sql`exists (select 1 from ${contactEmails} where ${contactEmails.contactId} = ${jobs.contactId} and ${contactEmails.email} ilike ${term})`,
+        ),
+      ),
+    )
+    .limit(RESULTS_PER_TYPE);
+
   return [
     ...contactRows.map((c): SearchResult => ({
       type: "contact",
@@ -125,6 +150,13 @@ export async function searchCrm<TQueryResult extends PgQueryResultHKT>(
       title: `Lead: ${l.contactName}`,
       subtitle: l.issueDescription,
       href: `/leads/${l.id}`,
+    })),
+    ...jobRows.map((j): SearchResult => ({
+      type: "job",
+      id: j.id,
+      title: j.jobNumber,
+      subtitle: j.contactName,
+      href: `/jobs/${j.id}`,
     })),
   ];
 }

@@ -22,6 +22,7 @@ export async function cleanupE2eData() {
     contactEmails,
     contactPhones,
     contacts,
+    jobCustomCharges,
     jobs,
     leads,
     organizationContacts,
@@ -73,26 +74,21 @@ export async function cleanupE2eData() {
     testLeadIds = testLeads.map((l) => l.id);
   }
 
-  let testJobIds: string[] = [];
-  if (
-    testLeadIds.length > 0 ||
-    testContactIds.length > 0 ||
-    testPropertyIds.length > 0 ||
-    testOrganizationIds.length > 0
-  ) {
-    const relationConditions = [];
-    if (testLeadIds.length > 0) relationConditions.push(inArray(jobs.leadId, testLeadIds));
-    if (testContactIds.length > 0) relationConditions.push(inArray(jobs.contactId, testContactIds));
-    if (testPropertyIds.length > 0)
-      relationConditions.push(inArray(jobs.propertyId, testPropertyIds));
-    if (testOrganizationIds.length > 0)
-      relationConditions.push(inArray(jobs.organizationId, testOrganizationIds));
-    const testJobs = await db
-      .select({ id: jobs.id })
-      .from(jobs)
-      .where(or(...relationConditions));
-    testJobIds = testJobs.map((j) => j.id);
-  }
+  // Jobs may have no relationships at all (docs/CLAUDE.md §6), so they're
+  // also matched directly by an E2E_NAME_PREFIX-tagged issue description —
+  // relation-matching alone would silently leave those behind.
+  const relationConditions = [ilike(jobs.issueDescription, `${E2E_NAME_PREFIX}%`)];
+  if (testLeadIds.length > 0) relationConditions.push(inArray(jobs.leadId, testLeadIds));
+  if (testContactIds.length > 0) relationConditions.push(inArray(jobs.contactId, testContactIds));
+  if (testPropertyIds.length > 0)
+    relationConditions.push(inArray(jobs.propertyId, testPropertyIds));
+  if (testOrganizationIds.length > 0)
+    relationConditions.push(inArray(jobs.organizationId, testOrganizationIds));
+  const testJobs = await db
+    .select({ id: jobs.id })
+    .from(jobs)
+    .where(or(...relationConditions));
+  const testJobIds = testJobs.map((j) => j.id);
 
   // jobs.lead_id -> leads.id and leads.converted_job_id -> jobs.id form a
   // circular RESTRICT reference (the bidirectional link recorded at
@@ -102,6 +98,9 @@ export async function cleanupE2eData() {
     await db.update(leads).set({ convertedJobId: null }).where(inArray(leads.id, testLeadIds));
   }
   if (testJobIds.length > 0) {
+    // job_custom_charges is ON DELETE RESTRICT (unlike job_photos, which
+    // cascades), so it must be cleared before the job row itself.
+    await db.delete(jobCustomCharges).where(inArray(jobCustomCharges.jobId, testJobIds));
     await db.delete(activities).where(inArray(activities.entityId, testJobIds));
     await db.delete(jobs).where(inArray(jobs.id, testJobIds));
   }

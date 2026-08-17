@@ -10,11 +10,11 @@ export interface PickerOption {
 }
 
 /**
- * Generic optional search-and-select field shared by the New/Edit Lead
- * dialogs for contact/property/organization — mirrors the search-then-pick
- * pattern already established in contacts' attach-*-dialog components
- * (Phase 3), just reusable across three different entity types via the
- * `search` prop instead of being duplicated per entity.
+ * Generic optional search-and-select field shared by the New/Edit Lead and
+ * New/Edit Job forms for contact/property/organization — mirrors the
+ * search-then-pick pattern established in contacts' attach-*-dialog
+ * components (Phase 3), reusable across entity types via the `search` prop
+ * instead of being duplicated per entity.
  */
 export function EntityPicker({
   name,

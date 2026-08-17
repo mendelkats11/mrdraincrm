@@ -29,7 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { EntityPicker } from "../entity-picker";
+import { EntityPicker } from "@/components/entity-picker";
 
 export function EditLeadDialog({
   lead,

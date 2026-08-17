@@ -54,10 +54,15 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <StatusSelect leadId={lead.id} status={lead.status} />
-            {lead.convertedJobNumber ? (
+            {lead.convertedJobNumber && lead.convertedJobId ? (
               <p className="text-sm text-muted-foreground">
                 Converted to job{" "}
-                <span className="font-medium text-foreground">{lead.convertedJobNumber}</span>
+                <Link
+                  href={`/jobs/${lead.convertedJobId}`}
+                  className="font-medium text-primary hover:underline"
+                >
+                  {lead.convertedJobNumber}
+                </Link>
               </p>
             ) : null}
           </CardContent>

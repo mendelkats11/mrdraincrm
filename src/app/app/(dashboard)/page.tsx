@@ -10,6 +10,11 @@ const SECTIONS = [
     description: "Incoming interest, from the website or entered manually.",
   },
   {
+    href: "/jobs",
+    label: "Jobs",
+    description: "Work to be done, with or without a lead behind it.",
+  },
+  {
     href: "/contacts",
     label: "Contacts",
     description: "People, on their own or linked to a property/organization.",
@@ -33,14 +38,15 @@ export default async function DashboardPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-xl font-semibold text-foreground">
-          Welcome, {session.user.name} <Badge variant="outline">Phase 4</Badge>
+          Welcome, {session.user.name} <Badge variant="outline">Phase 5</Badge>
         </h1>
         <p className="text-sm text-muted-foreground">
-          CRM and leads are available below. Scheduling, jobs, and financials are built in later
-          phases per <code className="rounded bg-muted px-1 py-0.5 text-xs">docs/ROADMAP.md</code>.
+          CRM, leads, and jobs are available below. Scheduling, contractors, and financial reporting
+          are built in later phases per{" "}
+          <code className="rounded bg-muted px-1 py-0.5 text-xs">docs/ROADMAP.md</code>.
         </p>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {SECTIONS.map((section) => (
           <Link key={section.href} href={section.href}>
             <Card className="h-full transition-colors hover:border-primary">

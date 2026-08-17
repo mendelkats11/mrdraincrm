@@ -7,6 +7,8 @@ import { createOrganization } from "@/lib/crm/organizations";
 import { createProperty } from "@/lib/crm/properties";
 import { searchCrm } from "@/lib/crm/search";
 import { normalizePhone } from "@/lib/phone";
+import { changeJobStatus, createJob } from "@/lib/jobs/jobs";
+import { sequences } from "@/lib/db/schema";
 
 describe("searchCrm", () => {
   let ctx: Awaited<ReturnType<typeof createTestDb>>;
@@ -98,5 +100,34 @@ describe("searchCrm", () => {
     await changeLeadStatus(ctx.db, lead.id, "lost", null);
     const results = await searchCrm(ctx.db, "Lost Lead Contact");
     expect(results.some((r) => r.type === "lead")).toBe(false);
+  });
+
+  it("finds a job by its job number", async () => {
+    await ctx.db
+      .insert(sequences)
+      .values({ name: "job", prefix: "JOB-", nextNumber: 1, minDigits: 4 });
+    const job = await createJob(ctx.db, {}, null);
+    const results = await searchCrm(ctx.db, job.jobNumber);
+    expect(results.some((r) => r.type === "job" && r.id === job.id)).toBe(true);
+  });
+
+  it("finds a job via its linked contact's name", async () => {
+    await ctx.db
+      .insert(sequences)
+      .values({ name: "job", prefix: "JOB-", nextNumber: 1, minDigits: 4 });
+    const contact = await createContact(ctx.db, { displayName: "Job Contact Findable" }, null);
+    const job = await createJob(ctx.db, { contactId: contact.id }, null);
+    const results = await searchCrm(ctx.db, "Job Contact Findable");
+    expect(results.some((r) => r.type === "job" && r.id === job.id)).toBe(true);
+  });
+
+  it("excludes Cancelled jobs from search, matching the default active-jobs view", async () => {
+    await ctx.db
+      .insert(sequences)
+      .values({ name: "job", prefix: "JOB-", nextNumber: 1, minDigits: 4 });
+    const job = await createJob(ctx.db, {}, null);
+    await changeJobStatus(ctx.db, job.id, "cancelled", null);
+    const results = await searchCrm(ctx.db, job.jobNumber);
+    expect(results.some((r) => r.type === "job")).toBe(false);
   });
 });

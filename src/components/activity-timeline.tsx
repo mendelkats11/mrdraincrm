@@ -24,6 +24,15 @@ const ACTION_LABELS: Record<string, string> = {
   lead_status_changed: "Lead status changed",
   lead_converted: "Converted to a job",
   job_created_from_lead: "Job created from lead",
+  job_created: "Job created",
+  job_updated: "Job updated",
+  job_status_changed: "Job status changed",
+  job_financials_changed: "Financial inputs changed",
+  job_custom_charge_added: "Custom charge added",
+  job_custom_charge_removed: "Custom charge removed",
+  job_photo_uploaded: "Photo uploaded",
+  job_photo_deleted: "Photo deleted",
+  job_photo_recategorized: "Photo re-categorized",
 };
 
 function humanizeAction(action: string): string {

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getDb } from "@/lib/db/client";
 import { getContact } from "@/lib/crm/contacts";
@@ -11,6 +12,7 @@ import { listContactOrganizations, listContactProperties } from "@/lib/crm/relat
 import { getEntityTimeline } from "@/lib/audit/activity";
 import { formatPhoneForDisplay } from "@/lib/phone";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { EditContactDialog } from "./edit-contact-dialog";
@@ -59,6 +61,9 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
           ) : null}
         </div>
         <div className="flex gap-2">
+          <Button asChild variant="outline">
+            <Link href={`/jobs/new?contactId=${contact.id}`}>+ New Job</Link>
+          </Button>
           <EditContactDialog contact={contact} />
           {!contact.archivedAt ? (
             <MergeContactDialog contact={{ id: contact.id, displayName: contact.displayName }} />

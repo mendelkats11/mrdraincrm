@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getDb } from "@/lib/db/client";
 import { getProperty } from "@/lib/crm/properties";
@@ -5,6 +6,7 @@ import { detachContactFromPropertyAction } from "@/lib/crm/contact-actions";
 import { listPropertyContacts } from "@/lib/crm/relationships";
 import { getEntityTimeline } from "@/lib/audit/activity";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { RemoveButton } from "@/components/remove-button";
@@ -67,6 +69,9 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
           </p>
         </div>
         <div className="flex gap-2">
+          <Button asChild variant="outline">
+            <Link href={`/jobs/new?propertyId=${property.id}`}>+ New Job</Link>
+          </Button>
           <EditPropertyDialog property={property} />
           <ArchiveButton propertyId={property.id} archived={Boolean(property.archivedAt)} />
         </div>
