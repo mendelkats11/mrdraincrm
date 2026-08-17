@@ -20,7 +20,11 @@ export function HeaderSearch() {
         }
       }}
     >
-      <Input name="q" type="search" placeholder="Search contacts, organizations, properties…" />
+      <Input
+        name="q"
+        type="search"
+        placeholder="Search contacts, organizations, properties, leads…"
+      />
     </form>
   );
 }

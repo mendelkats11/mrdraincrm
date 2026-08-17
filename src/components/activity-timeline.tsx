@@ -19,6 +19,11 @@ const ACTION_LABELS: Record<string, string> = {
   contact_attached_to_property: "Added to property",
   contact_detached_from_property: "Removed from property",
   contact_property_role_updated: "Property role updated",
+  lead_created: "Lead created",
+  lead_updated: "Lead updated",
+  lead_status_changed: "Lead status changed",
+  lead_converted: "Converted to a job",
+  job_created_from_lead: "Job created from lead",
 };
 
 function humanizeAction(action: string): string {

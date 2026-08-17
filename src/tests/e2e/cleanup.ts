@@ -1,4 +1,4 @@
-import { eq, ilike, inArray } from "drizzle-orm";
+import { eq, ilike, inArray, or } from "drizzle-orm";
 import { E2E_NAME_PREFIX, E2E_OWNER_EMAIL } from "./e2e-credentials";
 
 /**
@@ -22,6 +22,8 @@ export async function cleanupE2eData() {
     contactEmails,
     contactPhones,
     contacts,
+    jobs,
+    leads,
     organizationContacts,
     organizations,
     properties,
@@ -49,6 +51,64 @@ export async function cleanupE2eData() {
     .from(properties)
     .where(ilike(properties.addressLine1, `${E2E_NAME_PREFIX}%`));
   const testPropertyIds = testProperties.map((p) => p.id);
+
+  // Leads/jobs reference contacts/properties/organizations with ON DELETE
+  // RESTRICT, so they must be found and removed *before* those rows below —
+  // matched by relation to the test contact/property/organization rows
+  // above, the same way this function already matches everything else by
+  // relation rather than a naming convention on leads/jobs themselves.
+  let testLeadIds: string[] = [];
+  if (testContactIds.length > 0 || testPropertyIds.length > 0 || testOrganizationIds.length > 0) {
+    const relationConditions = [];
+    if (testContactIds.length > 0)
+      relationConditions.push(inArray(leads.contactId, testContactIds));
+    if (testPropertyIds.length > 0)
+      relationConditions.push(inArray(leads.propertyId, testPropertyIds));
+    if (testOrganizationIds.length > 0)
+      relationConditions.push(inArray(leads.organizationId, testOrganizationIds));
+    const testLeads = await db
+      .select({ id: leads.id })
+      .from(leads)
+      .where(or(...relationConditions));
+    testLeadIds = testLeads.map((l) => l.id);
+  }
+
+  let testJobIds: string[] = [];
+  if (
+    testLeadIds.length > 0 ||
+    testContactIds.length > 0 ||
+    testPropertyIds.length > 0 ||
+    testOrganizationIds.length > 0
+  ) {
+    const relationConditions = [];
+    if (testLeadIds.length > 0) relationConditions.push(inArray(jobs.leadId, testLeadIds));
+    if (testContactIds.length > 0) relationConditions.push(inArray(jobs.contactId, testContactIds));
+    if (testPropertyIds.length > 0)
+      relationConditions.push(inArray(jobs.propertyId, testPropertyIds));
+    if (testOrganizationIds.length > 0)
+      relationConditions.push(inArray(jobs.organizationId, testOrganizationIds));
+    const testJobs = await db
+      .select({ id: jobs.id })
+      .from(jobs)
+      .where(or(...relationConditions));
+    testJobIds = testJobs.map((j) => j.id);
+  }
+
+  // jobs.lead_id -> leads.id and leads.converted_job_id -> jobs.id form a
+  // circular RESTRICT reference (the bidirectional link recorded at
+  // conversion time). Null out the leads side first so either table can
+  // then be deleted without the other blocking it.
+  if (testLeadIds.length > 0) {
+    await db.update(leads).set({ convertedJobId: null }).where(inArray(leads.id, testLeadIds));
+  }
+  if (testJobIds.length > 0) {
+    await db.delete(activities).where(inArray(activities.entityId, testJobIds));
+    await db.delete(jobs).where(inArray(jobs.id, testJobIds));
+  }
+  if (testLeadIds.length > 0) {
+    await db.delete(activities).where(inArray(activities.entityId, testLeadIds));
+    await db.delete(leads).where(inArray(leads.id, testLeadIds));
+  }
 
   if (testContactIds.length > 0) {
     await db.delete(contactPhones).where(inArray(contactPhones.contactId, testContactIds));

@@ -5,6 +5,11 @@ import { requireUser } from "@/lib/auth/require-user";
 
 const SECTIONS = [
   {
+    href: "/leads",
+    label: "Leads",
+    description: "Incoming interest, from the website or entered manually.",
+  },
+  {
     href: "/contacts",
     label: "Contacts",
     description: "People, on their own or linked to a property/organization.",
@@ -28,14 +33,14 @@ export default async function DashboardPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-xl font-semibold text-foreground">
-          Welcome, {session.user.name} <Badge variant="outline">Phase 3</Badge>
+          Welcome, {session.user.name} <Badge variant="outline">Phase 4</Badge>
         </h1>
         <p className="text-sm text-muted-foreground">
-          CRM is available below. Scheduling, jobs, and financials are built in later phases per{" "}
-          <code className="rounded bg-muted px-1 py-0.5 text-xs">docs/ROADMAP.md</code>.
+          CRM and leads are available below. Scheduling, jobs, and financials are built in later
+          phases per <code className="rounded bg-muted px-1 py-0.5 text-xs">docs/ROADMAP.md</code>.
         </p>
       </div>
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {SECTIONS.map((section) => (
           <Link key={section.href} href={section.href}>
             <Card className="h-full transition-colors hover:border-primary">

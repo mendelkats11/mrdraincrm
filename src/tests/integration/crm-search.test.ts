@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createTestDb } from "../helpers/test-db";
 import { archiveContact, createContact } from "@/lib/crm/contacts";
+import { changeLeadStatus, createLead } from "@/lib/crm/leads";
 import { createOrganization } from "@/lib/crm/organizations";
 import { createProperty } from "@/lib/crm/properties";
 import { searchCrm } from "@/lib/crm/search";
@@ -82,5 +83,20 @@ describe("searchCrm", () => {
     const contact = await createContact(ctx.db, { displayName: "Link Test" }, null);
     const results = await searchCrm(ctx.db, "Link Test");
     expect(results[0].href).toBe(`/contacts/${contact.id}`);
+  });
+
+  it("finds a lead via its linked contact's name", async () => {
+    const contact = await createContact(ctx.db, { displayName: "Lead Contact Findable" }, null);
+    const lead = await createLead(ctx.db, { contactId: contact.id }, null);
+    const results = await searchCrm(ctx.db, "Lead Contact Findable");
+    expect(results.some((r) => r.type === "lead" && r.id === lead.id)).toBe(true);
+  });
+
+  it("excludes Lost leads from search, matching the default active-leads view", async () => {
+    const contact = await createContact(ctx.db, { displayName: "Lost Lead Contact" }, null);
+    const lead = await createLead(ctx.db, { contactId: contact.id }, null);
+    await changeLeadStatus(ctx.db, lead.id, "lost", null);
+    const results = await searchCrm(ctx.db, "Lost Lead Contact");
+    expect(results.some((r) => r.type === "lead")).toBe(false);
   });
 });

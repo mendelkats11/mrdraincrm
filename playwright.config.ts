@@ -12,6 +12,13 @@ export const E2E_APP_ORIGIN = "http://app.localhost:3000";
 export default defineConfig({
   testDir: "./src/tests/e2e",
   fullyParallel: false,
+  // All spec files share one `next start` process and one real Neon
+  // database (not per-worker isolated fixtures), so different files running
+  // concurrently across workers contend for the same server — this caused
+  // genuine timing flakiness once a second substantive spec file existed
+  // (Phase 4), not a data-correctness bug. One worker keeps every test
+  // file's requests strictly sequential against that shared server.
+  workers: 1,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: "html",

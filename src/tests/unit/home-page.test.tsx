@@ -3,9 +3,9 @@ import { render, screen } from "@testing-library/react";
 import Home from "@/app/page";
 
 describe("Home page", () => {
-  it("renders the Phase 0 placeholder", () => {
+  it("renders the placeholder with a link to the public quote form", () => {
     render(<Home />);
     expect(screen.getByText("Mr. Drain")).toBeInTheDocument();
-    expect(screen.getByText("Phase 0")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "quote form" })).toHaveAttribute("href", "/contact");
   });
 });

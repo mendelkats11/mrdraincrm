@@ -25,6 +25,14 @@ export const LOGIN_ATTEMPT_IP_ENTITY_TYPE = "login_attempt_ip";
 export const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 export const RATE_LIMIT_MAX_ATTEMPTS = 5;
 
+// Public lead-submission rate limiting (Phase 4) — same table, same
+// deterministic-IP-to-entity-id trick, its own entity type/action/window so
+// it can't be confused with (or exhausted by) login attempts.
+export const LEAD_SUBMISSION_IP_ENTITY_TYPE = "lead_submission_ip";
+export const LEAD_SUBMISSION_ATTEMPT_ACTION = "lead_submission_attempt";
+export const LEAD_SUBMISSION_WINDOW_MS = 60 * 60 * 1000;
+export const LEAD_SUBMISSION_MAX_ATTEMPTS = 5;
+
 export function deterministicIdFrom(value: string): string {
   const hex = createHash("sha256").update(value).digest("hex").slice(0, 32);
   return [
@@ -55,6 +63,33 @@ export async function countRecentFailedLogins<TQueryResult extends PgQueryResult
         eq(activities.entityType, entityType),
         eq(activities.entityId, entityId),
         eq(activities.action, "login_failed"),
+        gt(activities.createdAt, since),
+      ),
+    );
+  return rows.length;
+}
+
+/**
+ * Counts recent public lead-submission attempts from one IP, regardless of
+ * whether the submission was ultimately valid — the caller records one
+ * `lead_submission_attempt` row per incoming request before doing any real
+ * work, so a flood of malformed payloads counts against the limit exactly
+ * like a flood of valid ones.
+ */
+export async function countRecentLeadSubmissions<TQueryResult extends PgQueryResultHKT>(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  db: PgDatabase<TQueryResult, any, any>,
+  ipEntityId: string,
+): Promise<number> {
+  const since = new Date(Date.now() - LEAD_SUBMISSION_WINDOW_MS);
+  const rows = await db
+    .select({ id: activities.id })
+    .from(activities)
+    .where(
+      and(
+        eq(activities.entityType, LEAD_SUBMISSION_IP_ENTITY_TYPE),
+        eq(activities.entityId, ipEntityId),
+        eq(activities.action, LEAD_SUBMISSION_ATTEMPT_ACTION),
         gt(activities.createdAt, since),
       ),
     );

@@ -1,12 +1,19 @@
-import { and, ilike, isNull, or, sql } from "drizzle-orm";
+import { and, eq, ilike, isNull, ne, or, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import { contactEmails, contactPhones, contacts, organizations, properties } from "@/lib/db/schema";
+import {
+  contactEmails,
+  contactPhones,
+  contacts,
+  leads,
+  organizations,
+  properties,
+} from "@/lib/db/schema";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db<TQueryResult extends PgQueryResultHKT> = PgDatabase<TQueryResult, any, any>;
 
 export interface SearchResult {
-  type: "contact" | "organization" | "property";
+  type: "contact" | "organization" | "property" | "lead";
   id: string;
   title: string;
   subtitle: string | null;
@@ -68,6 +75,28 @@ export async function searchCrm<TQueryResult extends PgQueryResultHKT>(
     )
     .limit(RESULTS_PER_TYPE);
 
+  // Leads have no name of their own — matched via the linked contact's
+  // name/phone/email, same as the contact search above.
+  const leadRows = await db
+    .select({
+      id: leads.id,
+      contactName: contacts.displayName,
+      issueDescription: leads.issueDescription,
+    })
+    .from(leads)
+    .innerJoin(contacts, eq(leads.contactId, contacts.id))
+    .where(
+      and(
+        ne(leads.status, "lost"),
+        or(
+          ilike(contacts.displayName, term),
+          sql`exists (select 1 from ${contactPhones} where ${contactPhones.contactId} = ${contacts.id} and ${contactPhones.phoneNormalized} ilike ${term})`,
+          sql`exists (select 1 from ${contactEmails} where ${contactEmails.contactId} = ${contacts.id} and ${contactEmails.email} ilike ${term})`,
+        ),
+      ),
+    )
+    .limit(RESULTS_PER_TYPE);
+
   return [
     ...contactRows.map((c): SearchResult => ({
       type: "contact",
@@ -89,6 +118,13 @@ export async function searchCrm<TQueryResult extends PgQueryResultHKT>(
       title: p.addressLine1,
       subtitle: p.city,
       href: `/properties/${p.id}`,
+    })),
+    ...leadRows.map((l): SearchResult => ({
+      type: "lead",
+      id: l.id,
+      title: `Lead: ${l.contactName}`,
+      subtitle: l.issueDescription,
+      href: `/leads/${l.id}`,
     })),
   ];
 }

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -7,13 +8,17 @@ export default function Home() {
       <Card className="max-w-md">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            Mr. Drain <Badge variant="outline">Phase 0</Badge>
+            Mr. Drain <Badge variant="outline">Phase 4</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="text-muted-foreground">
-          Project foundation is set up. Public site and private app routing are built starting in
-          later phases per{" "}
-          <code className="rounded bg-muted px-1 py-0.5 text-sm">docs/ROADMAP.md</code>.
+          The full public site is built in a later phase per{" "}
+          <code className="rounded bg-muted px-1 py-0.5 text-sm">docs/ROADMAP.md</code>. In the
+          meantime, see the{" "}
+          <Link href="/contact" className="text-primary hover:underline">
+            quote form
+          </Link>
+          .
         </CardContent>
       </Card>
     </div>
