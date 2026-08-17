@@ -9,8 +9,12 @@ export default defineConfig({
     setupFiles: ["./src/tests/setup.ts"],
     include: ["src/tests/unit/**/*.test.{ts,tsx}", "src/tests/integration/**/*.test.{ts,tsx}"],
     // Integration tests spin up a fresh embedded Postgres (PGlite) and
-    // apply real migrations — slower than a pure unit test.
+    // apply real migrations — slower than a pure unit test, and slower
+    // still with many integration test files starting one concurrently
+    // per worker. hookTimeout is separate from testTimeout and defaults
+    // to 10s, which beforeEach(createTestDb) can exceed under that load.
     testTimeout: 30_000,
+    hookTimeout: 30_000,
   },
   resolve: {
     alias: {
