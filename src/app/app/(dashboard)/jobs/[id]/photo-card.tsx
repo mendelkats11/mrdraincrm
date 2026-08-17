@@ -36,7 +36,7 @@ export function PhotoCard({ jobId, photo }: { jobId: string; photo: JobPhotoWith
   const router = useRouter();
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg border p-2">
+    <div className="flex flex-col gap-2 rounded-lg border p-2" data-testid="job-photo-card">
       {/* eslint-disable-next-line @next/next/no-img-element -- signed R2 URLs, not a Next-optimizable local/static source */}
       <img
         src={photo.signedUrl}

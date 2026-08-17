@@ -51,8 +51,9 @@ test.describe.serial("Job photos (real R2)", () => {
     expect(response.headers()["content-type"]).toContain("image");
 
     // Recategorize, scoped to this specific photo card so it can't be
-    // confused with the upload form's own category select above it.
-    const photoCard = page.locator("div").filter({ has: image }).first();
+    // confused with the upload form's own category select or the job's
+    // status select above it.
+    const photoCard = page.getByTestId("job-photo-card").filter({ has: image });
     await photoCard.getByRole("combobox").click();
     await page.getByRole("option", { name: "After", exact: true }).click();
     await expect(photoCard.getByRole("combobox")).toContainText("After");
