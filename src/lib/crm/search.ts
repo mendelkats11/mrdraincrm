@@ -1,0 +1,94 @@
+import { and, ilike, isNull, or, sql } from "drizzle-orm";
+import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
+import { contactEmails, contactPhones, contacts, organizations, properties } from "@/lib/db/schema";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Db<TQueryResult extends PgQueryResultHKT> = PgDatabase<TQueryResult, any, any>;
+
+export interface SearchResult {
+  type: "contact" | "organization" | "property";
+  id: string;
+  title: string;
+  subtitle: string | null;
+  href: string;
+}
+
+const RESULTS_PER_TYPE = 10;
+
+/**
+ * Basic cross-entity search — contacts, organizations, and properties only,
+ * since those are the only entities that exist as of Phase 3. Structured so
+ * later phases (leads, jobs, invoices, quotes, calls, messages, reminders —
+ * docs/PROJECT_SPEC.md §7) can append their own query + result mapping here
+ * without changing this function's shape. The *polished*, unified,
+ * live-typeahead search experience is an explicit docs/ROADMAP.md Phase 17
+ * deliverable ("global search polish") — this is the functional baseline.
+ */
+export async function searchCrm<TQueryResult extends PgQueryResultHKT>(
+  db: Db<TQueryResult>,
+  query: string,
+): Promise<SearchResult[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+  const term = `%${trimmed}%`;
+
+  const contactRows = await db
+    .select({ id: contacts.id, displayName: contacts.displayName })
+    .from(contacts)
+    .where(
+      and(
+        isNull(contacts.archivedAt),
+        or(
+          ilike(contacts.displayName, term),
+          sql`exists (select 1 from ${contactPhones} where ${contactPhones.contactId} = ${contacts.id} and ${contactPhones.phoneNormalized} ilike ${term})`,
+          sql`exists (select 1 from ${contactEmails} where ${contactEmails.contactId} = ${contacts.id} and ${contactEmails.email} ilike ${term})`,
+        ),
+      ),
+    )
+    .limit(RESULTS_PER_TYPE);
+
+  const organizationRows = await db
+    .select({ id: organizations.id, name: organizations.name })
+    .from(organizations)
+    .where(and(isNull(organizations.archivedAt), ilike(organizations.name, term)))
+    .limit(RESULTS_PER_TYPE);
+
+  const propertyRows = await db
+    .select({
+      id: properties.id,
+      addressLine1: properties.addressLine1,
+      city: properties.city,
+    })
+    .from(properties)
+    .where(
+      and(
+        isNull(properties.archivedAt),
+        or(ilike(properties.addressLine1, term), ilike(properties.city, term)),
+      ),
+    )
+    .limit(RESULTS_PER_TYPE);
+
+  return [
+    ...contactRows.map((c): SearchResult => ({
+      type: "contact",
+      id: c.id,
+      title: c.displayName,
+      subtitle: "Contact",
+      href: `/contacts/${c.id}`,
+    })),
+    ...organizationRows.map((o): SearchResult => ({
+      type: "organization",
+      id: o.id,
+      title: o.name,
+      subtitle: "Organization",
+      href: `/organizations/${o.id}`,
+    })),
+    ...propertyRows.map((p): SearchResult => ({
+      type: "property",
+      id: p.id,
+      title: p.addressLine1,
+      subtitle: p.city,
+      href: `/properties/${p.id}`,
+    })),
+  ];
+}

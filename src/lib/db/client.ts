@@ -1,11 +1,15 @@
-import { drizzle } from "drizzle-orm/neon-http";
-import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-serverless";
+import { Pool } from "@neondatabase/serverless";
 import * as schema from "./schema";
 
-// HTTP-based Neon driver — no persistent TCP connection, which is what
-// makes this safe to call from short-lived Netlify Functions. See
-// docs/IMPLEMENTATION_PLAN.md §5 for why Neon direct (not Netlify's own DB
-// product) and why this driver over node-postgres.
+// WebSocket-based Neon driver, not neon-http. Phase 3's service layer
+// relies on db.transaction() to keep a mutation and its audit-log row
+// atomic (docs/ARCHITECTURE.md §16 — "the log can never drift out of sync
+// with the record"); neon-http is a stateless single-query HTTP interface
+// and does not support transactions at all ("No transactions support in
+// neon-http driver"), discovered via the Phase 3 E2E run. neon-serverless's
+// Pool still suits short-lived serverless functions per Neon's own
+// guidance — it's WebSocket-based, not a traditional long-lived pool.
 function createDb() {
   const url = process.env.DATABASE_URL;
   if (!url) {
@@ -14,8 +18,8 @@ function createDb() {
         "(see docs/IMPLEMENTATION_PLAN.md §5 for how to get a free Neon connection string).",
     );
   }
-  const sql = neon(url);
-  return drizzle(sql, { schema });
+  const pool = new Pool({ connectionString: url });
+  return drizzle(pool, { schema });
 }
 
 let cached: ReturnType<typeof createDb> | undefined;
