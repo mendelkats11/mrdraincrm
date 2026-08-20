@@ -6,6 +6,10 @@
 # NOT pinned as an explicit dependency or plugin here so Netlify can keep it
 # up to date with new Next.js releases.
 #
+# `publish` must still be set explicitly to ".next" (Next.js's own build
+# output directory) — @netlify/plugin-nextjs refuses to run if it defaults
+# to the repo root, which is the same as the base directory.
+#
 # Two custom domains will be attached to this one site in Phase 19:
 #   mrdrainsk.com      -> public marketing site
 #   app.mrdrainsk.com  -> private application
@@ -14,6 +18,7 @@
 
 [build]
   command = "npm run build"
+  publish = ".next"
 
 [build.environment]
   NODE_VERSION = "24"
