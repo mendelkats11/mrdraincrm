@@ -9,6 +9,15 @@ import { ContactForm } from "./contact-form";
 // quote-form pipeline required by Phase 4 (public submission → lead
 // creation → source tracking) is real and testable; Phase 15 will restyle
 // it to match the finished site.
+//
+// Forces per-request rendering: this page reads live service-area data
+// (editable from the dashboard), so a build-time snapshot would go stale.
+// Without this, Next.js's automatic static optimization prerenders it at
+// `next build` time, which requires DATABASE_URL to be available during
+// the build step itself — Netlify's build environment doesn't have it,
+// causing the build to fail entirely rather than just this page being stale.
+export const dynamic = "force-dynamic";
+
 export default async function ContactPage() {
   const db = getDb();
   const serviceAreas = await listActiveServiceAreas(db);
