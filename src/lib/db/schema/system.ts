@@ -17,6 +17,12 @@ export const appSettings = pgTable("app_settings", {
   businessAddress: text("business_address"),
   logoUrl: text("logo_url"),
   notificationEmail: text("notification_email"),
+  // Phase 10: the one email setting docs/PROJECT_SPEC.md §17 asks for
+  // ("Email reminder settings are configurable"). Destination address is
+  // the notificationEmail field above.
+  reminderEmailNotificationsEnabled: boolean("reminder_email_notifications_enabled")
+    .notNull()
+    .default(true),
   // Default applied to newly created jobs; changing this never rewrites the
   // tax_inclusion_mode already snapshotted on existing jobs — §2.1.B.
   taxInclusionDefault: taxInclusionModeEnum("tax_inclusion_default").notNull().default("excluded"),

@@ -9,10 +9,12 @@ import { getCurrentAssignment, listAssignmentHistory } from "@/lib/contractors/a
 import { listInvoicesForJob } from "@/lib/invoices/invoices";
 import { listPaymentsForJob } from "@/lib/payments/payments";
 import { listQuotesForJob } from "@/lib/quotes/quotes";
+import { listRemindersForEntity } from "@/lib/reminders/reminders";
 import { getEntityTimeline } from "@/lib/audit/activity";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityTimeline } from "@/components/activity-timeline";
+import { RemindersCard } from "@/components/reminders-card";
 import { StatusSelect } from "./status-select";
 import { EditJobDialog } from "./edit-job-dialog";
 import { FinancialSection } from "./financial-section";
@@ -38,16 +40,25 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
     storageConfigured = false;
   }
 
-  const [services, timeline, currentAssignment, assignmentHistory, invoices, payments, quotes] =
-    await Promise.all([
-      listActiveServices(db),
-      getEntityTimeline(db, "job", id),
-      getCurrentAssignment(db, id),
-      listAssignmentHistory(db, id),
-      listInvoicesForJob(db, id),
-      listPaymentsForJob(db, id),
-      listQuotesForJob(db, id),
-    ]);
+  const [
+    services,
+    timeline,
+    currentAssignment,
+    assignmentHistory,
+    invoices,
+    payments,
+    quotes,
+    reminders,
+  ] = await Promise.all([
+    listActiveServices(db),
+    getEntityTimeline(db, "job", id),
+    getCurrentAssignment(db, id),
+    listAssignmentHistory(db, id),
+    listInvoicesForJob(db, id),
+    listPaymentsForJob(db, id),
+    listQuotesForJob(db, id),
+    listRemindersForEntity(db, { jobId: id }),
+  ]);
 
   const availableInvoices = invoices
     .filter((invoice) => invoice.status !== "draft" && invoice.status !== "void")
@@ -225,6 +236,15 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Reminders</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <RemindersCard reminders={reminders} jobId={job.id} />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

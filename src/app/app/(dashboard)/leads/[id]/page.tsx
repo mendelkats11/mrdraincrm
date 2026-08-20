@@ -4,10 +4,12 @@ import { AlertTriangle } from "lucide-react";
 import { getDb } from "@/lib/db/client";
 import { getLead, listActiveServices } from "@/lib/crm/leads";
 import { listQuotesForContact } from "@/lib/quotes/quotes";
+import { listRemindersForEntity } from "@/lib/reminders/reminders";
 import { getEntityTimeline } from "@/lib/audit/activity";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityTimeline } from "@/components/activity-timeline";
+import { RemindersCard } from "@/components/reminders-card";
 import { StatusSelect } from "./status-select";
 import { ConvertToJobButton } from "./convert-to-job-button";
 import { EditLeadDialog } from "./edit-lead-dialog";
@@ -20,10 +22,15 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const lead = await getLead(db, id);
   if (!lead) notFound();
 
-  const [services, timeline, quotes] = await Promise.all([
+  const [services, timeline, quotes, reminders] = await Promise.all([
     listActiveServices(db),
     getEntityTimeline(db, "lead", id),
     lead.contactId ? listQuotesForContact(db, lead.contactId) : Promise.resolve([]),
+    listRemindersForEntity(db, {
+      contactId: lead.contactId ?? undefined,
+      propertyId: lead.propertyId ?? undefined,
+      organizationId: lead.organizationId ?? undefined,
+    }),
   ]);
 
   const quoteRows = quotes.map((quote) => ({
@@ -189,6 +196,20 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           </CardContent>
         </Card>
       ) : null}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Reminders</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <RemindersCard
+            reminders={reminders}
+            contactId={lead.contactId ?? undefined}
+            propertyId={lead.propertyId ?? undefined}
+            organizationId={lead.organizationId ?? undefined}
+          />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

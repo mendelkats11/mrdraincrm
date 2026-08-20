@@ -57,6 +57,12 @@ const ACTION_LABELS: Record<string, string> = {
   quote_custom_charge_removed: "Custom charge removed",
   quote_converted: "Converted to a job",
   job_created_from_quote: "Job created from quote",
+  reminder_created: "Reminder created",
+  reminder_updated: "Reminder updated",
+  reminder_completed: "Reminder completed",
+  reminder_cancelled: "Reminder hidden (don't show again)",
+  reminder_reopened: "Reminder reopened",
+  reminder_occurrence_created: "Next occurrence created",
 };
 
 function humanizeAction(action: string): string {

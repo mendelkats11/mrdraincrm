@@ -9,12 +9,14 @@ import {
   removeContactPhoneAction,
 } from "@/lib/crm/contact-actions";
 import { listContactOrganizations, listContactProperties } from "@/lib/crm/relationships";
+import { listRemindersForEntity } from "@/lib/reminders/reminders";
 import { getEntityTimeline } from "@/lib/audit/activity";
 import { formatPhoneForDisplay } from "@/lib/phone";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityTimeline } from "@/components/activity-timeline";
+import { RemindersCard } from "@/components/reminders-card";
 import { EditContactDialog } from "./edit-contact-dialog";
 import { MergeContactDialog } from "./merge-contact-dialog";
 import { DuplicatesSection } from "./duplicates-section";
@@ -42,10 +44,11 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
   const contact = await getContact(db, id);
   if (!contact) notFound();
 
-  const [organizations, properties, timeline] = await Promise.all([
+  const [organizations, properties, timeline, reminders] = await Promise.all([
     listContactOrganizations(db, id),
     listContactProperties(db, id),
     getEntityTimeline(db, "contact", id),
+    listRemindersForEntity(db, { contactId: id }),
   ]);
 
   return (
@@ -217,6 +220,15 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
           <CardContent className="whitespace-pre-wrap text-sm">{contact.notes}</CardContent>
         </Card>
       ) : null}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Reminders</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <RemindersCard reminders={reminders} contactId={contact.id} />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

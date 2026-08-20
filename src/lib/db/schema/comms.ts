@@ -1,5 +1,7 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
+  date,
   index,
   integer,
   jsonb,
@@ -103,6 +105,10 @@ export const reminders = pgTable("reminders", {
   recurrence: reminderRecurrenceEnum("recurrence").notNull().default("one_time"),
   // Completing a reminder preserves it in history — docs/PROJECT_SPEC.md §17.
   completedAt: timestamp("completed_at", { withTimezone: true }),
+  // "Don't show again" — Phase 10 decision. Distinct from completedAt: the
+  // task wasn't necessarily done, it's just no longer wanted. Preserved in
+  // history like everything else, never hard-deleted.
+  cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -118,10 +124,31 @@ export const notifications = pgTable(
     body: text("body"),
     entityType: text("entity_type"),
     entityId: uuid("entity_id"),
+    // Business-timezone calendar date this notification instance is "for" —
+    // Phase 10 decision: an overdue reminder renotifies once per day it
+    // remains unresolved, so dedup can't be "once ever." Only populated for
+    // entity_type = 'reminder'; other notification types leave it null.
+    notificationDate: date("notification_date"),
     readAt: timestamp("read_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index("notifications_recipient_idx").on(table.recipientUserId)],
+  (table) => [
+    index("notifications_recipient_idx").on(table.recipientUserId),
+    // Idempotency guarantee for the scheduled function (docs/PROJECT_SPEC.md
+    // §24, Phase 10): a concurrent/duplicate run can never create a second
+    // "reminder_due" notification for the same recipient+reminder+day.
+    // Scoped to entity_type = 'reminder' so it never constrains a future
+    // notification type that legitimately wants to repeat same-day.
+    uniqueIndex("notifications_reminder_dedupe_idx")
+      .on(
+        table.recipientUserId,
+        table.entityType,
+        table.entityId,
+        table.type,
+        table.notificationDate,
+      )
+      .where(sql`${table.entityType} = 'reminder'`),
+  ],
 );
 
 export const emailEventStatusEnum = pgEnum("email_event_status", [

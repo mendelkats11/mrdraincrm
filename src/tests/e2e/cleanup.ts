@@ -1,4 +1,4 @@
-import { eq, ilike, inArray, or } from "drizzle-orm";
+import { and, eq, ilike, inArray, or } from "drizzle-orm";
 import { E2E_NAME_PREFIX, E2E_OWNER_EMAIL } from "./e2e-credentials";
 
 /**
@@ -30,10 +30,13 @@ export async function cleanupE2eData() {
     leads,
     organizationContacts,
     organizations,
+    emailEvents,
+    notifications,
     payments,
     properties,
     propertyContacts,
     quotes,
+    reminders,
     sessions,
     users,
   } = await import("../../lib/db/schema");
@@ -129,6 +132,48 @@ export async function cleanupE2eData() {
     .where(or(...relationConditions));
   const testJobIds = testJobs.map((j) => j.id);
 
+  // Reminders may exist with no relationship at all (Phase 10 decision,
+  // same "may be created without a contact" philosophy as jobs), so —
+  // same as jobs — matched by relation *or* directly by an
+  // E2E_NAME_PREFIX-tagged title. reminders.job_id/contact_id/etc. are all
+  // ON DELETE RESTRICT, so this must run before the contacts/properties/
+  // organizations/jobs deletions below. notifications.entity_id has no FK
+  // constraint (polymorphic, unenforced) so there's no ordering requirement
+  // there — deleted anyway for hygiene, not because anything would block.
+  const reminderRelationConditions = [ilike(reminders.title, `${E2E_NAME_PREFIX}%`)];
+  if (testContactIds.length > 0)
+    reminderRelationConditions.push(inArray(reminders.contactId, testContactIds));
+  if (testPropertyIds.length > 0)
+    reminderRelationConditions.push(inArray(reminders.propertyId, testPropertyIds));
+  if (testOrganizationIds.length > 0)
+    reminderRelationConditions.push(inArray(reminders.organizationId, testOrganizationIds));
+  if (testJobIds.length > 0) reminderRelationConditions.push(inArray(reminders.jobId, testJobIds));
+  const testReminders = await db
+    .select({ id: reminders.id })
+    .from(reminders)
+    .where(or(...reminderRelationConditions));
+  const testReminderIds = testReminders.map((r) => r.id);
+  if (testReminderIds.length > 0) {
+    await db
+      .delete(notifications)
+      .where(
+        and(
+          eq(notifications.entityType, "reminder"),
+          inArray(notifications.entityId, testReminderIds),
+        ),
+      );
+    await db
+      .delete(emailEvents)
+      .where(
+        and(
+          eq(emailEvents.relatedEntityType, "reminder"),
+          inArray(emailEvents.relatedEntityId, testReminderIds),
+        ),
+      );
+    await db.delete(activities).where(inArray(activities.entityId, testReminderIds));
+    await db.delete(reminders).where(inArray(reminders.id, testReminderIds));
+  }
+
   // jobs.lead_id -> leads.id and leads.converted_job_id -> jobs.id form a
   // circular RESTRICT reference (the bidirectional link recorded at
   // conversion time). Null out the leads side first so either table can
@@ -223,6 +268,9 @@ export async function cleanupE2eData() {
     .from(users)
     .where(eq(users.email, E2E_OWNER_EMAIL));
   if (testUser) {
+    // notifications.recipient_user_id is ON DELETE RESTRICT, so this must
+    // run before the user itself is deleted below.
+    await db.delete(notifications).where(eq(notifications.recipientUserId, testUser.id));
     await db.delete(sessions).where(eq(sessions.userId, testUser.id));
     await db.delete(activities).where(eq(activities.actorUserId, testUser.id));
     await db.delete(users).where(eq(users.id, testUser.id));
