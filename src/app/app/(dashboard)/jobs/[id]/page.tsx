@@ -8,6 +8,7 @@ import { getStorageProvider } from "@/lib/storage";
 import { getCurrentAssignment, listAssignmentHistory } from "@/lib/contractors/assignments";
 import { listInvoicesForJob } from "@/lib/invoices/invoices";
 import { listPaymentsForJob } from "@/lib/payments/payments";
+import { listQuotesForJob } from "@/lib/quotes/quotes";
 import { getEntityTimeline } from "@/lib/audit/activity";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +21,7 @@ import { ScheduleSection } from "./schedule-section";
 import { ContractorSection } from "./contractor-section";
 import { InvoicesCard } from "./invoices-card";
 import { JobPaymentsSection } from "./job-payments-section";
+import { QuotesCard } from "./quotes-card";
 
 export default async function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -36,7 +38,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
     storageConfigured = false;
   }
 
-  const [services, timeline, currentAssignment, assignmentHistory, invoices, payments] =
+  const [services, timeline, currentAssignment, assignmentHistory, invoices, payments, quotes] =
     await Promise.all([
       listActiveServices(db),
       getEntityTimeline(db, "job", id),
@@ -44,11 +46,20 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
       listAssignmentHistory(db, id),
       listInvoicesForJob(db, id),
       listPaymentsForJob(db, id),
+      listQuotesForJob(db, id),
     ]);
 
   const availableInvoices = invoices
     .filter((invoice) => invoice.status !== "draft" && invoice.status !== "void")
     .map((invoice) => ({ id: invoice.id, invoiceNumber: invoice.invoiceNumber }));
+
+  const quoteRows = quotes.map((quote) => ({
+    id: quote.id,
+    quoteNumber: quote.quoteNumber,
+    status: quote.status,
+    expiresAt: quote.expiresAt,
+    totalCents: quote.subtotalCents + quote.taxCents,
+  }));
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
@@ -179,6 +190,17 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
           />
         </CardContent>
       </Card>
+
+      {quoteRows.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Quotes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <QuotesCard quotes={quoteRows} />
+          </CardContent>
+        </Card>
+      ) : null}
 
       <div className="grid gap-6 sm:grid-cols-2">
         <Card>

@@ -33,6 +33,7 @@ export async function cleanupE2eData() {
     payments,
     properties,
     propertyContacts,
+    quotes,
     sessions,
     users,
   } = await import("../../lib/db/schema");
@@ -62,6 +63,34 @@ export async function cleanupE2eData() {
     .from(contractors)
     .where(ilike(contractors.name, `${E2E_NAME_PREFIX}%`));
   const testContractorIds = testContractors.map((c) => c.id);
+
+  // Quotes may exist with no contact/property/organization at all (same as
+  // jobs — docs/CLAUDE.md §6's "may be created without a contact" philosophy
+  // extended to quotes), so relation matching alone would silently leave
+  // those behind. Matched by relation to the test contact/property/
+  // organization rows above *or* directly by an E2E_NAME_PREFIX-tagged
+  // description, mirroring the jobs.issue_description fallback below.
+  // quotes.converted_job_id is ON DELETE RESTRICT, so it must be nulled
+  // before the job it points to can be deleted, same circular-reference
+  // issue leads.converted_job_id has.
+  const quoteRelationConditions = [ilike(quotes.description, `${E2E_NAME_PREFIX}%`)];
+  if (testContactIds.length > 0)
+    quoteRelationConditions.push(inArray(quotes.contactId, testContactIds));
+  if (testPropertyIds.length > 0)
+    quoteRelationConditions.push(inArray(quotes.propertyId, testPropertyIds));
+  if (testOrganizationIds.length > 0)
+    quoteRelationConditions.push(inArray(quotes.organizationId, testOrganizationIds));
+  const testQuotes = await db
+    .select({ id: quotes.id })
+    .from(quotes)
+    .where(or(...quoteRelationConditions));
+  const testQuoteIds = testQuotes.map((q) => q.id);
+  if (testQuoteIds.length > 0) {
+    await db.update(quotes).set({ convertedJobId: null }).where(inArray(quotes.id, testQuoteIds));
+    await db.delete(activities).where(inArray(activities.entityId, testQuoteIds));
+    // quote_line_items and quote_custom_charges cascade off quotes.id.
+    await db.delete(quotes).where(inArray(quotes.id, testQuoteIds));
+  }
 
   // Leads/jobs reference contacts/properties/organizations with ON DELETE
   // RESTRICT, so they must be found and removed *before* those rows below —

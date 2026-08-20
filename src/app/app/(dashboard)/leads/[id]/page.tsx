@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
 import { getDb } from "@/lib/db/client";
 import { getLead, listActiveServices } from "@/lib/crm/leads";
+import { listQuotesForContact } from "@/lib/quotes/quotes";
 import { getEntityTimeline } from "@/lib/audit/activity";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +11,7 @@ import { ActivityTimeline } from "@/components/activity-timeline";
 import { StatusSelect } from "./status-select";
 import { ConvertToJobButton } from "./convert-to-job-button";
 import { EditLeadDialog } from "./edit-lead-dialog";
+import { LeadQuotesCard } from "./lead-quotes-card";
 
 export default async function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -18,10 +20,24 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const lead = await getLead(db, id);
   if (!lead) notFound();
 
-  const [services, timeline] = await Promise.all([
+  const [services, timeline, quotes] = await Promise.all([
     listActiveServices(db),
     getEntityTimeline(db, "lead", id),
+    lead.contactId ? listQuotesForContact(db, lead.contactId) : Promise.resolve([]),
   ]);
+
+  const quoteRows = quotes.map((quote) => ({
+    id: quote.id,
+    quoteNumber: quote.quoteNumber,
+    status: quote.status,
+    expiresAt: quote.expiresAt,
+    totalCents: quote.subtotalCents + quote.taxCents,
+  }));
+
+  const newQuoteParams = new URLSearchParams();
+  if (lead.contactId) newQuoteParams.set("contactId", lead.contactId);
+  if (lead.propertyId) newQuoteParams.set("propertyId", lead.propertyId);
+  if (lead.organizationId) newQuoteParams.set("organizationId", lead.organizationId);
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
@@ -159,6 +175,20 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           </CardContent>
         </Card>
       </div>
+
+      {lead.contactId ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Quotes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <LeadQuotesCard
+              quotes={quoteRows}
+              newQuoteHref={`/quotes/new?${newQuoteParams.toString()}`}
+            />
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader>

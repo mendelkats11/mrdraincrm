@@ -63,12 +63,16 @@ export const invoiceLineItems = pgTable("invoice_line_items", {
   sortOrder: integer("sort_order").notNull().default(0),
 });
 
+// "cancelled" is the staff-initiated void/archive equivalent required by
+// docs/PROJECT_SPEC.md §27 ("Quotes: void/archive") — distinct from
+// "declined" (the customer said no). Phase 9 decision 2.
 export const quoteStatusEnum = pgEnum("quote_status", [
   "draft",
   "sent",
   "accepted",
   "declined",
   "expired",
+  "cancelled",
 ]);
 
 export const quotes = pgTable("quotes", {

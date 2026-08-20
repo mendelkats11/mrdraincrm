@@ -50,6 +50,13 @@ const ACTION_LABELS: Record<string, string> = {
   payment_recorded: "Payment recorded",
   payment_updated: "Payment details updated",
   payment_voided: "Payment voided",
+  quote_created: "Quote created",
+  quote_updated: "Quote updated",
+  quote_status_changed: "Quote status changed",
+  quote_custom_charge_added: "Custom charge added",
+  quote_custom_charge_removed: "Custom charge removed",
+  quote_converted: "Converted to a job",
+  job_created_from_quote: "Job created from quote",
 };
 
 function humanizeAction(action: string): string {

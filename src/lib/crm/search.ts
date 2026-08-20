@@ -10,13 +10,15 @@ import {
   leads,
   organizations,
   properties,
+  quotes,
 } from "@/lib/db/schema";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db<TQueryResult extends PgQueryResultHKT> = PgDatabase<TQueryResult, any, any>;
 
 export interface SearchResult {
-  type: "contact" | "organization" | "property" | "lead" | "job" | "contractor" | "invoice";
+  type:
+    "contact" | "organization" | "property" | "lead" | "job" | "contractor" | "invoice" | "quote";
   id: string;
   title: string;
   subtitle: string | null;
@@ -151,6 +153,28 @@ export async function searchCrm<TQueryResult extends PgQueryResultHKT>(
     )
     .limit(RESULTS_PER_TYPE);
 
+  // Matched by quote number, or the linked contact/organization name.
+  // Quotes have no jobId to search by (unlike invoices) — they aren't tied
+  // to a job until conversion.
+  const quoteRows = await db
+    .select({
+      id: quotes.id,
+      quoteNumber: quotes.quoteNumber,
+      contactName: contacts.displayName,
+      organizationName: organizations.name,
+    })
+    .from(quotes)
+    .leftJoin(contacts, eq(quotes.contactId, contacts.id))
+    .leftJoin(organizations, eq(quotes.organizationId, organizations.id))
+    .where(
+      or(
+        ilike(quotes.quoteNumber, term),
+        sql`exists (select 1 from ${contacts} where ${contacts.id} = ${quotes.contactId} and ${contacts.displayName} ilike ${term})`,
+        sql`exists (select 1 from ${organizations} where ${organizations.id} = ${quotes.organizationId} and ${organizations.name} ilike ${term})`,
+      ),
+    )
+    .limit(RESULTS_PER_TYPE);
+
   return [
     ...contactRows.map((c): SearchResult => ({
       type: "contact",
@@ -200,6 +224,13 @@ export async function searchCrm<TQueryResult extends PgQueryResultHKT>(
       title: i.invoiceNumber,
       subtitle: i.customerName,
       href: `/invoices/${i.id}`,
+    })),
+    ...quoteRows.map((q): SearchResult => ({
+      type: "quote",
+      id: q.id,
+      title: q.quoteNumber,
+      subtitle: q.organizationName ?? q.contactName,
+      href: `/quotes/${q.id}`,
     })),
   ];
 }
