@@ -37,9 +37,13 @@ const ACTION_LABELS: Record<string, string> = {
   job_rescheduled: "Job rescheduled",
   job_schedule_cleared: "Schedule cleared",
   contractor_created: "Contractor created",
+  contractor_updated: "Contractor updated",
+  contractor_activated: "Contractor reactivated",
+  contractor_deactivated: "Contractor deactivated",
   contractor_assigned: "Contractor assigned",
   contractor_reassigned: "Contractor reassigned",
   contractor_unassigned: "Contractor unassigned",
+  contractor_status_changed: "Contractor status changed",
 };
 
 function humanizeAction(action: string): string {

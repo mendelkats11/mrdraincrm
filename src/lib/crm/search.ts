@@ -4,6 +4,7 @@ import {
   contactEmails,
   contactPhones,
   contacts,
+  contractors,
   jobs,
   leads,
   organizations,
@@ -14,7 +15,7 @@ import {
 type Db<TQueryResult extends PgQueryResultHKT> = PgDatabase<TQueryResult, any, any>;
 
 export interface SearchResult {
-  type: "contact" | "organization" | "property" | "lead" | "job";
+  type: "contact" | "organization" | "property" | "lead" | "job" | "contractor";
   id: string;
   title: string;
   subtitle: string | null;
@@ -122,6 +123,14 @@ export async function searchCrm<TQueryResult extends PgQueryResultHKT>(
     )
     .limit(RESULTS_PER_TYPE);
 
+  // Only active contractors — matches the same visibility rule
+  // searchContractors already applies for the job assignment picker.
+  const contractorRows = await db
+    .select({ id: contractors.id, name: contractors.name })
+    .from(contractors)
+    .where(and(eq(contractors.active, true), ilike(contractors.name, term)))
+    .limit(RESULTS_PER_TYPE);
+
   return [
     ...contactRows.map((c): SearchResult => ({
       type: "contact",
@@ -157,6 +166,13 @@ export async function searchCrm<TQueryResult extends PgQueryResultHKT>(
       title: j.jobNumber,
       subtitle: j.contactName,
       href: `/jobs/${j.id}`,
+    })),
+    ...contractorRows.map((c): SearchResult => ({
+      type: "contractor",
+      id: c.id,
+      title: c.name,
+      subtitle: "Contractor",
+      href: `/contractors/${c.id}`,
     })),
   ];
 }

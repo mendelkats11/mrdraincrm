@@ -8,8 +8,20 @@ import { normalizePhone } from "@/lib/phone";
 import { formatTimeRange } from "@/lib/schedule/format";
 import { jobs } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { createContractor, searchContractors } from "./contractors";
-import { assignContractor, checkContractorConflict, unassignContractor } from "./assignments";
+import {
+  createContractor,
+  searchContractors,
+  setContractorActive,
+  updateContractor,
+} from "./contractors";
+import {
+  assignContractor,
+  checkContractorConflict,
+  getCurrentAssignment,
+  unassignContractor,
+  updateAssignmentStatus,
+  type AssignmentActiveStatus,
+} from "./assignments";
 
 const phoneField = z
   .string()
@@ -22,6 +34,8 @@ const createContractorSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   phone: phoneField,
   email: emailField.optional(),
+  notes: z.string().trim().optional(),
+  defaultPayoutArrangement: z.string().trim().optional(),
 });
 
 export type ContractorFormState =
@@ -29,9 +43,9 @@ export type ContractorFormState =
   | { ok: false; error: string }
   | undefined;
 
-/** Quick-create only — name/phone/email, per the approved Phase 6 scope.
- *  The row it creates is a normal `contractors` record Phase 7 will later
- *  manage fully. */
+/** Handles both the Phase 6 quick-create (name/phone/email only) and the
+ *  full Phase 7 create form — notes/defaultPayoutArrangement simply default
+ *  to empty when the caller (e.g. the job page's inline picker) omits them. */
 export async function createContractorAction(
   _prevState: ContractorFormState,
   formData: FormData,
@@ -41,6 +55,8 @@ export async function createContractorAction(
     name: formData.get("name"),
     phone: formData.get("phone") || undefined,
     email: formData.get("email") || undefined,
+    notes: formData.get("notes") || undefined,
+    defaultPayoutArrangement: formData.get("defaultPayoutArrangement") || undefined,
   });
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input." };
@@ -53,11 +69,70 @@ export async function createContractorAction(
       name: parsed.data.name,
       phone: parsed.data.phone ? normalizePhone(parsed.data.phone) : null,
       email: parsed.data.email || null,
+      notes: parsed.data.notes || null,
+      defaultPayoutArrangement: parsed.data.defaultPayoutArrangement || null,
     },
     session.user.id,
   );
 
+  revalidatePath("/contractors");
   return { ok: true, contractorId: contractor.id, contractorName: contractor.name };
+}
+
+const updateContractorSchema = z.object({
+  contractorId: z.string().uuid(),
+  name: z.string().trim().min(1, "Name is required"),
+  phone: phoneField,
+  email: emailField.optional(),
+  notes: z.string().trim().optional(),
+  defaultPayoutArrangement: z.string().trim().optional(),
+});
+
+export async function updateContractorAction(
+  _prevState: ContractorFormState,
+  formData: FormData,
+): Promise<ContractorFormState> {
+  const session = await requireUser();
+  const parsed = updateContractorSchema.safeParse({
+    contractorId: formData.get("contractorId"),
+    name: formData.get("name"),
+    phone: formData.get("phone") || undefined,
+    email: formData.get("email") || undefined,
+    notes: formData.get("notes") || undefined,
+    defaultPayoutArrangement: formData.get("defaultPayoutArrangement") || undefined,
+  });
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input." };
+  }
+
+  const db = getDb();
+  const contractor = await updateContractor(
+    db,
+    parsed.data.contractorId,
+    {
+      name: parsed.data.name,
+      phone: parsed.data.phone ? normalizePhone(parsed.data.phone) : null,
+      email: parsed.data.email || null,
+      notes: parsed.data.notes || null,
+      defaultPayoutArrangement: parsed.data.defaultPayoutArrangement || null,
+    },
+    session.user.id,
+  );
+
+  revalidatePath("/contractors");
+  revalidatePath(`/contractors/${parsed.data.contractorId}`);
+  return { ok: true, contractorId: contractor.id, contractorName: contractor.name };
+}
+
+export async function setContractorActiveAction(
+  contractorId: string,
+  active: boolean,
+): Promise<void> {
+  const session = await requireUser();
+  const db = getDb();
+  await setContractorActive(db, contractorId, active, session.user.id);
+  revalidatePath("/contractors");
+  revalidatePath(`/contractors/${contractorId}`);
 }
 
 export interface ContractorSearchResult {
@@ -125,4 +200,24 @@ export async function unassignContractorAction(jobId: string): Promise<void> {
   revalidatePath(`/jobs/${jobId}`);
   revalidatePath("/jobs");
   revalidatePath("/schedule");
+}
+
+export type UpdateAssignmentStatusFormResult =
+  { ok: true } | { ok: false; error: string } | undefined;
+
+export async function updateAssignmentStatusAction(
+  jobId: string,
+  status: AssignmentActiveStatus,
+): Promise<UpdateAssignmentStatusFormResult> {
+  const session = await requireUser();
+  const db = getDb();
+  const result = await updateAssignmentStatus(db, jobId, status, session.user.id);
+  if (!result.ok) {
+    return { ok: false, error: "No contractor is currently assigned to this job." };
+  }
+  revalidatePath(`/jobs/${jobId}`);
+  revalidatePath("/contractors");
+  const current = await getCurrentAssignment(db, jobId);
+  if (current) revalidatePath(`/contractors/${current.contractorId}`);
+  return { ok: true };
 }

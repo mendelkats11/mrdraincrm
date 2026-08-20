@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   assignContractorAction,
@@ -8,12 +9,21 @@ import {
   createContractorAction,
   searchContractorsAction,
   unassignContractorAction,
+  updateAssignmentStatusAction,
   type ContractorSearchResult,
 } from "@/lib/contractors/contractor-actions";
+import type { AssignmentActiveStatus } from "@/lib/contractors/assignments";
 import { formatPhoneForDisplay } from "@/lib/phone";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,11 +35,28 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+const ASSIGNMENT_STATUS_LABELS: Record<AssignmentActiveStatus, string> = {
+  assigned: "Assigned",
+  completed: "Completed",
+  payout_pending: "Payout Pending",
+  paid: "Paid",
+};
+
+// Free transitions in either direction — no state machine, mirroring the
+// existing job-status precedent (StatusSelect).
+const ASSIGNMENT_STATUSES: AssignmentActiveStatus[] = [
+  "assigned",
+  "completed",
+  "payout_pending",
+  "paid",
+];
+
 export interface CurrentAssignmentInfo {
   contractorId: string;
   contractorName: string;
   contractorPhone: string | null;
   contractorEmail: string | null;
+  status: string;
 }
 
 export interface AssignmentHistoryInfo {
@@ -144,30 +171,65 @@ export function ContractorSection({
     });
   }
 
+  function handleStatusChange(status: AssignmentActiveStatus) {
+    startTransition(async () => {
+      await updateAssignmentStatusAction(jobId, status);
+      router.refresh();
+    });
+  }
+
   return (
     <div className="flex flex-col gap-3">
       {current ? (
-        <div className="flex items-center justify-between rounded-md border p-2 text-sm">
-          <div>
-            <p className="font-medium">{current.contractorName}</p>
-            {current.contractorPhone ? (
-              <p className="text-muted-foreground">
-                {formatPhoneForDisplay(current.contractorPhone)}
-              </p>
-            ) : null}
-            {current.contractorEmail ? (
-              <p className="text-muted-foreground">{current.contractorEmail}</p>
-            ) : null}
+        <div className="flex flex-col gap-2 rounded-md border p-2 text-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <Link
+                href={`/contractors/${current.contractorId}`}
+                className="font-medium hover:underline"
+              >
+                {current.contractorName}
+              </Link>
+              {current.contractorPhone ? (
+                <p className="text-muted-foreground">
+                  {formatPhoneForDisplay(current.contractorPhone)}
+                </p>
+              ) : null}
+              {current.contractorEmail ? (
+                <p className="text-muted-foreground">{current.contractorEmail}</p>
+              ) : null}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={pending}
+              onClick={handleUnassign}
+            >
+              Unassign
+            </Button>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={pending}
-            onClick={handleUnassign}
-          >
-            Unassign
-          </Button>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="assignmentStatus" className="text-xs">
+              Payout status
+            </Label>
+            <Select
+              value={current.status}
+              disabled={pending}
+              onValueChange={(next) => handleStatusChange(next as AssignmentActiveStatus)}
+            >
+              <SelectTrigger id="assignmentStatus" className="w-44">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ASSIGNMENT_STATUSES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {ASSIGNMENT_STATUS_LABELS[s]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       ) : (
         <p className="text-sm text-muted-foreground">No contractor assigned.</p>
