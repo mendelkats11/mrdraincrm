@@ -44,6 +44,12 @@ const ACTION_LABELS: Record<string, string> = {
   contractor_reassigned: "Contractor reassigned",
   contractor_unassigned: "Contractor unassigned",
   contractor_status_changed: "Contractor status changed",
+  invoice_created: "Invoice created",
+  invoice_updated: "Invoice updated",
+  invoice_status_changed: "Invoice status changed",
+  payment_recorded: "Payment recorded",
+  payment_updated: "Payment details updated",
+  payment_voided: "Payment voided",
 };
 
 function humanizeAction(action: string): string {

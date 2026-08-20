@@ -5,6 +5,7 @@ import {
   contactPhones,
   contacts,
   contractors,
+  invoices,
   jobs,
   leads,
   organizations,
@@ -15,7 +16,7 @@ import {
 type Db<TQueryResult extends PgQueryResultHKT> = PgDatabase<TQueryResult, any, any>;
 
 export interface SearchResult {
-  type: "contact" | "organization" | "property" | "lead" | "job" | "contractor";
+  type: "contact" | "organization" | "property" | "lead" | "job" | "contractor" | "invoice";
   id: string;
   title: string;
   subtitle: string | null;
@@ -131,6 +132,25 @@ export async function searchCrm<TQueryResult extends PgQueryResultHKT>(
     .where(and(eq(contractors.active, true), ilike(contractors.name, term)))
     .limit(RESULTS_PER_TYPE);
 
+  // Matched by invoice number, customer name (the snapshot on the invoice
+  // itself), or the linked job's number — docs/PROJECT_SPEC.md §7.
+  const invoiceRows = await db
+    .select({
+      id: invoices.id,
+      invoiceNumber: invoices.invoiceNumber,
+      customerName: invoices.customerName,
+    })
+    .from(invoices)
+    .innerJoin(jobs, eq(invoices.jobId, jobs.id))
+    .where(
+      or(
+        ilike(invoices.invoiceNumber, term),
+        ilike(invoices.customerName, term),
+        ilike(jobs.jobNumber, term),
+      ),
+    )
+    .limit(RESULTS_PER_TYPE);
+
   return [
     ...contactRows.map((c): SearchResult => ({
       type: "contact",
@@ -173,6 +193,13 @@ export async function searchCrm<TQueryResult extends PgQueryResultHKT>(
       title: c.name,
       subtitle: "Contractor",
       href: `/contractors/${c.id}`,
+    })),
+    ...invoiceRows.map((i): SearchResult => ({
+      type: "invoice",
+      id: i.id,
+      title: i.invoiceNumber,
+      subtitle: i.customerName,
+      href: `/invoices/${i.id}`,
     })),
   ];
 }

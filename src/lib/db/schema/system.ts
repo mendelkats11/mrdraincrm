@@ -10,6 +10,12 @@ export const appSettings = pgTable("app_settings", {
   id: uuid("id").primaryKey().defaultRandom(),
   singleton: boolean("singleton").notNull().default(true).unique(),
   businessName: text("business_name"),
+  // Phase 8: prefill source for the invoice PDF's business info — an
+  // invoice snapshots these at creation time (see invoices.businessName/
+  // logoUrl in money.ts), it never reads these live, so editing Settings
+  // later never rewrites an already-created invoice.
+  businessAddress: text("business_address"),
+  logoUrl: text("logo_url"),
   notificationEmail: text("notification_email"),
   // Default applied to newly created jobs; changing this never rewrites the
   // tax_inclusion_mode already snapshotted on existing jobs — §2.1.B.

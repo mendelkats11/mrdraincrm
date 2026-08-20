@@ -25,6 +25,7 @@
     "@aws-sdk/s3-request-presigner": "^3.1111.0",
     "@neondatabase/serverless": "^1.1.0",
     "@node-rs/argon2": "^2.1.0",
+    "@react-pdf/renderer": "^4.6.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",

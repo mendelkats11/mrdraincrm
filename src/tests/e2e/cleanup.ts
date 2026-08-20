@@ -23,12 +23,14 @@ export async function cleanupE2eData() {
     contactPhones,
     contacts,
     contractors,
+    invoices,
     jobContractorAssignments,
     jobCustomCharges,
     jobs,
     leads,
     organizationContacts,
     organizations,
+    payments,
     properties,
     propertyContacts,
     sessions,
@@ -117,6 +119,26 @@ export async function cleanupE2eData() {
     if (testContractorIds.length > 0)
       assignmentConditions.push(inArray(jobContractorAssignments.contractorId, testContractorIds));
     await db.delete(jobContractorAssignments).where(or(...assignmentConditions));
+  }
+
+  // payments.job_id and invoices.job_id are both ON DELETE RESTRICT, so
+  // both must be cleared before the job row itself — payments first, since
+  // payments.invoice_id also references invoices with ON DELETE RESTRICT.
+  // invoice_line_items cascades automatically off invoices, so it needs no
+  // explicit cleanup here.
+  let testInvoiceIds: string[] = [];
+  if (testJobIds.length > 0) {
+    const testInvoices = await db
+      .select({ id: invoices.id })
+      .from(invoices)
+      .where(inArray(invoices.jobId, testJobIds));
+    testInvoiceIds = testInvoices.map((i) => i.id);
+
+    await db.delete(payments).where(inArray(payments.jobId, testJobIds));
+    if (testInvoiceIds.length > 0) {
+      await db.delete(activities).where(inArray(activities.entityId, testInvoiceIds));
+      await db.delete(invoices).where(inArray(invoices.id, testInvoiceIds));
+    }
   }
 
   if (testJobIds.length > 0) {
