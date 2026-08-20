@@ -5,6 +5,7 @@ import { getDb } from "@/lib/db/client";
 import { getJob, listActiveServices } from "@/lib/jobs/jobs";
 import { listJobPhotos, type JobPhotoWithUrl } from "@/lib/jobs/job-photos";
 import { getStorageProvider } from "@/lib/storage";
+import { getCurrentAssignment, listAssignmentHistory } from "@/lib/contractors/assignments";
 import { getEntityTimeline } from "@/lib/audit/activity";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +14,8 @@ import { StatusSelect } from "./status-select";
 import { EditJobDialog } from "./edit-job-dialog";
 import { FinancialSection } from "./financial-section";
 import { PhotosSection } from "./photos-section";
+import { ScheduleSection } from "./schedule-section";
+import { ContractorSection } from "./contractor-section";
 
 export default async function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -29,9 +32,11 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
     storageConfigured = false;
   }
 
-  const [services, timeline] = await Promise.all([
+  const [services, timeline, currentAssignment, assignmentHistory] = await Promise.all([
     listActiveServices(db),
     getEntityTimeline(db, "job", id),
+    getCurrentAssignment(db, id),
+    listAssignmentHistory(db, id),
   ]);
 
   return (
@@ -106,6 +111,35 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
               )}
             </p>
             <p>Service: {job.serviceName ?? <span className="text-muted-foreground">None</span>}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 sm:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Schedule</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ScheduleSection
+              jobId={job.id}
+              scheduledStart={job.scheduledStart}
+              scheduledEnd={job.scheduledEnd}
+              timeTbd={job.timeTbd}
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Contractor</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ContractorSection
+              jobId={job.id}
+              current={currentAssignment}
+              history={assignmentHistory}
+            />
           </CardContent>
         </Card>
       </div>

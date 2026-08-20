@@ -22,6 +22,8 @@ export async function cleanupE2eData() {
     contactEmails,
     contactPhones,
     contacts,
+    contractors,
+    jobContractorAssignments,
     jobCustomCharges,
     jobs,
     leads,
@@ -52,6 +54,12 @@ export async function cleanupE2eData() {
     .from(properties)
     .where(ilike(properties.addressLine1, `${E2E_NAME_PREFIX}%`));
   const testPropertyIds = testProperties.map((p) => p.id);
+
+  const testContractors = await db
+    .select({ id: contractors.id })
+    .from(contractors)
+    .where(ilike(contractors.name, `${E2E_NAME_PREFIX}%`));
+  const testContractorIds = testContractors.map((c) => c.id);
 
   // Leads/jobs reference contacts/properties/organizations with ON DELETE
   // RESTRICT, so they must be found and removed *before* those rows below —
@@ -97,12 +105,30 @@ export async function cleanupE2eData() {
   if (testLeadIds.length > 0) {
     await db.update(leads).set({ convertedJobId: null }).where(inArray(leads.id, testLeadIds));
   }
+  // job_contractor_assignments is ON DELETE RESTRICT on both jobId and
+  // contractorId, so it must be cleared before either side is deleted —
+  // matched by relation to test jobs *or* test contractors, since an E2E
+  // contractor could in principle be assigned to a non-E2E-named job (not
+  // expected in practice, but this keeps the sweep correct either way).
+  if (testJobIds.length > 0 || testContractorIds.length > 0) {
+    const assignmentConditions = [];
+    if (testJobIds.length > 0)
+      assignmentConditions.push(inArray(jobContractorAssignments.jobId, testJobIds));
+    if (testContractorIds.length > 0)
+      assignmentConditions.push(inArray(jobContractorAssignments.contractorId, testContractorIds));
+    await db.delete(jobContractorAssignments).where(or(...assignmentConditions));
+  }
+
   if (testJobIds.length > 0) {
     // job_custom_charges is ON DELETE RESTRICT (unlike job_photos, which
     // cascades), so it must be cleared before the job row itself.
     await db.delete(jobCustomCharges).where(inArray(jobCustomCharges.jobId, testJobIds));
     await db.delete(activities).where(inArray(activities.entityId, testJobIds));
     await db.delete(jobs).where(inArray(jobs.id, testJobIds));
+  }
+  if (testContractorIds.length > 0) {
+    await db.delete(activities).where(inArray(activities.entityId, testContractorIds));
+    await db.delete(contractors).where(inArray(contractors.id, testContractorIds));
   }
   if (testLeadIds.length > 0) {
     await db.delete(activities).where(inArray(activities.entityId, testLeadIds));

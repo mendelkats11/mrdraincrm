@@ -264,6 +264,9 @@ export interface JobWithLabels {
   emergency: boolean;
   internalNotes: string | null;
   status: JobStatus;
+  scheduledStart: Date | null;
+  scheduledEnd: Date | null;
+  timeTbd: boolean;
   taxInclusionMode: "included" | "excluded";
   jobAmountCents: number;
   taxAmountCents: number;
@@ -343,6 +346,9 @@ export interface JobListRow {
   createdAt: Date;
   contactName: string | null;
   propertyAddressLine1: string | null;
+  scheduledStart: Date | null;
+  scheduledEnd: Date | null;
+  timeTbd: boolean;
 }
 
 export async function listJobs<TQueryResult extends PgQueryResultHKT>(
@@ -386,6 +392,9 @@ export async function listJobs<TQueryResult extends PgQueryResultHKT>(
       createdAt: jobs.createdAt,
       contactName: contacts.displayName,
       propertyAddressLine1: properties.addressLine1,
+      scheduledStart: jobs.scheduledStart,
+      scheduledEnd: jobs.scheduledEnd,
+      timeTbd: jobs.timeTbd,
     })
     .from(jobs)
     .leftJoin(contacts, eq(jobs.contactId, contacts.id))
@@ -460,4 +469,150 @@ export async function removeJobCustomCharge<TQueryResult extends PgQueryResultHK
         : null,
     });
   });
+}
+
+// ---- Scheduling (Phase 6) ----
+// Scheduling never touches `status` — the two are deliberately independent
+// (approved decision: no automatic Draft -> Scheduled, no state machine).
+
+export interface UpdateJobScheduleInput {
+  scheduledStart: Date;
+  scheduledEnd?: Date | null;
+  timeTbd?: boolean;
+}
+
+/**
+ * Sets or changes a job's schedule. Records `job_scheduled` the first time
+ * a date is set, `job_rescheduled` when changing an existing one — either
+ * way the full before/after (start, end, timeTbd) is on the activity row,
+ * so a Time-TBD-only toggle is visible as a diff within whichever of those
+ * two actions applies, the same way job_financials_changed already shows
+ * per-field before/after without needing one action per field.
+ */
+export async function updateJobSchedule<TQueryResult extends PgQueryResultHKT>(
+  db: Db<TQueryResult>,
+  jobId: string,
+  input: UpdateJobScheduleInput,
+  actorUserId: string | null,
+) {
+  return db.transaction(async (tx) => {
+    const [before] = await tx.select().from(jobs).where(eq(jobs.id, jobId));
+    if (!before) throw new Error(`Job ${jobId} not found`);
+
+    const [after] = await tx
+      .update(jobs)
+      .set({
+        scheduledStart: input.scheduledStart,
+        scheduledEnd: input.scheduledEnd ?? null,
+        timeTbd: input.timeTbd ?? false,
+        updatedAt: new Date(),
+      })
+      .where(eq(jobs.id, jobId))
+      .returning();
+
+    await recordActivity(tx, {
+      actorUserId,
+      entityType: "job",
+      entityId: jobId,
+      action: before.scheduledStart ? "job_rescheduled" : "job_scheduled",
+      oldValue: {
+        scheduledStart: before.scheduledStart,
+        scheduledEnd: before.scheduledEnd,
+        timeTbd: before.timeTbd,
+      },
+      newValue: {
+        scheduledStart: after.scheduledStart,
+        scheduledEnd: after.scheduledEnd,
+        timeTbd: after.timeTbd,
+      },
+    });
+
+    return after;
+  });
+}
+
+export async function clearJobSchedule<TQueryResult extends PgQueryResultHKT>(
+  db: Db<TQueryResult>,
+  jobId: string,
+  actorUserId: string | null,
+) {
+  return db.transaction(async (tx) => {
+    const [before] = await tx.select().from(jobs).where(eq(jobs.id, jobId));
+    if (!before) throw new Error(`Job ${jobId} not found`);
+
+    const [after] = await tx
+      .update(jobs)
+      .set({ scheduledStart: null, scheduledEnd: null, timeTbd: false, updatedAt: new Date() })
+      .where(eq(jobs.id, jobId))
+      .returning();
+
+    await recordActivity(tx, {
+      actorUserId,
+      entityType: "job",
+      entityId: jobId,
+      action: "job_schedule_cleared",
+      oldValue: {
+        scheduledStart: before.scheduledStart,
+        scheduledEnd: before.scheduledEnd,
+        timeTbd: before.timeTbd,
+      },
+    });
+
+    return after;
+  });
+}
+
+export interface ScheduledJobRow {
+  id: string;
+  jobNumber: string;
+  status: JobStatus;
+  emergency: boolean;
+  issueDescription: string | null;
+  scheduledStart: Date;
+  scheduledEnd: Date | null;
+  timeTbd: boolean;
+  contactName: string | null;
+  propertyAddressLine1: string | null;
+  propertyCity: string | null;
+}
+
+/**
+ * Jobs with a schedule in [start, end) — the calendar's one query, reused
+ * by Day/Week/Month/List (each just picks a different range). Unscheduled
+ * jobs (no scheduledStart) never appear here, by construction — approved
+ * decision §3.A.
+ */
+export async function listScheduledJobs<TQueryResult extends PgQueryResultHKT>(
+  db: Db<TQueryResult>,
+  range: { start: Date; end: Date },
+): Promise<ScheduledJobRow[]> {
+  const rows = await db
+    .select({
+      id: jobs.id,
+      jobNumber: jobs.jobNumber,
+      status: jobs.status,
+      emergency: jobs.emergency,
+      issueDescription: jobs.issueDescription,
+      scheduledStart: jobs.scheduledStart,
+      scheduledEnd: jobs.scheduledEnd,
+      timeTbd: jobs.timeTbd,
+      contactName: contacts.displayName,
+      propertyAddressLine1: properties.addressLine1,
+      propertyCity: properties.city,
+    })
+    .from(jobs)
+    .leftJoin(contacts, eq(jobs.contactId, contacts.id))
+    .leftJoin(properties, eq(jobs.propertyId, properties.id))
+    .where(
+      and(
+        sql`${jobs.scheduledStart} is not null`,
+        sql`${jobs.scheduledStart} >= ${range.start}`,
+        sql`${jobs.scheduledStart} < ${range.end}`,
+      ),
+    )
+    .orderBy(asc(jobs.scheduledStart));
+
+  // The WHERE clause above guarantees scheduledStart is non-null for every
+  // row; this just reflects that at the type level for callers.
+  return rows.map((row) => ({ ...row, scheduledStart: row.scheduledStart! }));
 }

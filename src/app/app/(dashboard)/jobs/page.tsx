@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 import { getDb } from "@/lib/db/client";
 import { listJobs } from "@/lib/jobs/jobs";
+import { formatScheduleSummary } from "@/lib/schedule/format";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -67,6 +68,7 @@ export default async function JobsPage({
                 <TableHead>Property</TableHead>
                 <TableHead>Issue</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Scheduled</TableHead>
                 <TableHead>Added</TableHead>
               </TableRow>
             </TableHeader>
@@ -92,6 +94,9 @@ export default async function JobsPage({
                   </TableCell>
                   <TableCell>
                     <StatusBadge status={job.status} />
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {formatScheduleSummary(job)}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {new Intl.DateTimeFormat("en-CA", { dateStyle: "medium" }).format(
