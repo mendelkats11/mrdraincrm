@@ -1,6 +1,7 @@
 import { and, eq, ilike, isNull, ne, or, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import {
+  calls,
   contactEmails,
   contactPhones,
   contacts,
@@ -8,6 +9,7 @@ import {
   invoices,
   jobs,
   leads,
+  messages,
   organizations,
   properties,
   quotes,
@@ -18,7 +20,16 @@ type Db<TQueryResult extends PgQueryResultHKT> = PgDatabase<TQueryResult, any, a
 
 export interface SearchResult {
   type:
-    "contact" | "organization" | "property" | "lead" | "job" | "contractor" | "invoice" | "quote";
+    | "contact"
+    | "organization"
+    | "property"
+    | "lead"
+    | "job"
+    | "contractor"
+    | "invoice"
+    | "quote"
+    | "call"
+    | "message";
   id: string;
   title: string;
   subtitle: string | null;
@@ -175,6 +186,41 @@ export async function searchCrm<TQueryResult extends PgQueryResultHKT>(
     )
     .limit(RESULTS_PER_TYPE);
 
+  // Matched by caller/phone number or the linked contact's name —
+  // docs/PROJECT_SPEC.md §7 lists calls/messages as searchable, by "phone"
+  // among other identifiers.
+  const callRows = await db
+    .select({
+      id: calls.id,
+      callerNumber: calls.callerNumber,
+      contactName: contacts.displayName,
+    })
+    .from(calls)
+    .leftJoin(contacts, eq(calls.contactId, contacts.id))
+    .where(
+      or(
+        ilike(calls.callerNumber, term),
+        sql`exists (select 1 from ${contacts} where ${contacts.id} = ${calls.contactId} and ${contacts.displayName} ilike ${term})`,
+      ),
+    )
+    .limit(RESULTS_PER_TYPE);
+
+  const messageRows = await db
+    .select({
+      id: messages.id,
+      phoneNumber: messages.phoneNumber,
+      contactName: contacts.displayName,
+    })
+    .from(messages)
+    .leftJoin(contacts, eq(messages.contactId, contacts.id))
+    .where(
+      or(
+        ilike(messages.phoneNumber, term),
+        sql`exists (select 1 from ${contacts} where ${contacts.id} = ${messages.contactId} and ${contacts.displayName} ilike ${term})`,
+      ),
+    )
+    .limit(RESULTS_PER_TYPE);
+
   return [
     ...contactRows.map((c): SearchResult => ({
       type: "contact",
@@ -231,6 +277,20 @@ export async function searchCrm<TQueryResult extends PgQueryResultHKT>(
       title: q.quoteNumber,
       subtitle: q.organizationName ?? q.contactName,
       href: `/quotes/${q.id}`,
+    })),
+    ...callRows.map((c): SearchResult => ({
+      type: "call",
+      id: c.id,
+      title: c.contactName ?? c.callerNumber,
+      subtitle: "Call",
+      href: `/calls/${c.id}`,
+    })),
+    ...messageRows.map((m): SearchResult => ({
+      type: "message",
+      id: m.id,
+      title: m.contactName ?? m.phoneNumber,
+      subtitle: "Message",
+      href: "/messages",
     })),
   ];
 }

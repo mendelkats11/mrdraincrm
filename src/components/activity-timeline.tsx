@@ -63,6 +63,10 @@ const ACTION_LABELS: Record<string, string> = {
   reminder_cancelled: "Reminder hidden (don't show again)",
   reminder_reopened: "Reminder reopened",
   reminder_occurrence_created: "Next occurrence created",
+  call_received: "Call received",
+  call_ignored: "Call ignored",
+  message_received: "Message received",
+  service_area_tracking_number_updated: "Tracking number updated",
 };
 
 function humanizeAction(action: string): string {

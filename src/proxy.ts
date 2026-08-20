@@ -27,12 +27,17 @@ function isAppHost(host: string): boolean {
   return false;
 }
 
-// Pages that must remain reachable on the app host without a session.
+// Pages/routes that must remain reachable on the app host without a
+// session. The CallRail webhook (Phase 11/roadmap Phase 13) is called by
+// CallRail's own servers, not a logged-in browser — it authenticates
+// itself independently via CALLRAIL_WEBHOOK_SECRET (see
+// src/app/app/api/webhooks/callrail/route.ts), not the session cookie.
 const PUBLIC_ON_APP_HOST_PREFIXES = [
   "/login",
   "/forgot-password",
   "/reset-password/",
   "/accept-invite/",
+  "/api/webhooks/callrail",
 ];
 
 function isPublicOnAppHost(pathname: string): boolean {

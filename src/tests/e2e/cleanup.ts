@@ -19,6 +19,7 @@ export async function cleanupE2eData() {
   const { getDb } = await import("../../lib/db/client");
   const {
     activities,
+    calls,
     contactEmails,
     contactPhones,
     contacts,
@@ -28,6 +29,7 @@ export async function cleanupE2eData() {
     jobCustomCharges,
     jobs,
     leads,
+    messages,
     organizationContacts,
     organizations,
     emailEvents,
@@ -38,6 +40,7 @@ export async function cleanupE2eData() {
     quotes,
     reminders,
     sessions,
+    webhookLog,
     users,
   } = await import("../../lib/db/schema");
 
@@ -66,6 +69,39 @@ export async function cleanupE2eData() {
     .from(contractors)
     .where(ilike(contractors.name, `${E2E_NAME_PREFIX}%`));
   const testContractorIds = testContractors.map((c) => c.id);
+
+  // Calls/messages are matched by an E2E_NAME_PREFIX-tagged
+  // callrail_call_id/callrail_message_id (their own synthetic test IDs,
+  // set by the E2E spec — there's no free-text field on either table to tag
+  // otherwise) *or* by relation to a test contact. calls/messages.contact_id
+  // is ON DELETE RESTRICT, so both must be cleared before contacts below.
+  // webhook_log has no FK to anything, so it's just matched and deleted
+  // alongside for hygiene.
+  const callConditions = [ilike(calls.callrailCallId, `${E2E_NAME_PREFIX}%`)];
+  if (testContactIds.length > 0) callConditions.push(inArray(calls.contactId, testContactIds));
+  const testCalls = await db
+    .select({ id: calls.id, callrailCallId: calls.callrailCallId })
+    .from(calls)
+    .where(or(...callConditions));
+  const testCallIds = testCalls.map((c) => c.id);
+  if (testCallIds.length > 0) {
+    await db.delete(activities).where(inArray(activities.entityId, testCallIds));
+    await db.delete(calls).where(inArray(calls.id, testCallIds));
+  }
+
+  const messageConditions = [ilike(messages.callrailMessageId, `${E2E_NAME_PREFIX}%`)];
+  if (testContactIds.length > 0)
+    messageConditions.push(inArray(messages.contactId, testContactIds));
+  const testMessages = await db
+    .select({ id: messages.id })
+    .from(messages)
+    .where(or(...messageConditions));
+  const testMessageIds = testMessages.map((m) => m.id);
+  if (testMessageIds.length > 0) {
+    await db.delete(messages).where(inArray(messages.id, testMessageIds));
+  }
+
+  await db.delete(webhookLog).where(ilike(webhookLog.externalEventId, `${E2E_NAME_PREFIX}%`));
 
   // Quotes may exist with no contact/property/organization at all (same as
   // jobs — docs/CLAUDE.md §6's "may be created without a contact" philosophy
