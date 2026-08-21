@@ -1,163 +1,204 @@
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireUser } from "@/lib/auth/require-user";
 import { getDb } from "@/lib/db/client";
 import { listReminders } from "@/lib/reminders/reminders";
-import { BUSINESS_TIMEZONE } from "@/lib/reminders/timezone";
-import { NewReminderDialog } from "./reminders/new-reminder-dialog";
-import { ReminderStatusBadge } from "./reminders/reminder-status-badge";
+import { getOperationsWidgetData } from "@/lib/dashboard/operations-widgets";
+import { getFinancialReport } from "@/lib/reports/financial-report";
+import { getFinancialWidgetExtras } from "@/lib/dashboard/financial-widgets";
+import {
+  resolveReportDateRange,
+  type ReportSearchParams,
+} from "@/lib/reports/resolve-range-from-search-params";
+import { getUserPreferences } from "@/lib/preferences/user-preferences";
+import { applyOrderAndVisibility } from "@/lib/preferences/apply-order";
+import {
+  ALWAYS_VISIBLE_OPERATIONS_WIDGETS,
+  OPERATIONS_WIDGET_IDS,
+  type OperationsWidgetId,
+} from "@/lib/dashboard/widgets";
+import type { DashboardMode } from "@/lib/preferences/user-preferences";
+import { formatCents } from "@/lib/money";
+import { formatBasisPointsAsPercent } from "@/lib/financials/job-financials";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { DashboardModeToggle } from "./dashboard-mode-toggle";
+import { WidgetCustomizer } from "./widget-customizer";
+import { OperationsWidgetGrid } from "./operations-widget-grid";
+import { DateRangeFilter } from "./reports/date-range-filter";
 
-const SECTIONS = [
-  {
-    href: "/leads",
-    label: "Leads",
-    description: "Incoming interest, from the website or entered manually.",
-  },
-  {
-    href: "/jobs",
-    label: "Jobs",
-    description: "Work to be done, with or without a lead behind it.",
-  },
-  {
-    href: "/contacts",
-    label: "Contacts",
-    description: "People, on their own or linked to a property/organization.",
-  },
-  {
-    href: "/organizations",
-    label: "Organizations",
-    description: "Companies and property managers.",
-  },
-  {
-    href: "/properties",
-    label: "Properties",
-    description: "Service locations, residential or commercial.",
-  },
-] as const;
+const DEFAULT_OPERATIONS_ORDER: string[] = [...OPERATIONS_WIDGET_IDS];
+const ALWAYS_VISIBLE = new Set<string>(ALWAYS_VISIBLE_OPERATIONS_WIDGETS);
 
-const DATE_FMT = new Intl.DateTimeFormat("en-CA", {
-  dateStyle: "medium",
-  timeStyle: "short",
-  timeZone: BUSINESS_TIMEZONE,
-});
-
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<ReportSearchParams & { mode?: string }>;
+}) {
   const session = await requireUser();
   const db = getDb();
-
-  const now = new Date();
-  const [overdue, dueToday, upcoming] = await Promise.all([
-    listReminders(db, { status: "overdue", pageSize: 10 }, now),
-    listReminders(db, { status: "due_today", pageSize: 10 }, now),
-    listReminders(db, { status: "upcoming", pageSize: 5 }, now),
-  ]);
+  const params = await searchParams;
+  const prefs = await getUserPreferences(db, session.user.id);
+  const mode: DashboardMode =
+    params.mode === "financial" || params.mode === "operations" ? params.mode : prefs.dashboardMode;
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-xl font-semibold text-foreground">Welcome, {session.user.name}</h1>
-        <p className="text-sm text-muted-foreground">
-          Reminders below need your attention. Everything else is in the sidebar.
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold text-foreground">Welcome, {session.user.name}</h1>
+          <p className="text-sm text-muted-foreground">
+            {mode === "operations"
+              ? "Today's operations at a glance."
+              : "Financial performance for the selected date range."}
+          </p>
+        </div>
+        <DashboardModeToggle mode={mode} />
       </div>
 
-      <div>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-foreground">Reminders</h2>
-          <NewReminderDialog triggerLabel="+ New Reminder" />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Card data-testid="overdue-reminders-card">
-            <CardHeader>
-              <CardTitle className="text-base">Overdue</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-2">
-              {overdue.rows.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nothing overdue.</p>
-              ) : (
-                overdue.rows.map((r) => (
-                  <Link
-                    key={r.id}
-                    href="/reminders"
-                    className="flex items-center justify-between gap-2 rounded-md border p-2 text-sm hover:bg-muted/50"
-                  >
-                    <span className="truncate">{r.title}</span>
-                    <ReminderStatusBadge
-                      dueAt={r.dueAt}
-                      completedAt={r.completedAt}
-                      cancelledAt={r.cancelledAt}
-                      now={now}
-                    />
-                  </Link>
-                ))
-              )}
-            </CardContent>
-          </Card>
+      {mode === "operations" ? (
+        <OperationsTab
+          hiddenIds={prefs.dashboardWidgetHidden}
+          orderIds={prefs.dashboardWidgetOrder}
+        />
+      ) : (
+        <FinancialTab searchParams={params} />
+      )}
+    </div>
+  );
+}
 
-          <Card data-testid="due-today-reminders-card">
-            <CardHeader>
-              <CardTitle className="text-base">Due today</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-2">
-              {dueToday.rows.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nothing due today.</p>
-              ) : (
-                dueToday.rows.map((r) => (
-                  <Link
-                    key={r.id}
-                    href="/reminders"
-                    className="flex items-center justify-between gap-2 rounded-md border p-2 text-sm hover:bg-muted/50"
-                  >
-                    <span className="truncate">{r.title}</span>
-                    <span className="shrink-0 text-xs text-muted-foreground">
-                      {DATE_FMT.format(r.dueAt)}
-                    </span>
-                  </Link>
-                ))
-              )}
-            </CardContent>
-          </Card>
+async function OperationsTab({ orderIds, hiddenIds }: { orderIds: string[]; hiddenIds: string[] }) {
+  const db = getDb();
+  const now = new Date();
+  const [data, overdueReminders] = await Promise.all([
+    getOperationsWidgetData(db, now),
+    listReminders(db, { status: "overdue", pageSize: 10 }, now),
+  ]);
 
-          <Card data-testid="upcoming-reminders-card">
-            <CardHeader>
-              <CardTitle className="text-base">Upcoming</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-2">
-              {upcoming.rows.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nothing upcoming.</p>
-              ) : (
-                upcoming.rows.map((r) => (
-                  <Link
-                    key={r.id}
-                    href="/reminders"
-                    className="flex items-center justify-between gap-2 rounded-md border p-2 text-sm hover:bg-muted/50"
-                  >
-                    <span className="truncate">{r.title}</span>
-                    <span className="shrink-0 text-xs text-muted-foreground">
-                      {DATE_FMT.format(r.dueAt)}
-                    </span>
-                  </Link>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </div>
+  // Defensive: an always-visible widget can never actually be hidden, even
+  // if a stale/tampered preference row says otherwise.
+  const effectiveHidden = hiddenIds.filter((id) => !ALWAYS_VISIBLE.has(id));
+  const visibleWidgetIds = applyOrderAndVisibility(
+    DEFAULT_OPERATIONS_ORDER,
+    orderIds,
+    effectiveHidden,
+  ) as OperationsWidgetId[];
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex justify-end">
+        <WidgetCustomizer savedOrder={orderIds} savedHidden={hiddenIds} />
       </div>
+      <OperationsWidgetGrid
+        visibleWidgetIds={visibleWidgetIds}
+        data={data}
+        overdueReminders={overdueReminders}
+      />
+    </div>
+  );
+}
+
+async function FinancialTab({ searchParams }: { searchParams: ReportSearchParams }) {
+  const db = getDb();
+  const dateRange = resolveReportDateRange(searchParams);
+  const [report, extras] = await Promise.all([
+    getFinancialReport(db, { dateRange }),
+    getFinancialWidgetExtras(db, dateRange),
+  ]);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <DateRangeFilter basePath="/" />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {SECTIONS.map((section) => (
-          <Link key={section.href} href={section.href}>
-            <Card className="h-full transition-colors hover:border-primary">
-              <CardHeader>
-                <CardTitle>{section.label}</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">
-                {section.description}
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
+        <SummaryCard label="Revenue" value={formatCents(report.totals.revenueCents)} />
+        <SummaryCard label="Profit" value={formatCents(report.totals.profitCents)} />
+        <SummaryCard
+          label="Profit Margin"
+          value={formatBasisPointsAsPercent(report.totals.profitMarginBasisPoints)}
+        />
+        <SummaryCard label="Materials" value={formatCents(extras.materialsCents)} />
+        <SummaryCard label="Contractor Payouts" value={formatCents(extras.contractorPayoutCents)} />
+        <SummaryCard label="Outstanding" value={formatCents(extras.outstandingCents)} />
       </div>
+
+      {report.byMonth.length > 0 ? (
+        <TrendTable title="Revenue / Profit Trend" rows={report.byMonth} />
+      ) : null}
+      {report.byService.length > 0 ? (
+        <TrendTable title="By Service" rows={report.byService} />
+      ) : null}
+
+      <Link href="/reports/financial" className="text-sm text-primary hover:underline">
+        View the full Financial report →
+      </Link>
+    </div>
+  );
+}
+
+function SummaryCard({ label, value }: { label: string; value: string }) {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
+      </CardHeader>
+      <CardContent className="text-2xl font-semibold">{value}</CardContent>
+    </Card>
+  );
+}
+
+function TrendTable({
+  title,
+  rows,
+}: {
+  title: string;
+  rows: {
+    label: string;
+    jobCount: number;
+    financials: { revenueCents: number; profitCents: number };
+  }[];
+}) {
+  return (
+    <div className="overflow-x-auto rounded-lg border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead
+              colSpan={4}
+              className="text-xs font-semibold uppercase text-muted-foreground"
+            >
+              {title}
+            </TableHead>
+          </TableRow>
+          <TableRow>
+            <TableHead></TableHead>
+            <TableHead className="text-right">Jobs</TableHead>
+            <TableHead className="text-right">Revenue</TableHead>
+            <TableHead className="text-right">Profit</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((row) => (
+            <TableRow key={row.label}>
+              <TableCell>{row.label}</TableCell>
+              <TableCell className="text-right">{row.jobCount}</TableCell>
+              <TableCell className="text-right">
+                {formatCents(row.financials.revenueCents)}
+              </TableCell>
+              <TableCell className="text-right">
+                {formatCents(row.financials.profitCents)}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }

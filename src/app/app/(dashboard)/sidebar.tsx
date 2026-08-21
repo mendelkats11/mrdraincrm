@@ -2,52 +2,124 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  BarChart3,
+  Bell,
+  Building2,
+  Calendar,
+  FileSignature,
+  FileText,
+  Globe,
+  HardHat,
+  Home,
+  LayoutDashboard,
+  MessageSquare,
+  Phone,
+  User,
+  UserPlus,
+  Wrench,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { NAV_HREFS } from "@/lib/dashboard/sidebar-nav";
+import { SidebarCustomizer } from "./sidebar-customizer";
 
-// Fixed for Phase 3 — show/hide, reorder, and collapse behavior is an
-// explicit docs/ROADMAP.md Phase 17 deliverable ("sidebar customization"),
-// not this phase's.
-const NAV_ITEMS = [
-  { href: "/", label: "Dashboard" },
-  { href: "/leads", label: "Leads" },
-  { href: "/jobs", label: "Jobs" },
-  { href: "/schedule", label: "Schedule" },
-  { href: "/contractors", label: "Contractors" },
-  { href: "/invoices", label: "Invoices" },
-  { href: "/quotes", label: "Quotes" },
-  { href: "/reminders", label: "Reminders" },
-  { href: "/calls", label: "Calls" },
-  { href: "/messages", label: "Messages" },
-  { href: "/contacts", label: "Contacts" },
-  { href: "/organizations", label: "Organizations" },
-  { href: "/properties", label: "Properties" },
-  { href: "/website", label: "Website" },
-  { href: "/reports", label: "Reports" },
-] as const;
+const ICONS_BY_HREF = {
+  "/": LayoutDashboard,
+  "/leads": UserPlus,
+  "/jobs": Wrench,
+  "/schedule": Calendar,
+  "/contractors": HardHat,
+  "/invoices": FileText,
+  "/quotes": FileSignature,
+  "/reminders": Bell,
+  "/calls": Phone,
+  "/messages": MessageSquare,
+  "/contacts": User,
+  "/organizations": Building2,
+  "/properties": Home,
+  "/website": Globe,
+  "/reports": BarChart3,
+} as const;
 
-export function Sidebar() {
+const LABELS_BY_HREF: Record<(typeof NAV_HREFS)[number], string> = {
+  "/": "Dashboard",
+  "/leads": "Leads",
+  "/jobs": "Jobs",
+  "/schedule": "Schedule",
+  "/contractors": "Contractors",
+  "/invoices": "Invoices",
+  "/quotes": "Quotes",
+  "/reminders": "Reminders",
+  "/calls": "Calls",
+  "/messages": "Messages",
+  "/contacts": "Contacts",
+  "/organizations": "Organizations",
+  "/properties": "Properties",
+  "/website": "Website",
+  "/reports": "Reports",
+};
+
+export const NAV_ITEMS = NAV_HREFS.map((href) => ({
+  href,
+  label: LABELS_BY_HREF[href],
+  icon: ICONS_BY_HREF[href],
+}));
+
+export function Sidebar({
+  visibleOrder,
+  savedOrder,
+  savedHidden,
+  collapsed,
+}: {
+  /** Already reordered + hidden-items-removed — see applyOrderAndVisibility
+   *  (src/lib/preferences/apply-order.ts), computed server-side in
+   *  layout.tsx from the signed-in user's saved preferences. */
+  visibleOrder: string[];
+  /** Raw saved fields, passed through to SidebarCustomizer so its edit UI
+   *  starts from what's actually saved (including hidden items, which
+   *  visibleOrder has already dropped) rather than the app defaults. */
+  savedOrder: string[];
+  savedHidden: string[];
+  collapsed: boolean;
+}) {
   const pathname = usePathname();
+  const itemsByHref = new Map(NAV_ITEMS.map((item) => [item.href, item]));
+  const items = visibleOrder
+    .map((href) => itemsByHref.get(href as (typeof NAV_ITEMS)[number]["href"]))
+    .filter((item): item is (typeof NAV_ITEMS)[number] => item !== undefined);
 
   return (
-    <nav className="flex w-56 shrink-0 flex-col gap-1 border-r bg-background p-4">
-      {NAV_ITEMS.map((item) => {
-        const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            aria-current={isActive ? "page" : undefined}
-            className={cn(
-              "rounded-md px-3 py-2 text-sm font-medium transition-colors",
-              isActive
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
-            )}
-          >
-            {item.label}
-          </Link>
-        );
-      })}
+    <nav
+      className={cn(
+        "flex shrink-0 flex-col gap-1 border-r bg-background p-3",
+        collapsed ? "w-14 items-center" : "w-56",
+      )}
+    >
+      <div className="flex-1 flex flex-col gap-1 w-full">
+        {items.map((item) => {
+          const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={isActive ? "page" : undefined}
+              title={collapsed ? item.label : undefined}
+              className={cn(
+                "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                collapsed && "justify-center px-2",
+                isActive
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+            >
+              <Icon className="size-4 shrink-0" aria-hidden="true" />
+              {collapsed ? null : item.label}
+            </Link>
+          );
+        })}
+      </div>
+      <SidebarCustomizer savedOrder={savedOrder} savedHidden={savedHidden} collapsed={collapsed} />
     </nav>
   );
 }

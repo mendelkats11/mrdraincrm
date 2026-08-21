@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useTransition } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createLeadAction } from "@/lib/crm/lead-actions";
 import {
   searchContactsAction,
@@ -31,10 +31,25 @@ import { Textarea } from "@/components/ui/textarea";
 import { EntityPicker } from "@/components/entity-picker";
 
 export function NewLeadDialog({ services }: { services: { id: string; name: string }[] }) {
-  const [open, setOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const [open, setOpen] = useState(() => searchParams.get("new") === "1");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
+
+  // The global "+ New" quick-actions menu (docs/PROJECT_SPEC.md §23) opens
+  // this dialog from anywhere via ?new=1 rather than duplicating its form —
+  // strip the param once consumed so a later refresh/back-navigation
+  // doesn't keep reopening it.
+  useEffect(() => {
+    if (searchParams.get("new") === "1") {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("new");
+      router.replace(params.toString() ? `${pathname}?${params}` : pathname, { scroll: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleSubmit(formData: FormData) {
     startTransition(async () => {

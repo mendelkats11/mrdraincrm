@@ -1,7 +1,7 @@
 "use client";
 
-import { type FormEvent, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { type FormEvent, useEffect, useState, useTransition } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createContactAction } from "@/lib/crm/contact-actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,10 +21,23 @@ import { Label } from "@/components/ui/label";
 // everything else (additional phones/relationships/notes) is added from
 // the detail page.
 export function NewContactDialog() {
-  const [open, setOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const [open, setOpen] = useState(() => searchParams.get("new") === "1");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
+
+  // Global "+ New" quick action (docs/PROJECT_SPEC.md §23) opens this via
+  // ?new=1 — see new-lead-dialog.tsx for the identical pattern.
+  useEffect(() => {
+    if (searchParams.get("new") === "1") {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("new");
+      router.replace(params.toString() ? `${pathname}?${params}` : pathname, { scroll: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

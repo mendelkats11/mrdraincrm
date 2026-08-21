@@ -86,3 +86,32 @@ export async function getEntityTimeline<TQueryResult extends PgQueryResultHKT>(
 
   return rows;
 }
+
+/**
+ * Global activity feed across every entity type, most recent first — the
+ * dashboard's "Recent Activity" widget (docs/PROJECT_SPEC.md §21). Same
+ * shape as getEntityTimeline, just without the entity filter.
+ */
+export async function listRecentActivity<TQueryResult extends PgQueryResultHKT>(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  db: PgDatabase<TQueryResult, any, any>,
+  limit = 10,
+): Promise<TimelineEntry[]> {
+  return db
+    .select({
+      id: activities.id,
+      actorUserId: activities.actorUserId,
+      actorName: users.name,
+      entityType: activities.entityType,
+      entityId: activities.entityId,
+      action: activities.action,
+      oldValue: activities.oldValue,
+      newValue: activities.newValue,
+      metadata: activities.metadata,
+      createdAt: activities.createdAt,
+    })
+    .from(activities)
+    .leftJoin(users, eq(activities.actorUserId, users.id))
+    .orderBy(desc(activities.createdAt))
+    .limit(limit);
+}

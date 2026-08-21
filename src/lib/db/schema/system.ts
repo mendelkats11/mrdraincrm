@@ -1,4 +1,4 @@
-import { boolean, index, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, index, jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 import { taxInclusionModeEnum } from "./jobs";
 
@@ -91,3 +91,28 @@ export const activities = pgTable(
   },
   (table) => [index("activities_entity_idx").on(table.entityType, table.entityId, table.createdAt)],
 );
+
+export const dashboardModeEnum = pgEnum("dashboard_mode", ["operations", "financial"]);
+
+// Phase 17 (Dashboard customization) — docs/PROJECT_SPEC.md §21/§25:
+// per-user dashboard/sidebar layout, not a global setting like appSettings
+// above. One row per user, created lazily on first customization (same
+// find-or-create pattern as the appSettings singleton). Order/hidden lists
+// store widget/nav-item *ids* (stable string keys defined in application
+// code — src/lib/dashboard/widgets.ts, src/app/app/(dashboard)/sidebar.tsx
+// — not labels), so relabeling a widget or nav item never orphans a saved
+// preference.
+export const userPreferences = pgTable("user_preferences", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: "cascade" }),
+  dashboardMode: dashboardModeEnum("dashboard_mode").notNull().default("operations"),
+  dashboardWidgetOrder: jsonb("dashboard_widget_order").$type<string[]>().notNull().default([]),
+  dashboardWidgetHidden: jsonb("dashboard_widget_hidden").$type<string[]>().notNull().default([]),
+  sidebarItemOrder: jsonb("sidebar_item_order").$type<string[]>().notNull().default([]),
+  sidebarItemHidden: jsonb("sidebar_item_hidden").$type<string[]>().notNull().default([]),
+  sidebarCollapsed: boolean("sidebar_collapsed").notNull().default(false),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
