@@ -33,6 +33,19 @@ export const appSettings = pgTable("app_settings", {
   // Default applied to newly created jobs; changing this never rewrites the
   // tax_inclusion_mode already snapshotted on existing jobs — §2.1.B.
   taxInclusionDefault: taxInclusionModeEnum("tax_inclusion_default").notNull().default("excluded"),
+  // Phase 15 (Website CMS) — public-site-wide content that isn't tied to a
+  // specific service/service area/homepage section. tagline/about* feed the
+  // hero and About page; publicContactEmail is shown to visitors (distinct
+  // from LEAD_NOTIFICATION_EMAILS, which is an internal-only env var);
+  // defaultCallrailTrackingNumber is the Call Now number for pages with no
+  // more specific service-area tracking number (docs/PROJECT_SPEC.md §2.4)
+  // — service area pages use their own serviceAreas.callrailTrackingNumber
+  // instead.
+  tagline: text("tagline"),
+  aboutHeading: text("about_heading"),
+  aboutBody: text("about_body"),
+  publicContactEmail: text("public_contact_email"),
+  defaultCallrailTrackingNumber: text("default_callrail_tracking_number"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

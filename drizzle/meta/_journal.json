@@ -50,6 +50,13 @@
       "when": 1787222772115,
       "tag": "0006_ambitious_cyclops",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1787282131063,
+      "tag": "0007_curious_owl",
+      "breakpoints": true
     }
   ]
 }

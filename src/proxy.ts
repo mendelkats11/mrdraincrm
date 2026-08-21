@@ -38,6 +38,11 @@ const PUBLIC_ON_APP_HOST_PREFIXES = [
   "/reset-password/",
   "/accept-invite/",
   "/api/webhooks/callrail",
+  // Public marketing images (gallery/service/service-area photos managed
+  // by the Website CMS) — not private data, and the CMS admin screens
+  // need to preview them via the same relative URL the public site uses.
+  // See src/lib/storage/public-asset-handler.ts.
+  "/api/public-assets/",
 ];
 
 function isPublicOnAppHost(pathname: string): boolean {

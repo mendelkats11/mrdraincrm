@@ -46,6 +46,9 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-cream: var(--brand-cream);
+  --color-brand-sky: var(--brand-sky);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -149,3 +152,34 @@
     @apply font-sans;
   }
 }
+
+/* Public-site brand theme (docs/DESIGN_SYSTEM.md §8: "use the existing Mr.
+ * Drain brand colors from the supplied logo/brand assets") — derived from
+ * public/logo.png via color-histogram sampling, not invented. Scoped to
+ * .site-theme (wraps only src/app/(site)/*, see src/app/(site)/layout.tsx)
+ * so the private app dashboard keeps its own neutral/professional-tool
+ * palette (docs/DESIGN_SYSTEM.md §5) — Phase 17's concern, not this one's.
+ * Overrides the same semantic tokens @theme inline already maps, so every
+ * existing bg-primary/text-primary/etc utility "just works" within this
+ * subtree without new utility names. */
+.site-theme {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.22 0.04 250);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.04 250);
+  --primary: oklch(0.47 0.12 235); /* ribbon blue, #0a6ca8-ish */
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.97 0.01 235);
+  --secondary-foreground: oklch(0.3 0.08 235);
+  --muted: oklch(0.97 0.015 90);
+  --muted-foreground: oklch(0.48 0.02 250);
+  --accent: oklch(0.72 0.16 55); /* badge orange, #e8832e-ish */
+  --accent-foreground: oklch(0.2 0.05 40);
+  --border: oklch(0.9 0.01 235);
+  --input: oklch(0.9 0.01 235);
+  --ring: oklch(0.6 0.1 235);
+  --brand-navy: oklch(0.26 0.06 250); /* cap/jacket navy, #0f2a47-ish */
+  --brand-cream: oklch(0.96 0.03 95); /* ring cream, #fbf3d9-ish */
+  --brand-sky: oklch(0.75 0.13 215); /* cap highlight, #29b6d8-ish */
+}
+

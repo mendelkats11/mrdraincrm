@@ -21,6 +21,7 @@ const NAV_ITEMS = [
   { href: "/contacts", label: "Contacts" },
   { href: "/organizations", label: "Organizations" },
   { href: "/properties", label: "Properties" },
+  { href: "/website", label: "Website" },
 ] as const;
 
 export function Sidebar() {
