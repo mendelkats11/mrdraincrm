@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Bell } from "lucide-react";
 import {
@@ -54,6 +54,17 @@ export function NotificationBell({
 }) {
   const [pending, startTransition] = useTransition();
   const router = useRouter();
+
+  // Polls for new notifications (new lead/call/text/reminder) so the bell
+  // updates on its own instead of requiring a manual page reload. A plain
+  // interval rather than a websocket/SSE — this is a small business's
+  // dashboard, not a chat app, and a Server Component re-fetch every 30s
+  // is a far cheaper, more portable way to get "close enough to real-time"
+  // than standing up a persistent connection.
+  useEffect(() => {
+    const interval = setInterval(() => router.refresh(), 30_000);
+    return () => clearInterval(interval);
+  }, [router]);
 
   return (
     <Popover>
