@@ -36,7 +36,12 @@ export const invoices = pgTable("invoices", {
   // never rewrites a historical PDF's content.
   businessName: text("business_name"),
   businessAddress: text("business_address"),
-  logoUrl: text("logo_url"),
+  // R2 object key (private bucket) — see the matching comment on
+  // appSettings.logoKey. Snapshotted at creation like everything else here.
+  logoKey: text("logo_key"),
+  // Snapshotted template choices — src/lib/pdf/invoice-template.ts.
+  accentColor: text("accent_color"),
+  fontFamily: text("font_family"),
   customerName: text("customer_name"),
   customerAddress: text("customer_address"),
   subtotalCents: integer("subtotal_cents").notNull().default(0),

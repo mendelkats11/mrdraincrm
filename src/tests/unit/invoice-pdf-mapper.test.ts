@@ -14,6 +14,8 @@ const EXPECTED_KEYS = [
   "businessName",
   "businessAddress",
   "logoUrl",
+  "accentColor",
+  "fontFamily",
   "customerName",
   "customerAddress",
   "jobNumber",
@@ -33,6 +35,8 @@ function fixtureInvoice(): InvoiceForPdf {
     businessName: "Mr. Drain Plumbing",
     businessAddress: "123 Main St",
     logoUrl: null,
+    accentColor: null,
+    fontFamily: null,
     customerName: "Jane Doe",
     customerAddress: "456 Oak Ave",
     jobNumber: "JOB-0001",
@@ -80,5 +84,21 @@ describe("toCustomerFacingInvoiceDocument", () => {
     expect(document.totalCents).toBe(26250);
     expect(document.businessName).toBe("Mr. Drain Plumbing");
     expect(document.customerName).toBe("Jane Doe");
+  });
+
+  it("resolves a null accent color/font to their curated defaults", () => {
+    const document = toCustomerFacingInvoiceDocument(fixtureInvoice());
+    expect(document.accentColor).toBe("#1e3a5f");
+    expect(document.fontFamily).toBe("Helvetica");
+  });
+
+  it("preserves an explicit accent color/font", () => {
+    const document = toCustomerFacingInvoiceDocument({
+      ...fixtureInvoice(),
+      accentColor: "#065f46",
+      fontFamily: "Times-Roman",
+    });
+    expect(document.accentColor).toBe("#065f46");
+    expect(document.fontFamily).toBe("Times-Roman");
   });
 });

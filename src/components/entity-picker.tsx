@@ -22,12 +22,16 @@ export function EntityPicker({
   placeholder,
   search,
   initial,
+  onSelect,
 }: {
   name: string;
   label: string;
   placeholder: string;
   search: (query: string) => Promise<PickerOption[]>;
   initial?: PickerOption | null;
+  /** Optional — lets a form prefill other fields (e.g. customer name/
+   *  address) from the picked entity. Called with null when cleared. */
+  onSelect?: (option: PickerOption | null) => void;
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PickerOption[]>([]);
@@ -55,7 +59,10 @@ export function EntityPicker({
           <span>{selected.label}</span>
           <button
             type="button"
-            onClick={() => setSelected(null)}
+            onClick={() => {
+              setSelected(null);
+              onSelect?.(null);
+            }}
             className="text-xs text-muted-foreground hover:underline"
           >
             Change
@@ -78,6 +85,7 @@ export function EntityPicker({
                       setSelected(r);
                       setQuery("");
                       setResults([]);
+                      onSelect?.(r);
                     }}
                     className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
                   >

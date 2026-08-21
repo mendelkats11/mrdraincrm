@@ -9,6 +9,7 @@ import { createProperty } from "@/lib/crm/properties";
 import {
   addInvoiceLineItem,
   createInvoice,
+  createInvoiceFromScratch,
   getInvoice,
   listInvoices,
   listInvoicesForJob,
@@ -19,7 +20,7 @@ import {
   updateInvoiceLineItem,
   voidInvoice,
 } from "@/lib/invoices/invoices";
-import { activities, appSettings, sequences } from "@/lib/db/schema";
+import { activities, appSettings, jobs, sequences } from "@/lib/db/schema";
 
 async function seedSequences(db: Awaited<ReturnType<typeof createTestDb>>["db"]) {
   await db.insert(sequences).values([
@@ -94,6 +95,79 @@ describe("createInvoice", () => {
   });
 });
 
+describe("createInvoiceFromScratch", () => {
+  let ctx: Awaited<ReturnType<typeof createTestDb>>;
+
+  beforeEach(async () => {
+    ctx = await createTestDb();
+    await seedSequences(ctx.db);
+  });
+
+  afterEach(async () => {
+    await ctx.client.close();
+  });
+
+  it("creates a minimal job and points a draft invoice at it", async () => {
+    const invoice = await createInvoiceFromScratch(ctx.db, {}, null);
+    expect(invoice.invoiceNumber).toBe("INV-0001");
+    expect(invoice.status).toBe("draft");
+
+    const [job] = await ctx.db.select().from(jobs).where(eq(jobs.id, invoice.jobId));
+    expect(job).toBeTruthy();
+    expect(job.jobNumber).toBe("JOB-0001");
+  });
+
+  it("attaches the given contact/property/organization to the created job", async () => {
+    const contact = await createContact(ctx.db, { displayName: "Jane Doe" }, null);
+    const property = await createProperty(
+      ctx.db,
+      { addressLine1: "1 Main St", city: "Saskatoon", province: "SK", postalCode: "S7K 0A1" },
+      null,
+    );
+    const org = await createOrganization(ctx.db, { name: "Acme Co" }, null);
+
+    const invoice = await createInvoiceFromScratch(
+      ctx.db,
+      { contactId: contact.id, propertyId: property.id, organizationId: org.id },
+      null,
+    );
+
+    const [job] = await ctx.db.select().from(jobs).where(eq(jobs.id, invoice.jobId));
+    expect(job.contactId).toBe(contact.id);
+    expect(job.propertyId).toBe(property.id);
+    expect(job.organizationId).toBe(org.id);
+  });
+
+  it("records job_created with the invoice-from-scratch source and invoice_created", async () => {
+    const invoice = await createInvoiceFromScratch(ctx.db, {}, null);
+
+    const jobActivity = await ctx.db
+      .select()
+      .from(activities)
+      .where(and(eq(activities.entityType, "job"), eq(activities.entityId, invoice.jobId)));
+    expect(jobActivity).toHaveLength(1);
+    expect(jobActivity[0].action).toBe("job_created");
+    expect(jobActivity[0].metadata).toEqual({ source: "invoice_created_from_scratch" });
+
+    const invoiceActivity = await ctx.db
+      .select()
+      .from(activities)
+      .where(and(eq(activities.entityType, "invoice"), eq(activities.entityId, invoice.id)));
+    expect(invoiceActivity.map((a) => a.action)).toContain("invoice_created");
+  });
+
+  it("stores the given business/customer details and tax on the invoice", async () => {
+    const invoice = await createInvoiceFromScratch(
+      ctx.db,
+      { customerName: "Jane Doe", taxCents: 500 },
+      null,
+    );
+    expect(invoice.customerName).toBe("Jane Doe");
+    expect(invoice.taxCents).toBe(500);
+    expect(invoice.totalCents).toBe(500);
+  });
+});
+
 describe("resolveInvoiceDefaults", () => {
   let ctx: Awaited<ReturnType<typeof createTestDb>>;
 
@@ -152,6 +226,16 @@ describe("resolveInvoiceDefaults", () => {
     const defaults = await resolveInvoiceDefaults(ctx.db, job.id);
     expect(defaults.businessName).toBe("Mr. Drain Plumbing");
     expect(defaults.businessAddress).toBe("1 Main St");
+  });
+
+  it("with no jobId, returns business-wide defaults and no customer prefill", async () => {
+    await ctx.db.insert(appSettings).values({ businessName: "Mr. Drain Plumbing" });
+    const defaults = await resolveInvoiceDefaults(ctx.db);
+    expect(defaults.businessName).toBe("Mr. Drain Plumbing");
+    expect(defaults.customerName).toBeNull();
+    expect(defaults.customerAddress).toBeNull();
+    expect(defaults.accentColor).toBe("#1e3a5f");
+    expect(defaults.fontFamily).toBe("Helvetica");
   });
 });
 
@@ -363,6 +447,34 @@ describe("updateInvoiceDetails", () => {
 
     const result = await updateInvoiceDetails(ctx.db, invoice.id, { notes: "too late" }, null);
     expect(result).toEqual({ ok: false, error: "not_editable" });
+  });
+
+  it("updates the per-invoice accent color and font, falling back for an invalid value", async () => {
+    const job = await createJob(ctx.db, {}, null);
+    const invoice = await createInvoice(ctx.db, { jobId: job.id }, null);
+
+    await updateInvoiceDetails(
+      ctx.db,
+      invoice.id,
+      { accentColor: "#065f46", fontFamily: "Times-Roman" },
+      null,
+    );
+    const after = await getInvoice(ctx.db, invoice.id);
+    expect(after?.accentColor).toBe("#065f46");
+    expect(after?.fontFamily).toBe("Times-Roman");
+
+    await updateInvoiceDetails(ctx.db, invoice.id, { accentColor: "#not-a-real-option" }, null);
+    const afterInvalid = await getInvoice(ctx.db, invoice.id);
+    expect(afterInvalid?.accentColor).toBe("#1e3a5f");
+  });
+
+  it("updates the logo key independently of the business-wide default", async () => {
+    const job = await createJob(ctx.db, {}, null);
+    const invoice = await createInvoice(ctx.db, { jobId: job.id }, null);
+
+    await updateInvoiceDetails(ctx.db, invoice.id, { logoKey: "settings/logo/new.png" }, null);
+    const after = await getInvoice(ctx.db, invoice.id);
+    expect(after?.logoKey).toBe("settings/logo/new.png");
   });
 });
 

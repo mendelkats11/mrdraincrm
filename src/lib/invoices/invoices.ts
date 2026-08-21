@@ -12,6 +12,7 @@ import {
 import { recordActivity } from "@/lib/audit/activity";
 import { allocateSequenceNumber } from "@/lib/sequences/allocate";
 import { calculateLineTotalCents } from "@/lib/money";
+import { resolveAccentColor, resolveFontFamily } from "@/lib/pdf/invoice-template";
 import type { InvoicePaidStatus } from "./status";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -22,7 +23,9 @@ export type InvoiceStatus = "draft" | "sent" | "partially_paid" | "paid" | "void
 export interface InvoiceDefaults {
   businessName: string | null;
   businessAddress: string | null;
-  logoUrl: string | null;
+  logoKey: string | null;
+  accentColor: string;
+  fontFamily: string;
   customerName: string | null;
   customerAddress: string | null;
 }
@@ -34,15 +37,29 @@ export interface InvoiceDefaults {
  * customer info is resolved from the job's linked organization/property/
  * contact — organization name/address preferred (the billing entity for
  * commercial work), falling back to the individual contact/property.
+ * jobId is optional: the "create from scratch" entry point has no job yet
+ * (one is created alongside the invoice, see createInvoiceFromScratch), so
+ * it only gets the business-wide defaults with no customer prefill.
  */
 export async function resolveInvoiceDefaults<TQueryResult extends PgQueryResultHKT>(
   db: Db<TQueryResult>,
-  jobId: string,
+  jobId?: string,
 ): Promise<InvoiceDefaults> {
+  const [settings] = await db.select().from(appSettings).limit(1);
+
+  const businessDefaults: InvoiceDefaults = {
+    businessName: settings?.businessName ?? null,
+    businessAddress: settings?.businessAddress ?? null,
+    logoKey: settings?.logoKey ?? null,
+    accentColor: resolveAccentColor(settings?.invoiceAccentColor),
+    fontFamily: resolveFontFamily(settings?.invoiceFontFamily),
+    customerName: null,
+    customerAddress: null,
+  };
+  if (!jobId) return businessDefaults;
+
   const [job] = await db.select().from(jobs).where(eq(jobs.id, jobId));
   if (!job) throw new Error(`Job ${jobId} not found`);
-
-  const [settings] = await db.select().from(appSettings).limit(1);
 
   let customerName: string | null = null;
   let customerAddress: string | null = null;
@@ -74,20 +91,16 @@ export async function resolveInvoiceDefaults<TQueryResult extends PgQueryResultH
     }
   }
 
-  return {
-    businessName: settings?.businessName ?? null,
-    businessAddress: settings?.businessAddress ?? null,
-    logoUrl: settings?.logoUrl ?? null,
-    customerName,
-    customerAddress,
-  };
+  return { ...businessDefaults, customerName, customerAddress };
 }
 
 export interface CreateInvoiceInput {
   jobId: string;
   businessName?: string | null;
   businessAddress?: string | null;
-  logoUrl?: string | null;
+  logoKey?: string | null;
+  accentColor?: string | null;
+  fontFamily?: string | null;
   customerName?: string | null;
   customerAddress?: string | null;
   notes?: string | null;
@@ -120,7 +133,95 @@ export async function createInvoice<TQueryResult extends PgQueryResultHKT>(
         status: "draft",
         businessName: input.businessName || null,
         businessAddress: input.businessAddress || null,
-        logoUrl: input.logoUrl || null,
+        logoKey: input.logoKey || null,
+        accentColor: resolveAccentColor(input.accentColor),
+        fontFamily: resolveFontFamily(input.fontFamily),
+        customerName: input.customerName || null,
+        customerAddress: input.customerAddress || null,
+        subtotalCents: 0,
+        taxCents,
+        totalCents: taxCents,
+        notes: input.notes || null,
+        paymentInstructions: input.paymentInstructions || null,
+        footer: input.footer || null,
+      })
+      .returning();
+
+    await recordActivity(tx, {
+      actorUserId,
+      entityType: "invoice",
+      entityId: invoice.id,
+      action: "invoice_created",
+      newValue: { invoiceNumber: invoice.invoiceNumber, jobId: invoice.jobId },
+    });
+
+    return invoice;
+  });
+}
+
+export interface CreateInvoiceFromScratchInput extends Omit<CreateInvoiceInput, "jobId"> {
+  contactId?: string | null;
+  propertyId?: string | null;
+  organizationId?: string | null;
+}
+
+/**
+ * "Create an invoice from scratch" (not starting from an existing job's
+ * page) still needs a job underneath — the entire payment/balance system is
+ * built around a payment always belonging to a job (docs/ARCHITECTURE.md
+ * §6.2), so a job-less invoice would have nowhere for a payment to attach.
+ * Rather than change that architecture, this creates a minimal job in the
+ * same transaction and points the invoice at it — invisible unless the
+ * owner goes looking at the job itself. Job creation logic is inlined
+ * (matching how convertQuoteToJob does the same thing) rather than calling
+ * createJob(), since that function opens its own transaction and Drizzle
+ * doesn't support the createJob(tx, ...) / createInvoice(tx, ...) nesting
+ * cleanly across two independently-transactional functions.
+ */
+export async function createInvoiceFromScratch<TQueryResult extends PgQueryResultHKT>(
+  db: Db<TQueryResult>,
+  input: CreateInvoiceFromScratchInput,
+  actorUserId: string | null,
+) {
+  return db.transaction(async (tx) => {
+    const [settings] = await tx.select().from(appSettings).limit(1);
+    const taxInclusionMode = settings?.taxInclusionDefault ?? "excluded";
+
+    const jobNumber = await allocateSequenceNumber(tx, "job");
+    const [job] = await tx
+      .insert(jobs)
+      .values({
+        jobNumber,
+        contactId: input.contactId || null,
+        propertyId: input.propertyId || null,
+        organizationId: input.organizationId || null,
+        taxInclusionMode,
+      })
+      .returning();
+
+    await recordActivity(tx, {
+      actorUserId,
+      entityType: "job",
+      entityId: job.id,
+      action: "job_created",
+      newValue: { jobNumber: job.jobNumber, status: job.status },
+      metadata: { source: "invoice_created_from_scratch" },
+    });
+
+    const invoiceNumber = await allocateSequenceNumber(tx, "invoice");
+    const taxCents = input.taxCents ?? 0;
+
+    const [invoice] = await tx
+      .insert(invoices)
+      .values({
+        invoiceNumber,
+        jobId: job.id,
+        status: "draft",
+        businessName: input.businessName || null,
+        businessAddress: input.businessAddress || null,
+        logoKey: input.logoKey || null,
+        accentColor: resolveAccentColor(input.accentColor),
+        fontFamily: resolveFontFamily(input.fontFamily),
         customerName: input.customerName || null,
         customerAddress: input.customerAddress || null,
         subtotalCents: 0,
@@ -423,7 +524,9 @@ export async function removeInvoiceLineItem<TQueryResult extends PgQueryResultHK
 export interface UpdateInvoiceDetailsInput {
   businessName?: string | null;
   businessAddress?: string | null;
-  logoUrl?: string | null;
+  logoKey?: string | null;
+  accentColor?: string | null;
+  fontFamily?: string | null;
   customerName?: string | null;
   customerAddress?: string | null;
   notes?: string | null;
@@ -451,7 +554,11 @@ export async function updateInvoiceDetails<TQueryResult extends PgQueryResultHKT
         businessName: input.businessName !== undefined ? input.businessName || null : undefined,
         businessAddress:
           input.businessAddress !== undefined ? input.businessAddress || null : undefined,
-        logoUrl: input.logoUrl !== undefined ? input.logoUrl || null : undefined,
+        logoKey: input.logoKey !== undefined ? input.logoKey || null : undefined,
+        accentColor:
+          input.accentColor !== undefined ? resolveAccentColor(input.accentColor) : undefined,
+        fontFamily:
+          input.fontFamily !== undefined ? resolveFontFamily(input.fontFamily) : undefined,
         customerName: input.customerName !== undefined ? input.customerName || null : undefined,
         customerAddress:
           input.customerAddress !== undefined ? input.customerAddress || null : undefined,

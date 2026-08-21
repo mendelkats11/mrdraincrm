@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { InvoiceFilters } from "./invoice-filters";
 import { InvoiceStatusBadge } from "./invoice-status-badge";
 
@@ -41,6 +42,14 @@ export default async function InvoicesPage({
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-foreground">Invoices</h1>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/invoices/settings">Invoice settings</Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link href="/invoices/new">+ New Invoice</Link>
+          </Button>
+        </div>
       </div>
 
       <InvoiceFilters />
@@ -49,7 +58,11 @@ export default async function InvoicesPage({
         <div className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
           No invoices yet.
           <br />
-          Create one from a job&apos;s detail page.
+          Create one from a job&apos;s detail page, or{" "}
+          <Link href="/invoices/new" className="underline">
+            start from scratch
+          </Link>
+          .
         </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border">

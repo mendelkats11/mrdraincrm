@@ -12,10 +12,17 @@ export const appSettings = pgTable("app_settings", {
   businessName: text("business_name"),
   // Phase 8: prefill source for the invoice PDF's business info — an
   // invoice snapshots these at creation time (see invoices.businessName/
-  // logoUrl in money.ts), it never reads these live, so editing Settings
+  // logoKey in money.ts), it never reads these live, so editing Settings
   // later never rewrites an already-created invoice.
   businessAddress: text("business_address"),
-  logoUrl: text("logo_url"),
+  // R2 object key (private bucket), not a public URL — resolved to a
+  // short-lived signed URL wherever it's actually displayed/embedded.
+  // Replaces logo_url once logo upload replaced pasting a URL by hand.
+  logoKey: text("logo_key"),
+  // Curated choices only (see src/lib/pdf/invoice-template.ts) — a small,
+  // structured set of options, not an open-ended template builder.
+  invoiceAccentColor: text("invoice_accent_color"),
+  invoiceFontFamily: text("invoice_font_family"),
   notificationEmail: text("notification_email"),
   // Phase 10: the one email setting docs/PROJECT_SPEC.md §17 asks for
   // ("Email reminder settings are configurable"). Destination address is

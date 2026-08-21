@@ -1,4 +1,5 @@
 import type { InvoiceLineItemRow } from "@/lib/invoices/invoices";
+import { resolveAccentColor, resolveFontFamily } from "./invoice-template";
 
 export interface CustomerFacingInvoiceLineItem {
   description: string;
@@ -20,7 +21,12 @@ export interface CustomerFacingInvoiceDocument {
   createdAt: Date;
   businessName: string | null;
   businessAddress: string | null;
+  /** Already-resolved, short-lived signed URL — never a stored key (Phase
+   *  11.1 decision: logoKey is a private R2 object, resolved by the caller
+   *  right before this document is constructed, see invoice-pdf route). */
   logoUrl: string | null;
+  accentColor: string;
+  fontFamily: string;
   customerName: string | null;
   customerAddress: string | null;
   jobNumber: string;
@@ -39,6 +45,8 @@ export interface InvoiceForPdf {
   businessName: string | null;
   businessAddress: string | null;
   logoUrl: string | null;
+  accentColor?: string | null;
+  fontFamily?: string | null;
   customerName: string | null;
   customerAddress: string | null;
   jobNumber: string;
@@ -60,6 +68,8 @@ export function toCustomerFacingInvoiceDocument(
     businessName: invoice.businessName,
     businessAddress: invoice.businessAddress,
     logoUrl: invoice.logoUrl,
+    accentColor: resolveAccentColor(invoice.accentColor),
+    fontFamily: resolveFontFamily(invoice.fontFamily),
     customerName: invoice.customerName,
     customerAddress: invoice.customerAddress,
     jobNumber: invoice.jobNumber,

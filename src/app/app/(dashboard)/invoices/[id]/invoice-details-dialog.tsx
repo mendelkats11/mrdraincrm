@@ -1,9 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { type FormEvent, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updateInvoiceDetailsAction } from "@/lib/invoices/invoice-actions";
 import { centsToDollarsInputValue } from "@/lib/money";
+import {
+  ACCENT_COLOR_OPTIONS,
+  FONT_FAMILY_OPTIONS,
+  resolveAccentColor,
+  resolveFontFamily,
+} from "@/lib/pdf/invoice-template";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,11 +23,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export interface EditableInvoiceDetails {
   businessName: string | null;
   businessAddress: string | null;
-  logoUrl: string | null;
+  accentColor: string | null;
+  fontFamily: string | null;
   customerName: string | null;
   customerAddress: string | null;
   taxCents: number;
@@ -78,19 +93,14 @@ export function InvoiceDetailsDialog({
         <form onSubmit={handleSubmit} className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto">
           <input type="hidden" name="invoiceId" value={invoiceId} />
           <input type="hidden" name="jobId" value={jobId} />
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="businessName">Business name</Label>
-              <Input
-                id="businessName"
-                name="businessName"
-                defaultValue={invoice.businessName ?? ""}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="logoUrl">Logo URL</Label>
-              <Input id="logoUrl" name="logoUrl" defaultValue={invoice.logoUrl ?? ""} />
-            </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="businessName">Business name</Label>
+            <Input
+              id="businessName"
+              name="businessName"
+              defaultValue={invoice.businessName ?? ""}
+            />
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="businessAddress">Business address</Label>
@@ -101,6 +111,47 @@ export function InvoiceDetailsDialog({
               defaultValue={invoice.businessAddress ?? ""}
             />
           </div>
+          <p className="text-xs text-muted-foreground">
+            Logo is set business-wide in{" "}
+            <Link href="/invoices/settings" className="underline">
+              Invoice settings
+            </Link>
+            .
+          </p>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="accentColor">Accent color</Label>
+              <Select name="accentColor" defaultValue={resolveAccentColor(invoice.accentColor)}>
+                <SelectTrigger id="accentColor">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ACCENT_COLOR_OPTIONS.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="fontFamily">Font</Label>
+              <Select name="fontFamily" defaultValue={resolveFontFamily(invoice.fontFamily)}>
+                <SelectTrigger id="fontFamily">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FONT_FAMILY_OPTIONS.map((f) => (
+                    <SelectItem key={f.value} value={f.value}>
+                      {f.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="customerName">Customer name</Label>
             <Input
