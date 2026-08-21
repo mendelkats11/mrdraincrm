@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { invites, users } from "@/lib/db/schema";
 import { recordActivity } from "@/lib/audit/activity";
-import { getEmailProvider } from "@/lib/email";
+import { sendTrackedEmail } from "@/lib/email/send-tracked-email";
 import { hashPassword } from "./password";
 import { normalizeEmail } from "./rate-limit";
 
@@ -40,24 +40,31 @@ export async function createInvite<TQueryResult extends PgQueryResultHKT>(
   const token = generateToken();
   const expiresAt = new Date(Date.now() + INVITE_TOKEN_TTL_MS);
 
-  const [invite] = await db
-    .insert(invites)
-    .values({ email: normalizedEmail, tokenHash: hashToken(token), invitedBy, expiresAt })
-    .returning();
+  const invite = await db.transaction(async (tx) => {
+    const [row] = await tx
+      .insert(invites)
+      .values({ email: normalizedEmail, tokenHash: hashToken(token), invitedBy, expiresAt })
+      .returning();
 
-  await recordActivity(db, {
-    actorUserId: invitedBy,
-    entityType: "invite",
-    entityId: invite.id,
-    action: "invite_created",
-    metadata: { email: normalizedEmail },
+    await recordActivity(tx, {
+      actorUserId: invitedBy,
+      entityType: "invite",
+      entityId: row.id,
+      action: "invite_created",
+      metadata: { email: normalizedEmail },
+    });
+
+    return row;
   });
 
   const inviteUrl = `${appUrl}/accept-invite/${token}`;
-  await getEmailProvider().send({
+  await sendTrackedEmail(db, {
     to: normalizedEmail,
     subject: "You've been invited to Mr. Drain",
     text: `You've been invited to join Mr. Drain. Accept your invite: ${inviteUrl}\n\nThis link expires in 7 days.`,
+    template: "invite",
+    relatedEntityType: "invite",
+    relatedEntityId: invite.id,
   });
 
   return { inviteId: invite.id, token, expiresAt };
@@ -87,20 +94,24 @@ export async function acceptInvite<TQueryResult extends PgQueryResultHKT>(
   }
 
   const passwordHash = await hashPassword(password);
-  const [user] = await db
-    .insert(users)
-    .values({ email: invite.email, passwordHash, name })
-    .returning();
+  const userId = await db.transaction(async (tx) => {
+    const [user] = await tx
+      .insert(users)
+      .values({ email: invite.email, passwordHash, name })
+      .returning();
 
-  await db.update(invites).set({ acceptedAt: new Date() }).where(eq(invites.id, invite.id));
+    await tx.update(invites).set({ acceptedAt: new Date() }).where(eq(invites.id, invite.id));
 
-  await recordActivity(db, {
-    actorUserId: user.id,
-    entityType: "user",
-    entityId: user.id,
-    action: "user_created_from_invite",
-    metadata: { inviteId: invite.id },
+    await recordActivity(tx, {
+      actorUserId: user.id,
+      entityType: "user",
+      entityId: user.id,
+      action: "user_created_from_invite",
+      metadata: { inviteId: invite.id },
+    });
+
+    return user.id;
   });
 
-  return { ok: true, userId: user.id };
+  return { ok: true, userId };
 }

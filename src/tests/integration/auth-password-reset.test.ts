@@ -7,6 +7,7 @@ import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { createSession, validateSessionCookie } from "@/lib/auth/session-store";
 import { passwordResetTokens, users } from "@/lib/db/schema";
 import * as emailModule from "@/lib/email";
+import type { SendEmailInput } from "@/lib/email";
 
 async function insertTestUser(db: Awaited<ReturnType<typeof createTestDb>>["db"], email: string) {
   const [user] = await db
@@ -17,7 +18,7 @@ async function insertTestUser(db: Awaited<ReturnType<typeof createTestDb>>["db"]
 }
 
 function captureSentEmails() {
-  const sent: { to: string; subject: string; text: string }[] = [];
+  const sent: SendEmailInput[] = [];
   vi.spyOn(emailModule, "getEmailProvider").mockReturnValue({
     send: async (input) => {
       sent.push(input);
@@ -61,7 +62,7 @@ describe("password reset flow", () => {
     const sent = captureSentEmails();
     await expect(
       requestPasswordReset(ctx.db, "nobody@example.com", "http://localhost:3000"),
-    ).resolves.toBeUndefined();
+    ).resolves.toEqual({ ok: true });
     expect(sent).toHaveLength(0);
   });
 
@@ -105,6 +106,49 @@ describe("password reset flow", () => {
 
     const second = await resetPassword(ctx.db, token, "another-password-1");
     expect(second).toEqual({ ok: false, reason: "invalid_or_expired_token" });
+  });
+
+  it("rate limits repeated requests for the same email, regardless of whether it's registered", async () => {
+    const sent = captureSentEmails();
+    for (let i = 0; i < 5; i++) {
+      const result = await requestPasswordReset(
+        ctx.db,
+        "flood@example.com",
+        "http://localhost:3000",
+        "203.0.113.5",
+      );
+      expect(result).toEqual({ ok: true });
+    }
+
+    const limited = await requestPasswordReset(
+      ctx.db,
+      "flood@example.com",
+      "http://localhost:3000",
+      "203.0.113.5",
+    );
+    expect(limited).toEqual({ ok: false, reason: "rate_limited" });
+    // Never sent an email either way — the account doesn't exist.
+    expect(sent).toHaveLength(0);
+  });
+
+  it("rate limits repeated requests from the same IP across different emails", async () => {
+    for (let i = 0; i < 5; i++) {
+      const result = await requestPasswordReset(
+        ctx.db,
+        `victim${i}@example.com`,
+        "http://localhost:3000",
+        "198.51.100.9",
+      );
+      expect(result).toEqual({ ok: true });
+    }
+
+    const limited = await requestPasswordReset(
+      ctx.db,
+      "yet-another@example.com",
+      "http://localhost:3000",
+      "198.51.100.9",
+    );
+    expect(limited).toEqual({ ok: false, reason: "rate_limited" });
   });
 
   it("revokes every existing session when a reset completes", async () => {

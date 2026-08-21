@@ -6,6 +6,7 @@ import { acceptInvite, createInvite } from "@/lib/auth/invites";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { invites, users } from "@/lib/db/schema";
 import * as emailModule from "@/lib/email";
+import type { SendEmailInput } from "@/lib/email";
 
 async function insertTestUser(db: Awaited<ReturnType<typeof createTestDb>>["db"], email: string) {
   const [user] = await db
@@ -16,7 +17,7 @@ async function insertTestUser(db: Awaited<ReturnType<typeof createTestDb>>["db"]
 }
 
 function captureSentEmails() {
-  const sent: { to: string; subject: string; text: string }[] = [];
+  const sent: SendEmailInput[] = [];
   vi.spyOn(emailModule, "getEmailProvider").mockReturnValue({
     send: async (input) => {
       sent.push(input);

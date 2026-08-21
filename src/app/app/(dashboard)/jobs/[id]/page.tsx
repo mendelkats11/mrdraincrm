@@ -15,6 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { RemindersCard } from "@/components/reminders-card";
+import { SendEmailDialog } from "@/components/send-email-dialog";
+import { resolveJobRecipientEmail, sendJobConfirmationEmailAction } from "@/lib/jobs/job-email";
 import { StatusSelect } from "./status-select";
 import { EditJobDialog } from "./edit-job-dialog";
 import { FinancialSection } from "./financial-section";
@@ -95,7 +97,17 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
             </p>
           ) : null}
         </div>
-        <EditJobDialog job={job} services={services} />
+        <div className="flex items-center gap-2">
+          <SendEmailDialog
+            entityId={job.id}
+            idFieldName="jobId"
+            triggerLabel="Send confirmation"
+            dialogTitle="Send appointment confirmation"
+            resolveDefaultEmail={resolveJobRecipientEmail}
+            action={sendJobConfirmationEmailAction}
+          />
+          <EditJobDialog job={job} services={services} />
+        </div>
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2">

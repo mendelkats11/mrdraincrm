@@ -3,8 +3,10 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { markInvoiceSentAction, voidInvoiceAction } from "@/lib/invoices/invoice-actions";
+import { resolveInvoiceRecipientEmail, sendInvoiceEmailAction } from "@/lib/invoices/invoice-email";
 import type { InvoiceStatus } from "@/lib/invoices/invoices";
 import { Button } from "@/components/ui/button";
+import { SendEmailDialog } from "@/components/send-email-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -71,6 +73,14 @@ export function InvoiceActionsBar({
             Download PDF
           </a>
         </Button>
+        <SendEmailDialog
+          entityId={invoiceId}
+          idFieldName="invoiceId"
+          triggerLabel="Send email"
+          dialogTitle="Email this invoice"
+          resolveDefaultEmail={resolveInvoiceRecipientEmail}
+          action={sendInvoiceEmailAction}
+        />
         {status === "draft" ? (
           <Button type="button" size="sm" disabled={pending} onClick={handleMarkSent}>
             Mark as Sent

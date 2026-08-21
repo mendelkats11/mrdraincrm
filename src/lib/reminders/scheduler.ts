@@ -1,7 +1,7 @@
 import { and, isNull, lte } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import { appSettings, emailEvents, notifications, reminders, users } from "@/lib/db/schema";
-import { getEmailProvider } from "@/lib/email";
+import { appSettings, notifications, reminders, users } from "@/lib/db/schema";
+import { sendTrackedEmail } from "@/lib/email/send-tracked-email";
 import { businessDateString } from "./timezone";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -85,31 +85,19 @@ export async function processReminders<TQueryResult extends PgQueryResultHKT>(
       settings?.reminderEmailNotificationsEnabled &&
       settings?.notificationEmail
     ) {
-      const toEmail = settings.notificationEmail;
-      try {
-        await getEmailProvider().send({
-          to: toEmail,
-          subject: `Reminder due: ${reminder.title}`,
-          text: reminder.description
-            ? `${reminder.title}\n\n${reminder.description}`
-            : reminder.title,
-        });
-        await db.insert(emailEvents).values({
-          toEmail,
-          template: "reminder_due",
-          relatedEntityType: "reminder",
-          relatedEntityId: reminder.id,
-          status: "sent",
-        });
+      const result = await sendTrackedEmail(db, {
+        to: settings.notificationEmail,
+        subject: `Reminder due: ${reminder.title}`,
+        text: reminder.description
+          ? `${reminder.title}\n\n${reminder.description}`
+          : reminder.title,
+        template: "reminder_due",
+        relatedEntityType: "reminder",
+        relatedEntityId: reminder.id,
+      });
+      if (result.ok) {
         emailsSent += 1;
-      } catch {
-        await db.insert(emailEvents).values({
-          toEmail,
-          template: "reminder_due",
-          relatedEntityType: "reminder",
-          relatedEntityId: reminder.id,
-          status: "failed",
-        });
+      } else {
         emailsFailed += 1;
       }
     }

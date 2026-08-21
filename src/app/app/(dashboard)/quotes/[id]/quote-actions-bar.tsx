@@ -9,8 +9,10 @@ import {
   markQuoteDeclinedAction,
   markQuoteSentAction,
 } from "@/lib/quotes/quote-actions";
+import { resolveQuoteRecipientEmail, sendQuoteEmailAction } from "@/lib/quotes/quote-email";
 import type { QuoteStatus } from "@/lib/quotes/quotes";
 import { Button } from "@/components/ui/button";
+import { SendEmailDialog } from "@/components/send-email-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -94,6 +96,14 @@ export function QuoteActionsBar({
             Download PDF
           </a>
         </Button>
+        <SendEmailDialog
+          entityId={quoteId}
+          idFieldName="quoteId"
+          triggerLabel="Send email"
+          dialogTitle="Email this quote"
+          resolveDefaultEmail={resolveQuoteRecipientEmail}
+          action={sendQuoteEmailAction}
+        />
         {canMarkSent ? (
           <Button
             type="button"

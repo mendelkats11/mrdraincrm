@@ -9,8 +9,21 @@ import {
   countRecentLeadSubmissions,
   deterministicIdFrom,
 } from "@/lib/auth/rate-limit";
-import { normalizePhone } from "@/lib/phone";
+import { normalizePhone, formatPhoneForDisplay } from "@/lib/phone";
 import { createLeadFromPublicSubmission } from "@/lib/crm/leads";
+import { sendTrackedEmail } from "@/lib/email/send-tracked-email";
+import { leadNotificationEmailTemplate } from "@/lib/email/templates";
+
+// Comma-separated list of internal addresses that get an alert for every
+// new lead — set once, read server-side only. If unset, no notification is
+// sent (the lead is still created either way; this is a courtesy alert,
+// not part of the lead's own correctness).
+function leadNotificationRecipients(): string[] {
+  return (process.env.LEAD_NOTIFICATION_EMAILS || "")
+    .split(",")
+    .map((email) => email.trim())
+    .filter(Boolean);
+}
 
 // The one genuinely public, unauthenticated write path in the system today
 // (docs/IMPLEMENTATION_PLAN.md §18) — hardened at the level appropriate to
@@ -36,10 +49,18 @@ function errorResponse(message: string, status: number) {
 }
 
 function getClientIp(request: NextRequest): string {
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  if (forwardedFor) return forwardedFor.split(",")[0].trim();
+  // x-nf-client-connection-ip is set by Netlify's edge from the actual TCP
+  // connection and cannot be overridden by the client — checked first for
+  // that reason. x-forwarded-for is checked second only as a local-dev
+  // fallback (Netlify not in front of the request): a client can freely set
+  // x-forwarded-for on the initial request, and if the platform in front of
+  // this handler merely appends to rather than replaces that header, naively
+  // trusting its first entry lets an attacker rotate a fake value on every
+  // request and defeat the per-IP rate limit below entirely.
   const nfClientIp = request.headers.get("x-nf-client-connection-ip");
   if (nfClientIp) return nfClientIp;
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  if (forwardedFor) return forwardedFor.split(",")[0].trim();
   return "unknown";
 }
 
@@ -87,11 +108,13 @@ export async function POST(request: NextRequest) {
     return errorResponse(GENERIC_ERROR, 400);
   }
 
+  const email = parsed.data.email ? parsed.data.email.toLowerCase() : null;
+  let lead: Awaited<ReturnType<typeof createLeadFromPublicSubmission>>;
   try {
-    await createLeadFromPublicSubmission(db, {
+    lead = await createLeadFromPublicSubmission(db, {
       name: parsed.data.name,
       phone,
-      email: parsed.data.email ? parsed.data.email.toLowerCase() : null,
+      email,
       serviceAreaId: parsed.data.serviceAreaId || null,
       issueDescription: parsed.data.issueDescription,
       emergency: parsed.data.emergency ?? false,
@@ -102,6 +125,32 @@ export async function POST(request: NextRequest) {
     // server-side only.
     console.error("Public lead submission failed:", error);
     return errorResponse(GENERIC_ERROR, 500);
+  }
+
+  // Best-effort internal alert — the lead is already safely created above
+  // regardless of whether this succeeds; a Resend hiccup must never turn
+  // into a failed public submission (sendTrackedEmail already catches and
+  // logs internally, its result is deliberately ignored here). Still
+  // awaited, not fire-and-forget: Netlify Functions can freeze/terminate
+  // the execution context right after the response is returned, so an
+  // un-awaited send could simply never happen.
+  const recipients = leadNotificationRecipients();
+  if (recipients.length > 0) {
+    const notification = leadNotificationEmailTemplate({
+      name: parsed.data.name,
+      phone: formatPhoneForDisplay(phone.e164),
+      email,
+      issueDescription: parsed.data.issueDescription,
+      emergency: parsed.data.emergency ?? false,
+      sourceDetails: lead.sourceDetails,
+    });
+    await sendTrackedEmail(db, {
+      to: recipients,
+      ...notification,
+      template: "lead_notification",
+      relatedEntityType: "lead",
+      relatedEntityId: lead.id,
+    });
   }
 
   return NextResponse.json({ ok: true });
