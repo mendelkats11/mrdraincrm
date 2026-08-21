@@ -13,6 +13,7 @@ import { normalizePhone, formatPhoneForDisplay } from "@/lib/phone";
 import { createLeadFromPublicSubmission } from "@/lib/crm/leads";
 import { sendTrackedEmail } from "@/lib/email/send-tracked-email";
 import { leadNotificationEmailTemplate } from "@/lib/email/templates";
+import { notifyActiveUsers } from "@/lib/notifications/notifications";
 
 // Comma-separated list of internal addresses that get an alert for every
 // new lead — set once, read server-side only. If unset, no notification is
@@ -126,6 +127,20 @@ export async function POST(request: NextRequest) {
     console.error("Public lead submission failed:", error);
     return errorResponse(GENERIC_ERROR, 500);
   }
+
+  // Dashboard bell notification — docs/PROJECT_SPEC.md §24 ("new quote
+  // request", "emergency request"). Independent of the email alert below
+  // (which depends on LEAD_NOTIFICATION_EMAILS being configured); this
+  // always fires so the in-app bell works even if email isn't set up.
+  await notifyActiveUsers(db, {
+    type: parsed.data.emergency ? "emergency_request" : "new_lead",
+    title: parsed.data.emergency
+      ? `Emergency request from ${parsed.data.name}`
+      : `New quote request from ${parsed.data.name}`,
+    body: parsed.data.issueDescription,
+    entityType: "lead",
+    entityId: lead.id,
+  });
 
   // Best-effort internal alert — the lead is already safely created above
   // regardless of whether this succeeds; a Resend hiccup must never turn

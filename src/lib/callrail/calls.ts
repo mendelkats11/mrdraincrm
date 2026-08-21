@@ -12,7 +12,8 @@ import {
 import { recordActivity } from "@/lib/audit/activity";
 import { createContact } from "@/lib/crm/contacts";
 import { createLead } from "@/lib/crm/leads";
-import { normalizePhone } from "@/lib/phone";
+import { normalizePhone, formatPhoneForDisplay } from "@/lib/phone";
+import { notifyActiveUsers } from "@/lib/notifications/notifications";
 import { parseCallWebhookPayload, parseMessageWebhookPayload } from "./webhook";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -102,6 +103,13 @@ export async function processCallWebhook<TQueryResult extends PgQueryResultHKT>(
       newValue: { matched: call.matched, answered: call.answered },
     });
 
+    await notifyActiveUsers(tx, {
+      type: "callrail_call",
+      title: `${call.answered ? "Call" : "Missed call"} from ${normalized ? formatPhoneForDisplay(normalized.e164) : call.callerNumber}`,
+      entityType: "call",
+      entityId: call.id,
+    });
+
     return { ok: true, duplicate: false, callId: call.id };
   });
 }
@@ -146,6 +154,14 @@ export async function processMessageWebhook<TQueryResult extends PgQueryResultHK
       entityId: message.id,
       action: "message_received",
       newValue: { matched: contactId !== null },
+    });
+
+    await notifyActiveUsers(tx, {
+      type: "incoming_text",
+      title: `New text from ${normalized ? formatPhoneForDisplay(normalized.e164) : message.phoneNumber}`,
+      body: message.body,
+      entityType: "message",
+      entityId: message.id,
     });
 
     return { ok: true, duplicate: false, callId: message.id };
