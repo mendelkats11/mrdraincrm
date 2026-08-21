@@ -165,7 +165,12 @@ export async function requestPasswordResetAction(
   }
 
   const db = getDb();
-  await requestPasswordReset(db, parsed.data.email, getAppUrl());
+  const meta = await getRequestMeta();
+  const result = await requestPasswordReset(db, parsed.data.email, getAppUrl(), meta.ipAddress);
+
+  if (!result.ok) {
+    return { error: "Too many attempts. Try again in a few minutes." };
+  }
 
   // Identical response whether or not the email is registered — see
   // src/lib/auth/password-reset.ts.

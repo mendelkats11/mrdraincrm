@@ -20,14 +20,16 @@ export async function uploadJobPhotoAction(
 ): Promise<SimpleFormState> {
   const session = await requireUser();
 
-  const jobId = formData.get("jobId");
+  const jobIdField = formData.get("jobId");
   const category = categorySchema.safeParse(formData.get("category"));
   const caption = formData.get("caption");
   const file = formData.get("file");
 
-  if (typeof jobId !== "string" || !jobId) {
+  const jobIdParsed = z.string().uuid().safeParse(jobIdField);
+  if (!jobIdParsed.success) {
     return { ok: false, error: "Invalid job." };
   }
+  const jobId = jobIdParsed.data;
   if (!category.success) {
     return { ok: false, error: "Choose a photo category." };
   }

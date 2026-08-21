@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { jobPhotoCategoryEnum, jobPhotos } from "@/lib/db/schema";
 import { recordActivity } from "@/lib/audit/activity";
@@ -103,6 +103,10 @@ export async function listJobPhotos<TQueryResult extends PgQueryResultHKT>(
  * intact and visible. Only once the row is gone do we best-effort delete
  * the R2 object; a failure there leaves an orphaned object (wasted storage,
  * never user-visible) rather than a broken reference to a missing file.
+ *
+ * The WHERE clause matches on (photoId AND jobId) together, in one atomic
+ * statement — matching on photoId alone and checking jobId afterward would
+ * delete the row regardless of the mismatch before the check ever ran.
  */
 export async function deleteJobPhoto<TQueryResult extends PgQueryResultHKT>(
   db: Db<TQueryResult>,
@@ -111,17 +115,25 @@ export async function deleteJobPhoto<TQueryResult extends PgQueryResultHKT>(
   photoId: string,
   actorUserId: string | null,
 ): Promise<void> {
-  const [removed] = await db.delete(jobPhotos).where(eq(jobPhotos.id, photoId)).returning();
+  const removed = await db.transaction(async (tx) => {
+    const [row] = await tx
+      .delete(jobPhotos)
+      .where(and(eq(jobPhotos.id, photoId), eq(jobPhotos.jobId, jobId)))
+      .returning();
+    if (!row) return null;
 
-  if (!removed || removed.jobId !== jobId) return;
+    await recordActivity(tx, {
+      actorUserId,
+      entityType: "job",
+      entityId: jobId,
+      action: "job_photo_deleted",
+      oldValue: { category: row.category },
+    });
 
-  await recordActivity(db, {
-    actorUserId,
-    entityType: "job",
-    entityId: jobId,
-    action: "job_photo_deleted",
-    oldValue: { category: removed.category },
+    return row;
   });
+
+  if (!removed) return;
 
   try {
     await storage.delete(removed.storageKey);

@@ -133,6 +133,57 @@ describe("job photos", () => {
     expect(storage.deletedKeys).toContain(photo.storageKey);
   });
 
+  it("records a job_photo_deleted activity alongside the delete, in the same transaction", async () => {
+    const job = await createJob(ctx.db, {}, null);
+    const photo = await uploadJobPhoto(
+      ctx.db,
+      storage,
+      job.id,
+      { buffer: Buffer.from("x"), contentType: "image/jpeg", category: "other" },
+      null,
+    );
+
+    await deleteJobPhoto(ctx.db, storage, job.id, photo.id, null);
+
+    const rows = await ctx.db
+      .select()
+      .from(activities)
+      .where(
+        and(
+          eq(activities.entityType, "job"),
+          eq(activities.entityId, job.id),
+          eq(activities.action, "job_photo_deleted"),
+        ),
+      );
+    expect(rows).toHaveLength(1);
+  });
+
+  it("does not delete the photo (or record activity) when the given jobId doesn't match the photo's actual job", async () => {
+    const job = await createJob(ctx.db, {}, null);
+    const otherJob = await createJob(ctx.db, {}, null);
+    const photo = await uploadJobPhoto(
+      ctx.db,
+      storage,
+      job.id,
+      { buffer: Buffer.from("x"), contentType: "image/jpeg", category: "other" },
+      null,
+    );
+
+    // Same photoId, wrong jobId — must be a safe no-op, not a bypass that
+    // deletes the row while merely skipping the audit trail.
+    await deleteJobPhoto(ctx.db, storage, otherJob.id, photo.id, null);
+
+    const rows = await ctx.db.select().from(jobPhotos).where(eq(jobPhotos.id, photo.id));
+    expect(rows).toHaveLength(1);
+    expect(storage.objects.size).toBe(1);
+
+    const activityRows = await ctx.db
+      .select()
+      .from(activities)
+      .where(and(eq(activities.entityType, "job"), eq(activities.action, "job_photo_deleted")));
+    expect(activityRows).toHaveLength(0);
+  });
+
   it("removing the database row survives a storage delete failure (orphan, not breakage)", async () => {
     const job = await createJob(ctx.db, {}, null);
     const photo = await uploadJobPhoto(

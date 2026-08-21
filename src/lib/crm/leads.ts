@@ -188,7 +188,13 @@ export async function convertLeadToJob<TQueryResult extends PgQueryResultHKT>(
   actorUserId: string | null,
 ): Promise<ConvertLeadToJobResult> {
   return db.transaction(async (tx) => {
-    const [lead] = await tx.select().from(leads).where(eq(leads.id, leadId));
+    // FOR UPDATE locks this lead row for the rest of the transaction — two
+    // concurrent conversion requests (double-click, or a client retry
+    // racing the original) would otherwise both read convertedJobId as
+    // null under READ COMMITTED and both proceed, each creating its own
+    // job. The second transaction blocks here until the first commits (and
+    // then sees convertedJobId set), rather than racing past this check.
+    const [lead] = await tx.select().from(leads).where(eq(leads.id, leadId)).for("update");
     if (!lead) return { ok: false, error: "not_found" };
     if (lead.convertedJobId) return { ok: false, error: "already_converted" };
     if (lead.status === "lost") return { ok: false, error: "lead_lost" };

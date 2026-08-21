@@ -37,8 +37,8 @@ const createQuoteSchema = z.object({
   contactId: uuidOrEmpty,
   propertyId: uuidOrEmpty,
   organizationId: uuidOrEmpty,
-  description: z.string().trim().optional(),
-  notes: z.string().trim().optional(),
+  description: z.string().trim().max(2000).optional(),
+  notes: z.string().trim().max(5000).optional(),
   expiresAt: z.string().trim().optional(),
   taxAmount: moneyField,
 });
@@ -87,7 +87,7 @@ export type QuoteMutationFormState = { ok: true } | { ok: false; error: string }
 
 const addLineItemSchema = z.object({
   quoteId: z.string().uuid(),
-  description: z.string().trim().min(1, "Description is required"),
+  description: z.string().trim().min(1, "Description is required").max(500),
   quantity: z.string().trim().optional(),
   unitPrice: z.string().trim().min(1, "Unit price is required"),
 });
@@ -129,7 +129,7 @@ export async function addQuoteLineItemAction(
 const updateLineItemSchema = z.object({
   quoteId: z.string().uuid(),
   lineItemId: z.string().uuid(),
-  description: z.string().trim().min(1, "Description is required"),
+  description: z.string().trim().min(1, "Description is required").max(500),
   quantity: z.string().trim().optional(),
   unitPrice: z.string().trim().min(1, "Unit price is required"),
 });
@@ -185,7 +185,7 @@ export async function removeQuoteLineItemAction(
 
 const addCustomChargeSchema = z.object({
   quoteId: z.string().uuid(),
-  description: z.string().trim().min(1, "Description is required"),
+  description: z.string().trim().min(1, "Description is required").max(500),
   amount: z.string().trim().min(1, "Amount is required"),
 });
 
@@ -234,8 +234,8 @@ const updateQuoteDetailsSchema = z.object({
   contactId: uuidOrEmpty,
   propertyId: uuidOrEmpty,
   organizationId: uuidOrEmpty,
-  description: z.string().trim().optional(),
-  notes: z.string().trim().optional(),
+  description: z.string().trim().max(2000).optional(),
+  notes: z.string().trim().max(5000).optional(),
   expiresAt: z.string().trim().optional(),
   taxAmount: moneyField,
 });

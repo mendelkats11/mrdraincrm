@@ -629,7 +629,9 @@ export async function convertQuoteToJob<TQueryResult extends PgQueryResultHKT>(
   actorUserId: string | null,
 ): Promise<ConvertQuoteToJobResult> {
   return db.transaction(async (tx) => {
-    const [quote] = await tx.select().from(quotes).where(eq(quotes.id, quoteId));
+    // FOR UPDATE — see the identical comment on convertLeadToJob
+    // (src/lib/crm/leads.ts) for why this closes a double-conversion race.
+    const [quote] = await tx.select().from(quotes).where(eq(quotes.id, quoteId)).for("update");
     if (!quote) return { ok: false, error: "not_found" };
     if (quote.convertedJobId) return { ok: false, error: "already_converted" };
     if (quote.status !== "accepted") return { ok: false, error: "invalid_status" };
