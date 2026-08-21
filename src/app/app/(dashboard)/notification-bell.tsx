@@ -30,8 +30,19 @@ const DATE_FMT = new Intl.DateTimeFormat("en-CA", {
 
 function linkFor(entityType: string | null, entityId: string | null): string | null {
   if (!entityType || !entityId) return null;
-  if (entityType === "reminder") return "/reminders";
-  return null;
+  switch (entityType) {
+    case "reminder":
+      return "/reminders";
+    case "lead":
+      return `/leads/${entityId}`;
+    case "call":
+      return `/calls/${entityId}`;
+    case "message":
+      // No message detail page exists (list-only) — see src/app/app/(dashboard)/messages/page.tsx.
+      return "/messages";
+    default:
+      return null;
+  }
 }
 
 export function NotificationBell({

@@ -17,7 +17,7 @@ import { InvoiceStatusBadge } from "./invoice-status-badge";
 const PAGE_SIZE = 25;
 const VALID_STATUSES: InvoiceStatus[] = ["draft", "sent", "partially_paid", "paid", "void"];
 
-const DATE_FMT = new Intl.DateTimeFormat("en-CA", { dateStyle: "medium" });
+const DATE_FMT = new Intl.DateTimeFormat("en-CA", { dateStyle: "medium", timeStyle: "short" });
 
 export default async function InvoicesPage({
   searchParams,

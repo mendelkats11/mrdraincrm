@@ -23,7 +23,7 @@ const VALID_STATUSES: QuoteStatus[] = [
   "cancelled",
 ];
 
-const DATE_FMT = new Intl.DateTimeFormat("en-CA", { dateStyle: "medium" });
+const DATE_FMT = new Intl.DateTimeFormat("en-CA", { dateStyle: "medium", timeStyle: "short" });
 
 export default async function QuotesPage({
   searchParams,

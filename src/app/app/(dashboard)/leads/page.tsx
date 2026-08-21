@@ -96,9 +96,10 @@ export default async function LeadsPage({
                     <StatusBadge status={lead.status} />
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {new Intl.DateTimeFormat("en-CA", { dateStyle: "medium" }).format(
-                      lead.createdAt,
-                    )}
+                    {new Intl.DateTimeFormat("en-CA", {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    }).format(lead.createdAt)}
                   </TableCell>
                 </TableRow>
               ))}

@@ -23,7 +23,11 @@ export class ResendEmailProvider implements EmailProvider {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: this.fromEmail,
+        // RFC 5322 "Display Name <address>" — without a display name, mail
+        // clients fall back to showing the raw address (or, per a live
+        // report, something worse-looking derived from it), which reads as
+        // spammy/untrustworthy for a business's own outbound mail.
+        from: `Mr. Drain Plumber <${this.fromEmail}>`,
         to: input.to,
         subject: input.subject,
         text: input.text,

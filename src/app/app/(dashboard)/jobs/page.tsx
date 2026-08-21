@@ -99,9 +99,10 @@ export default async function JobsPage({
                     {formatScheduleSummary(job)}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {new Intl.DateTimeFormat("en-CA", { dateStyle: "medium" }).format(
-                      job.createdAt,
-                    )}
+                    {new Intl.DateTimeFormat("en-CA", {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    }).format(job.createdAt)}
                   </TableCell>
                 </TableRow>
               ))}
