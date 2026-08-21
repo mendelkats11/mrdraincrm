@@ -7,7 +7,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -58,21 +58,29 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* App (private dashboard) theme — docs/DESIGN_SYSTEM.md §5 ("professional
+ * operations tool") + §8 ("use the existing Mr. Drain brand colors from the
+ * supplied logo/brand assets" — not a generic neutral gray). Same brand
+ * blue/navy the public site uses (.site-theme below, sampled from
+ * public/logo.png), applied much more lightly here: a cool-tinted
+ * near-white background and primary/accent/ring in the brand blue, so the
+ * app reads as "the same company" without competing with the public
+ * site's bolder marketing palette or with information-dense tables. */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --background: oklch(0.99 0.002 235);
+  --foreground: oklch(0.22 0.02 250);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.22 0.02 250);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.22 0.02 250);
+  --primary: oklch(0.47 0.12 235); /* brand blue, #0a6ca8-ish */
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.96 0.008 235);
+  --secondary-foreground: oklch(0.3 0.05 240);
+  --muted: oklch(0.96 0.006 235);
+  --muted-foreground: oklch(0.5 0.015 250);
+  --accent: oklch(0.94 0.02 235);
+  --accent-foreground: oklch(0.3 0.06 240);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
   --success: oklch(0.55 0.15 145);
@@ -81,23 +89,23 @@
   --warning-foreground: oklch(0.145 0 0);
   --info: oklch(0.55 0.15 250);
   --info-foreground: oklch(0.985 0 0);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
+  --border: oklch(0.91 0.008 235);
+  --input: oklch(0.91 0.008 235);
+  --ring: oklch(0.6 0.1 235);
+  --chart-1: oklch(0.47 0.12 235);
+  --chart-2: oklch(0.72 0.16 55);
+  --chart-3: oklch(0.556 0 0);
+  --chart-4: oklch(0.439 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: oklch(0.97 0.006 235);
+  --sidebar-foreground: oklch(0.22 0.02 250);
+  --sidebar-primary: oklch(0.47 0.12 235);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.93 0.018 235);
+  --sidebar-accent-foreground: oklch(0.3 0.06 240);
+  --sidebar-border: oklch(0.9 0.01 235);
+  --sidebar-ring: oklch(0.6 0.1 235);
 }
 
 .dark {
@@ -157,11 +165,13 @@
  * Drain brand colors from the supplied logo/brand assets") — derived from
  * public/logo.png via color-histogram sampling, not invented. Scoped to
  * .site-theme (wraps only src/app/(site)/*, see src/app/(site)/layout.tsx)
- * so the private app dashboard keeps its own neutral/professional-tool
- * palette (docs/DESIGN_SYSTEM.md §5) — Phase 17's concern, not this one's.
- * Overrides the same semantic tokens @theme inline already maps, so every
- * existing bg-primary/text-primary/etc utility "just works" within this
- * subtree without new utility names. */
+ * and noticeably bolder than the :root app theme above — the public site
+ * is a marketing surface, the app is an information-dense operations tool,
+ * so they share a palette family (same blue/navy/orange hues) at different
+ * intensities rather than sharing exact values. Overrides the same
+ * semantic tokens @theme inline already maps, so every existing
+ * bg-primary/text-primary/etc utility "just works" within this subtree
+ * without new utility names. */
 .site-theme {
   --background: oklch(1 0 0);
   --foreground: oklch(0.22 0.04 250);

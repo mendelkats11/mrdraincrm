@@ -24,7 +24,7 @@ export function SiteFooter({
             alt={businessName ?? "Mr. Drain Plumbing"}
             width={140}
             height={103}
-            className="h-14 w-auto"
+            className="h-14 w-auto self-start"
           />
           <p className="text-sm text-white/70">
             {businessName ?? "Mr. Drain Plumbing"} — local, reliable plumbing.
