@@ -22,6 +22,7 @@ const NAV_ITEMS = [
   { href: "/organizations", label: "Organizations" },
   { href: "/properties", label: "Properties" },
   { href: "/website", label: "Website" },
+  { href: "/reports", label: "Reports" },
 ] as const;
 
 export function Sidebar() {

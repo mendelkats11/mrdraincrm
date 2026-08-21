@@ -57,6 +57,13 @@
       "when": 1787282131063,
       "tag": "0007_curious_owl",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1787287684278,
+      "tag": "0008_giant_zeigeist",
+      "breakpoints": true
     }
   ]
 }

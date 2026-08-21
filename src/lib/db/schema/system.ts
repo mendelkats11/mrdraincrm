@@ -33,6 +33,18 @@ export const appSettings = pgTable("app_settings", {
   // Default applied to newly created jobs; changing this never rewrites the
   // tax_inclusion_mode already snapshotted on existing jobs — §2.1.B.
   taxInclusionDefault: taxInclusionModeEnum("tax_inclusion_default").notNull().default("excluded"),
+  // Phase 16 (Reports) — docs/PROJECT_SPEC.md §11.1: "Tax inclusion in
+  // revenue/profit is configurable in Settings." Distinct from
+  // taxInclusionDefault above: that field only seeds a new job's own
+  // customer-facing tax_inclusion_mode snapshot and is never read again once
+  // set. This field is read live, every time a report or the financial
+  // dashboard computes revenue/profit, and only affects whether the tax
+  // portion of a job counts toward company revenue for that purpose — it
+  // never changes what a customer owes (Customer Total always includes tax,
+  // per §11.1's base formula) and never rewrites stored job data, satisfying
+  // §29's "changing a reporting setting must not rewrite historical raw
+  // data."
+  includeTaxInRevenue: boolean("include_tax_in_revenue").notNull().default(true),
   // Phase 15 (Website CMS) — public-site-wide content that isn't tied to a
   // specific service/service area/homepage section. tagline/about* feed the
   // hero and About page; publicContactEmail is shown to visitors (distinct
