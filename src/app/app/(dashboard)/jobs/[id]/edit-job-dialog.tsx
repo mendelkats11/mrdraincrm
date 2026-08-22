@@ -3,11 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updateJobAction } from "@/lib/jobs/job-actions";
-import {
-  searchContactsAction,
-  searchOrganizationsAction,
-  searchPropertiesAction,
-} from "@/lib/crm/contact-actions";
+import { searchContactsAction, searchPropertiesAction } from "@/lib/crm/contact-actions";
 import type { JobWithLabels } from "@/lib/jobs/jobs";
 import { EntityPicker } from "@/components/entity-picker";
 import { Button } from "@/components/ui/button";
@@ -72,6 +68,10 @@ export function EditJobDialog({
         </DialogHeader>
         <form action={handleSubmit} className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto">
           <input type="hidden" name="jobId" value={job.id} />
+          {/* Organization is no longer editable from the UI, but this
+              preserves any existing legacy link on save instead of
+              silently clearing it. */}
+          <input type="hidden" name="organizationId" value={job.organizationId ?? ""} />
           <EntityPicker
             name="contactId"
             label="Contact (optional)"
@@ -95,19 +95,6 @@ export function EditJobDialog({
                 id: p.id,
                 label: `${p.addressLine1}, ${p.city}`,
               }))
-            }
-          />
-          <EntityPicker
-            name="organizationId"
-            label="Organization (optional)"
-            placeholder="Search organizations…"
-            initial={
-              job.organizationId
-                ? { id: job.organizationId, label: job.organizationName ?? "" }
-                : null
-            }
-            search={async (q) =>
-              (await searchOrganizationsAction(q)).map((o) => ({ id: o.id, label: o.name }))
             }
           />
           {services.length > 0 ? (

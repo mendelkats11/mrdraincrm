@@ -145,16 +145,6 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
                 <span className="text-muted-foreground">None</span>
               )}
             </p>
-            <p>
-              Organization:{" "}
-              {job.organizationId ? (
-                <Link href={`/organizations/${job.organizationId}`} className="hover:underline">
-                  {job.organizationName}
-                </Link>
-              ) : (
-                <span className="text-muted-foreground">None</span>
-              )}
-            </p>
             <p>Service: {job.serviceName ?? <span className="text-muted-foreground">None</span>}</p>
           </CardContent>
         </Card>

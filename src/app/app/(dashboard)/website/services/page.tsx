@@ -1,5 +1,6 @@
 import { getDb } from "@/lib/db/client";
 import { listServicesForAdmin } from "@/lib/website/services";
+import { getPublicSiteOrigin } from "@/lib/site-url";
 import {
   Table,
   TableBody,
@@ -9,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { SitePreviewPane } from "@/components/site-preview-pane";
 import { NewServiceDialog } from "./new-service-dialog";
 import { ServiceRowActions } from "./service-row-actions";
 
@@ -17,43 +19,47 @@ export default async function WebsiteServicesPage() {
   const services = await listServicesForAdmin(db);
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">Services</h1>
-          <p className="text-sm text-muted-foreground">
-            {services.length} services — shown on the public Services page in this order.
-          </p>
+    <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
+      <div className="flex flex-col gap-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-foreground">Services</h1>
+            <p className="text-sm text-muted-foreground">
+              {services.length} services — shown on the public Services page in this order.
+            </p>
+          </div>
+          <NewServiceDialog />
         </div>
-        <NewServiceDialog />
+
+        <div className="overflow-x-auto rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {services.map((service) => (
+                <TableRow key={service.id}>
+                  <TableCell className="font-medium">{service.name}</TableCell>
+                  <TableCell>
+                    <Badge variant={service.active ? "default" : "outline"}>
+                      {service.active ? "Active" : "Hidden"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <ServiceRowActions service={service} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {services.map((service) => (
-              <TableRow key={service.id}>
-                <TableCell className="font-medium">{service.name}</TableCell>
-                <TableCell>
-                  <Badge variant={service.active ? "default" : "outline"}>
-                    {service.active ? "Active" : "Hidden"}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <ServiceRowActions service={service} />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      <SitePreviewPane origin={getPublicSiteOrigin()} path="/services" />
     </div>
   );
 }

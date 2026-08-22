@@ -4,19 +4,16 @@ import { type FormEvent, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createInvoiceAction } from "@/lib/invoices/invoice-actions";
 import type { InvoiceDefaults } from "@/lib/invoices/invoices";
-import {
-  searchContactsAction,
-  searchOrganizationsAction,
-  searchPropertiesAction,
-} from "@/lib/crm/contact-actions";
-import { dollarsToCents } from "@/lib/money";
+import { searchContactsAction, searchPropertiesAction } from "@/lib/crm/contact-actions";
+import { calculateLineTotalCents, dollarsToCents, formatCents } from "@/lib/money";
 import { ACCENT_COLOR_OPTIONS, FONT_FAMILY_OPTIONS } from "@/lib/pdf/invoice-template";
-import { EntityPicker, type PickerOption } from "@/components/entity-picker";
+import { EntityPicker } from "@/components/entity-picker";
 import { InvoicePdfPreview } from "@/components/invoice-pdf-preview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -26,15 +23,16 @@ import {
 } from "@/components/ui/select";
 
 // Business/customer info is prefilled from Settings + (when starting from a
-// job) the job's linked contact/property/organization, but fully editable
-// here — everything gets snapshotted onto the invoice at creation and never
+// job) the job's linked contact/property, but fully editable here —
+// everything gets snapshotted onto the invoice at creation and never
 // re-reads live data afterward (docs/PROJECT_SPEC.md §13.3). Line items are
-// added afterward on the invoice's own detail page, not here — matching the
-// from-scratch workflow, this page only sets up the invoice's header info.
+// entered right here and created together with the invoice in one request
+// (createInvoiceAction adds each via addInvoiceLineItem immediately after
+// the invoice row exists) — more can still be added/edited/removed on the
+// invoice's own detail page afterward, since it stays a Draft.
 //
 // Fields are controlled (not defaultValue) so the side-by-side PDF preview
-// can reflect every keystroke — no line items exist yet, so the preview
-// necessarily shows an empty table until the invoice is created.
+// reflects every keystroke, line items included.
 export function NewInvoiceForm({
   jobId,
   jobNumber,
@@ -50,9 +48,6 @@ export function NewInvoiceForm({
   const [pending, startTransition] = useTransition();
   const router = useRouter();
 
-  const [contact, setContact] = useState<PickerOption | null>(null);
-  const [organization, setOrganization] = useState<PickerOption | null>(null);
-
   const [businessName, setBusinessName] = useState(defaults.businessName ?? "");
   const [businessAddress, setBusinessAddress] = useState(defaults.businessAddress ?? "");
   const [accentColor, setAccentColor] = useState(defaults.accentColor);
@@ -66,8 +61,51 @@ export function NewInvoiceForm({
   const [notes, setNotes] = useState("");
   const [footer, setFooter] = useState("Thank you for your business!");
 
+  // Entered here and created together with the invoice (createInvoiceAction
+  // adds each as a real line item right after the invoice row exists) —
+  // avoids the old two-step "create an empty invoice, then go add prices on
+  // its detail page" flow, which read as "there's no price, just tax."
+  const [lineItems, setLineItems] = useState<
+    { description: string; quantity: string; unitPrice: string }[]
+  >([{ description: "", quantity: "1", unitPrice: "" }]);
+
+  function updateLineItem(
+    index: number,
+    field: "description" | "quantity" | "unitPrice",
+    value: string,
+  ) {
+    setLineItems((items) =>
+      items.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
+    );
+  }
+
+  function addLineItemRow() {
+    setLineItems((items) => [...items, { description: "", quantity: "1", unitPrice: "" }]);
+  }
+
+  function removeLineItemRow(index: number) {
+    setLineItems((items) => items.filter((_, i) => i !== index));
+  }
+
+  const previewLineItems = useMemo(
+    () =>
+      lineItems
+        .filter((item) => item.description.trim() && item.unitPrice.trim())
+        .map((item) => {
+          const unitPriceCents = dollarsToCents(item.unitPrice);
+          return {
+            description: item.description,
+            quantity: item.quantity || "1",
+            unitPriceCents,
+            lineTotalCents: calculateLineTotalCents(item.quantity || "1", unitPriceCents),
+          };
+        }),
+    [lineItems],
+  );
+
   const previewDocument = useMemo(() => {
     const taxCents = taxAmount ? dollarsToCents(taxAmount) : 0;
+    const subtotalCents = previewLineItems.reduce((sum, item) => sum + item.lineTotalCents, 0);
     return {
       invoiceNumber: "DRAFT",
       createdAt: new Date(),
@@ -79,10 +117,10 @@ export function NewInvoiceForm({
       customerName: customerName || null,
       customerAddress: customerAddress || null,
       jobNumber: jobNumber ?? "—",
-      lineItems: [],
-      subtotalCents: 0,
+      lineItems: previewLineItems,
+      subtotalCents,
       taxCents,
-      totalCents: taxCents,
+      totalCents: subtotalCents + taxCents,
       paymentInstructions: paymentInstructions || null,
       notes: notes || null,
       footer: footer || null,
@@ -96,6 +134,7 @@ export function NewInvoiceForm({
     customerName,
     customerAddress,
     taxAmount,
+    previewLineItems,
     paymentInstructions,
     notes,
     footer,
@@ -104,6 +143,10 @@ export function NewInvoiceForm({
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    formData.set(
+      "lineItemsJson",
+      JSON.stringify(lineItems.filter((item) => item.description.trim() && item.unitPrice.trim())),
+    );
     startTransition(async () => {
       const result = await createInvoiceAction(undefined, formData);
       if (result?.ok) {
@@ -128,11 +171,7 @@ export function NewInvoiceForm({
               search={async (q) =>
                 (await searchContactsAction(q)).map((c) => ({ id: c.id, label: c.displayName }))
               }
-              onSelect={(option) => {
-                setContact(option);
-                if (option && !organization) setCustomerName(option.label);
-                if (!option && !organization) setCustomerName("");
-              }}
+              onSelect={(option) => setCustomerName(option ? option.label : "")}
             />
             <EntityPicker
               name="propertyId"
@@ -145,20 +184,6 @@ export function NewInvoiceForm({
                 }))
               }
               onSelect={(option) => setCustomerAddress(option ? option.label : "")}
-            />
-            <EntityPicker
-              name="organizationId"
-              label="Organization (optional)"
-              placeholder="Search organizations…"
-              search={async (q) =>
-                (await searchOrganizationsAction(q)).map((o) => ({ id: o.id, label: o.name }))
-              }
-              onSelect={(option) => {
-                setOrganization(option);
-                if (option) setCustomerName(option.label);
-                else if (contact) setCustomerName(contact.label);
-                else setCustomerName("");
-              }}
             />
           </>
         )}
@@ -238,6 +263,67 @@ export function NewInvoiceForm({
             value={customerAddress}
             onChange={(e) => setCustomerAddress(e.target.value)}
           />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label>Line items</Label>
+          <div className="flex flex-col gap-2 rounded-lg border p-3">
+            {lineItems.map((item, index) => (
+              <div key={index} className="flex flex-wrap items-end gap-2">
+                <div className="flex flex-1 min-w-40 flex-col gap-1.5">
+                  <Label htmlFor={`li-description-${index}`} className="text-xs">
+                    Description
+                  </Label>
+                  <Input
+                    id={`li-description-${index}`}
+                    value={item.description}
+                    onChange={(e) => updateLineItem(index, "description", e.target.value)}
+                  />
+                </div>
+                <div className="flex w-20 flex-col gap-1.5">
+                  <Label htmlFor={`li-qty-${index}`} className="text-xs">
+                    Qty
+                  </Label>
+                  <Input
+                    id={`li-qty-${index}`}
+                    value={item.quantity}
+                    onChange={(e) => updateLineItem(index, "quantity", e.target.value)}
+                  />
+                </div>
+                <div className="flex w-32 flex-col gap-1.5">
+                  <Label htmlFor={`li-price-${index}`} className="text-xs">
+                    Unit price
+                  </Label>
+                  <Input
+                    id={`li-price-${index}`}
+                    inputMode="decimal"
+                    placeholder="0.00"
+                    value={item.unitPrice}
+                    onChange={(e) => updateLineItem(index, "unitPrice", e.target.value)}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-9"
+                  aria-label="Remove line item"
+                  onClick={() => removeLineItemRow(index)}
+                  disabled={lineItems.length === 1}
+                >
+                  <X className="size-3.5" />
+                </Button>
+              </div>
+            ))}
+            <div>
+              <Button type="button" variant="outline" size="sm" onClick={addLineItemRow}>
+                + Add line item
+              </Button>
+            </div>
+            <p className="text-right text-sm text-muted-foreground">
+              Subtotal: {formatCents(previewDocument.subtotalCents)}
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-col gap-1.5">

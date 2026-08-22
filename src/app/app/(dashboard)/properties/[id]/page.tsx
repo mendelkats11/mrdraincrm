@@ -57,15 +57,6 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
               .filter(Boolean)
               .join(", ")}{" "}
             · <Badge variant="outline">{TYPE_LABELS[property.propertyType]}</Badge>
-            {property.organizationName ? (
-              <>
-                {" "}
-                ·{" "}
-                <a href={`/organizations/${property.organizationId}`} className="hover:underline">
-                  {property.organizationName}
-                </a>
-              </>
-            ) : null}
           </p>
         </div>
         <div className="flex gap-2">

@@ -3,11 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updateLeadAction } from "@/lib/crm/lead-actions";
-import {
-  searchContactsAction,
-  searchOrganizationsAction,
-  searchPropertiesAction,
-} from "@/lib/crm/contact-actions";
+import { searchContactsAction, searchPropertiesAction } from "@/lib/crm/contact-actions";
 import type { LeadWithLabels } from "@/lib/crm/leads";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -73,6 +69,10 @@ export function EditLeadDialog({
         </DialogHeader>
         <form action={handleSubmit} className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto">
           <input type="hidden" name="leadId" value={lead.id} />
+          {/* Organization is no longer editable from the UI, but this
+              preserves any existing legacy link on save instead of
+              silently clearing it. */}
+          <input type="hidden" name="organizationId" value={lead.organizationId ?? ""} />
           <EntityPicker
             name="contactId"
             label="Contact (optional)"
@@ -99,19 +99,6 @@ export function EditLeadDialog({
                 id: p.id,
                 label: `${p.addressLine1}, ${p.city}`,
               }))
-            }
-          />
-          <EntityPicker
-            name="organizationId"
-            label="Organization (optional)"
-            placeholder="Search organizations…"
-            initial={
-              lead.organizationId
-                ? { id: lead.organizationId, label: lead.organizationName ?? "" }
-                : null
-            }
-            search={async (q) =>
-              (await searchOrganizationsAction(q)).map((o) => ({ id: o.id, label: o.name }))
             }
           />
           {services.length > 0 ? (

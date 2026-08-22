@@ -33,6 +33,12 @@ function editableErrorMessage(error: "not_editable" | "not_found"): string {
     : "Quote not found.";
 }
 
+const newLineItemSchema = z.object({
+  description: z.string().trim().min(1).max(500),
+  quantity: z.string().trim().optional(),
+  unitPrice: z.string().trim().min(1),
+});
+
 const createQuoteSchema = z.object({
   contactId: uuidOrEmpty,
   propertyId: uuidOrEmpty,
@@ -41,6 +47,10 @@ const createQuoteSchema = z.object({
   notes: z.string().trim().max(5000).optional(),
   expiresAt: z.string().trim().optional(),
   taxAmount: moneyField,
+  // JSON-encoded array of { description, quantity, unitPrice } — entered
+  // inline on the New Quote form (one page, no separate detail-page trip
+  // required before the quote shows a real dollar amount).
+  lineItemsJson: z.string().trim().optional(),
 });
 
 export type QuoteFormState =
@@ -59,9 +69,25 @@ export async function createQuoteAction(
     notes: formData.get("notes") || undefined,
     expiresAt: formData.get("expiresAt") || undefined,
     taxAmount: formData.get("taxAmount") || undefined,
+    lineItemsJson: formData.get("lineItemsJson") || undefined,
   });
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input." };
+  }
+
+  let newLineItems: z.infer<typeof newLineItemSchema>[] = [];
+  if (parsed.data.lineItemsJson) {
+    let rawLineItems: unknown;
+    try {
+      rawLineItems = JSON.parse(parsed.data.lineItemsJson);
+    } catch {
+      return { ok: false, error: "Invalid line items." };
+    }
+    const parsedLineItems = z.array(newLineItemSchema).safeParse(rawLineItems);
+    if (!parsedLineItems.success) {
+      return { ok: false, error: "Invalid line items." };
+    }
+    newLineItems = parsedLineItems.data;
   }
 
   const db = getDb();
@@ -78,6 +104,23 @@ export async function createQuoteAction(
     },
     session.user.id,
   );
+
+  // Sequential, not parallel — see the identical note in createInvoiceAction
+  // (src/lib/invoices/invoice-actions.ts): addQuoteLineItem recomputes the
+  // quote's subtotal by reading-then-writing, so concurrent calls for the
+  // same quote could race.
+  for (const item of newLineItems) {
+    await addQuoteLineItem(
+      db,
+      quote.id,
+      {
+        description: item.description,
+        quantity: item.quantity || undefined,
+        unitPriceCents: dollarsToCents(item.unitPrice),
+      },
+      session.user.id,
+    );
+  }
 
   revalidatePath("/quotes");
   return { ok: true, quoteId: quote.id };

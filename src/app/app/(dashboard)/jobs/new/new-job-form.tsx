@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createJobAction } from "@/lib/jobs/job-actions";
-import { searchOrganizationsAction, searchPropertiesAction } from "@/lib/crm/contact-actions";
+import { searchPropertiesAction } from "@/lib/crm/contact-actions";
 import { EntityPicker } from "@/components/entity-picker";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -92,17 +92,6 @@ export function NewJobForm({
           }))
         }
       />
-
-      {mode === "detailed" ? (
-        <EntityPicker
-          name="organizationId"
-          label="Organization (optional)"
-          placeholder="Search organizations…"
-          search={async (q) =>
-            (await searchOrganizationsAction(q)).map((o) => ({ id: o.id, label: o.name }))
-          }
-        />
-      ) : null}
 
       {services.length > 0 ? (
         <div className="flex flex-col gap-1.5">

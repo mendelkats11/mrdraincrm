@@ -5,8 +5,10 @@ import { MapPin, Phone } from "lucide-react";
 import { getDb } from "@/lib/db/client";
 import { getServiceAreaBySlug } from "@/lib/website/service-areas";
 import { getWebsiteSettings } from "@/lib/website/settings";
+import { listPublishedGalleryItemsForServiceArea } from "@/lib/website/gallery";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import { MobileFloatingCta } from "@/components/site/mobile-floating-cta";
+import { GallerySection } from "@/components/site/sections/gallery-section";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +38,8 @@ export default async function ServiceAreaDetailPage({
     getWebsiteSettings(db),
   ]);
   if (!area) notFound();
+
+  const areaGalleryItems = await listPublishedGalleryItemsForServiceArea(db, area.id);
 
   // Falls back to the site default when this area has no CallRail number
   // of its own — docs/PROJECT_SPEC.md §2.4.
@@ -90,6 +94,8 @@ export default async function ServiceAreaDetailPage({
           </a>
         </div>
       </div>
+
+      <GallerySection items={areaGalleryItems} />
 
       <MobileFloatingCta trackingNumber={trackingNumber} />
     </div>

@@ -3,12 +3,11 @@ import { notFound } from "next/navigation";
 import { getDb } from "@/lib/db/client";
 import { getContact } from "@/lib/crm/contacts";
 import {
-  detachContactFromOrganizationAction,
   detachContactFromPropertyAction,
   removeContactEmailAction,
   removeContactPhoneAction,
 } from "@/lib/crm/contact-actions";
-import { listContactOrganizations, listContactProperties } from "@/lib/crm/relationships";
+import { listContactProperties } from "@/lib/crm/relationships";
 import { listRemindersForEntity } from "@/lib/reminders/reminders";
 import { getEntityTimeline } from "@/lib/audit/activity";
 import { formatPhoneForDisplay } from "@/lib/phone";
@@ -20,7 +19,6 @@ import { RemindersCard } from "@/components/reminders-card";
 import { EditContactDialog } from "./edit-contact-dialog";
 import { MergeContactDialog } from "./merge-contact-dialog";
 import { DuplicatesSection } from "./duplicates-section";
-import { AttachOrganizationDialog } from "./attach-organization-dialog";
 import { AttachPropertyDialog } from "./attach-property-dialog";
 import { AddPhoneDialog } from "./add-phone-dialog";
 import { AddEmailDialog } from "./add-email-dialog";
@@ -44,8 +42,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
   const contact = await getContact(db, id);
   if (!contact) notFound();
 
-  const [organizations, properties, timeline, reminders] = await Promise.all([
-    listContactOrganizations(db, id),
+  const [properties, timeline, reminders] = await Promise.all([
     listContactProperties(db, id),
     getEntityTimeline(db, "contact", id),
     listRemindersForEntity(db, { contactId: id }),
@@ -137,39 +134,6 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
                     <RemoveButton
                       label="Remove email"
                       onRemove={removeContactEmailAction.bind(null, contact.id, email.id)}
-                    />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base">Organizations</CardTitle>
-            <AttachOrganizationDialog contactId={contact.id} />
-          </CardHeader>
-          <CardContent>
-            {organizations.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Not linked to any organization.</p>
-            ) : (
-              <ul className="flex flex-col gap-1">
-                {organizations.map((org) => (
-                  <li key={org.id} className="flex items-center justify-between text-sm">
-                    <a href={`/organizations/${org.organizationId}`} className="hover:underline">
-                      {org.name}
-                      {org.title ? (
-                        <span className="ml-2 text-muted-foreground">{org.title}</span>
-                      ) : null}
-                    </a>
-                    <RemoveButton
-                      label="Remove organization link"
-                      onRemove={detachContactFromOrganizationAction.bind(
-                        null,
-                        contact.id,
-                        org.organizationId,
-                      )}
                     />
                   </li>
                 ))}

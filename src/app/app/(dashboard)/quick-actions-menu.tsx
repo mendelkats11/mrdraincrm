@@ -15,19 +15,18 @@ import {
 
 // docs/PROJECT_SPEC.md §23 — persistent "+ New" quick action, reachable
 // from anywhere in the app. Job/Invoice/Quote already have dedicated /new
-// pages, linked directly. Lead/Contact/Organization/Property/Reminder are
-// each created via a dialog scoped to their own list page (e.g.
-// NewLeadDialog on /leads) — rather than duplicating that logic here,
-// `?new=1` tells the destination page to auto-open its existing dialog on
-// arrival (see each page's "New*Dialog" component). Record Payment and
-// Upload Photos both belong to a specific job, which nothing global can
-// pick for the user — routed to the Jobs list to choose one, where both
-// actions already live on the job detail page.
+// pages, linked directly. Lead/Contact/Property/Reminder are each created
+// via a dialog scoped to their own list page (e.g. NewLeadDialog on
+// /leads) — rather than duplicating that logic here, `?new=1` tells the
+// destination page to auto-open its existing dialog on arrival (see each
+// page's "New*Dialog" component). Record Payment and Upload Photos both
+// belong to a specific job, which nothing global can pick for the user —
+// routed to the Jobs list to choose one, where both actions already live
+// on the job detail page.
 const QUICK_ACTIONS = [
   { group: "Create", label: "New Job", href: "/jobs/new" },
   { group: "Create", label: "New Lead", href: "/leads?new=1" },
   { group: "Create", label: "New Contact", href: "/contacts?new=1" },
-  { group: "Create", label: "New Organization", href: "/organizations?new=1" },
   { group: "Create", label: "New Property", href: "/properties?new=1" },
   { group: "Create", label: "New Reminder", href: "/reminders?new=1" },
   { group: "Billing", label: "New Invoice", href: "/invoices/new" },

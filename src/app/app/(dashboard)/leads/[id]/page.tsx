@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
 import { getDb } from "@/lib/db/client";
 import { getLead, listActiveServices } from "@/lib/crm/leads";
+import { formatPhoneForDisplay } from "@/lib/phone";
 import { listQuotesForContact } from "@/lib/quotes/quotes";
 import { listRemindersForEntity } from "@/lib/reminders/reminders";
 import { getEntityTimeline } from "@/lib/audit/activity";
@@ -44,7 +45,6 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const newQuoteParams = new URLSearchParams();
   if (lead.contactId) newQuoteParams.set("contactId", lead.contactId);
   if (lead.propertyId) newQuoteParams.set("propertyId", lead.propertyId);
-  if (lead.organizationId) newQuoteParams.set("organizationId", lead.organizationId);
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
@@ -106,21 +106,33 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                 <span className="text-muted-foreground">None</span>
               )}
             </p>
+            {lead.contactPhone ? (
+              <p>
+                Phone:{" "}
+                <a
+                  href={`tel:${lead.contactPhone}`}
+                  className="text-muted-foreground hover:underline"
+                >
+                  {formatPhoneForDisplay(lead.contactPhone)}
+                </a>
+              </p>
+            ) : null}
+            {lead.contactEmail ? (
+              <p>
+                Email:{" "}
+                <a
+                  href={`mailto:${lead.contactEmail}`}
+                  className="text-muted-foreground hover:underline"
+                >
+                  {lead.contactEmail}
+                </a>
+              </p>
+            ) : null}
             <p>
               Property:{" "}
               {lead.propertyId ? (
                 <Link href={`/properties/${lead.propertyId}`} className="hover:underline">
                   {lead.propertyAddressLine1}, {lead.propertyCity}
-                </Link>
-              ) : (
-                <span className="text-muted-foreground">None</span>
-              )}
-            </p>
-            <p>
-              Organization:{" "}
-              {lead.organizationId ? (
-                <Link href={`/organizations/${lead.organizationId}`} className="hover:underline">
-                  {lead.organizationName}
                 </Link>
               ) : (
                 <span className="text-muted-foreground">None</span>

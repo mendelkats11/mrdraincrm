@@ -15,6 +15,7 @@ import {
 } from "@/lib/db/schema";
 import { recordActivity } from "@/lib/audit/activity";
 import { allocateSequenceNumber } from "@/lib/sequences/allocate";
+import { getPrimaryPhonesForContacts } from "./contacts";
 import type { NormalizedPhone } from "@/lib/phone";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -263,6 +264,8 @@ export interface LeadWithLabels {
   convertedAt: Date | null;
   convertedJobId: string | null;
   contactName: string | null;
+  contactPhone: string | null;
+  contactEmail: string | null;
   organizationName: string | null;
   propertyAddressLine1: string | null;
   propertyCity: string | null;
@@ -294,9 +297,33 @@ export async function getLead<TQueryResult extends PgQueryResultHKT>(
 
   if (!row) return null;
 
+  // The primary reason a lead's "submission info" (how to actually call/
+  // email this person back) needs to be visible on this page directly,
+  // not just via a click-through to the contact record.
+  let contactPhone: string | null = null;
+  let contactEmail: string | null = null;
+  if (row.lead.contactId) {
+    const [phoneRow] = await db
+      .select({ phoneE164: contactPhones.phoneE164 })
+      .from(contactPhones)
+      .where(eq(contactPhones.contactId, row.lead.contactId))
+      .orderBy(desc(contactPhones.isPrimary))
+      .limit(1);
+    const [emailRow] = await db
+      .select({ email: contactEmails.email })
+      .from(contactEmails)
+      .where(eq(contactEmails.contactId, row.lead.contactId))
+      .orderBy(desc(contactEmails.isPrimary))
+      .limit(1);
+    contactPhone = phoneRow?.phoneE164 ?? null;
+    contactEmail = emailRow?.email ?? null;
+  }
+
   return {
     ...row.lead,
     contactName: row.contactName,
+    contactPhone,
+    contactEmail,
     organizationName: row.organizationName,
     propertyAddressLine1: row.propertyAddressLine1,
     propertyCity: row.propertyCity,
@@ -322,7 +349,9 @@ export interface LeadListRow {
   issueDescription: string | null;
   emergency: boolean;
   createdAt: Date;
+  contactId: string | null;
   contactName: string | null;
+  contactPhone: string | null;
 }
 
 export async function listLeads<TQueryResult extends PgQueryResultHKT>(
@@ -358,7 +387,7 @@ export async function listLeads<TQueryResult extends PgQueryResultHKT>(
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;
 
-  const rows = await db
+  const rawRows = await db
     .select({
       id: leads.id,
       status: leads.status,
@@ -366,6 +395,7 @@ export async function listLeads<TQueryResult extends PgQueryResultHKT>(
       issueDescription: leads.issueDescription,
       emergency: leads.emergency,
       createdAt: leads.createdAt,
+      contactId: leads.contactId,
       contactName: contacts.displayName,
     })
     .from(leads)
@@ -374,6 +404,15 @@ export async function listLeads<TQueryResult extends PgQueryResultHKT>(
     .orderBy(desc(leads.createdAt))
     .limit(pageSize)
     .offset((page - 1) * pageSize);
+
+  const phonesByContact = await getPrimaryPhonesForContacts(
+    db,
+    rawRows.map((r) => r.contactId).filter((id): id is string => id !== null),
+  );
+  const rows = rawRows.map((r) => ({
+    ...r,
+    contactPhone: r.contactId ? (phonesByContact.get(r.contactId) ?? null) : null,
+  }));
 
   const [{ count }] = await db
     .select({ count: sql<number>`count(*)::int` })

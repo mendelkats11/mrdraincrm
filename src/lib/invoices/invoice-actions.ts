@@ -52,11 +52,22 @@ const invoiceDetailFieldsSchema = z.object({
   taxAmount: moneyField,
 });
 
+const newLineItemSchema = z.object({
+  description: z.string().trim().min(1).max(500),
+  quantity: z.string().trim().optional(),
+  unitPrice: z.string().trim().min(1),
+});
+
 const createInvoiceSchema = invoiceDetailFieldsSchema.extend({
   jobId: uuidOrEmpty,
   contactId: uuidOrEmpty,
   propertyId: uuidOrEmpty,
   organizationId: uuidOrEmpty,
+  // JSON-encoded array of { description, quantity, unitPrice } — entered
+  // inline on the New Invoice form and created together with the invoice
+  // (see createInvoiceAction below), rather than requiring a second trip to
+  // the invoice's detail page before it has any price on it.
+  lineItemsJson: z.string().trim().optional(),
 });
 
 export type InvoiceFormState =
@@ -89,9 +100,25 @@ export async function createInvoiceAction(
     paymentInstructions: formData.get("paymentInstructions") || undefined,
     footer: formData.get("footer") || undefined,
     taxAmount: formData.get("taxAmount") || undefined,
+    lineItemsJson: formData.get("lineItemsJson") || undefined,
   });
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input." };
+  }
+
+  let newLineItems: z.infer<typeof newLineItemSchema>[] = [];
+  if (parsed.data.lineItemsJson) {
+    let rawLineItems: unknown;
+    try {
+      rawLineItems = JSON.parse(parsed.data.lineItemsJson);
+    } catch {
+      return { ok: false, error: "Invalid line items." };
+    }
+    const parsedLineItems = z.array(newLineItemSchema).safeParse(rawLineItems);
+    if (!parsedLineItems.success) {
+      return { ok: false, error: "Invalid line items." };
+    }
+    newLineItems = parsedLineItems.data;
   }
 
   const db = getDb();
@@ -122,6 +149,23 @@ export async function createInvoiceAction(
         },
         session.user.id,
       );
+
+  // Sequential, not parallel — recomputeInvoiceTotals (called inside
+  // addInvoiceLineItem) reads-then-writes the invoice's subtotal, so
+  // concurrent calls for the same invoice could race and drop a line
+  // item's contribution to the total.
+  for (const item of newLineItems) {
+    await addInvoiceLineItem(
+      db,
+      invoice.id,
+      {
+        description: item.description,
+        quantity: item.quantity || undefined,
+        unitPriceCents: dollarsToCents(item.unitPrice),
+      },
+      session.user.id,
+    );
+  }
 
   revalidatePath("/invoices");
   if (parsed.data.jobId) revalidatePath(`/jobs/${parsed.data.jobId}`);

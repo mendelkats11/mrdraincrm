@@ -8,11 +8,11 @@ import {
 import { getUserPreferences } from "@/lib/preferences/user-preferences";
 import { applyOrderAndVisibility } from "@/lib/preferences/apply-order";
 import { DEFAULT_SIDEBAR_ORDER } from "@/lib/dashboard/sidebar-nav";
-import { LogoutButtons } from "./logout-buttons";
 import { Sidebar } from "./sidebar";
 import { HeaderSearch } from "./header-search";
 import { NotificationBell } from "./notification-bell";
 import { QuickActionsMenu } from "./quick-actions-menu";
+import { ProfileMenu } from "./profile-menu";
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const session = await requireUser();
@@ -42,8 +42,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           <div className="flex shrink-0 items-center gap-4">
             <QuickActionsMenu />
             <NotificationBell notifications={notifications} unreadCount={unreadCount} />
-            <span className="text-sm font-medium text-foreground">{session.user.email}</span>
-            <LogoutButtons />
+            <ProfileMenu name={session.user.name} email={session.user.email} />
           </div>
         </header>
         <main className="flex-1 p-6">{children}</main>

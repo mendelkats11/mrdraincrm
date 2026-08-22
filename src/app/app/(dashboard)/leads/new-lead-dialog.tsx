@@ -3,11 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createLeadAction } from "@/lib/crm/lead-actions";
-import {
-  searchContactsAction,
-  searchOrganizationsAction,
-  searchPropertiesAction,
-} from "@/lib/crm/contact-actions";
+import { searchContactsAction, searchPropertiesAction } from "@/lib/crm/contact-actions";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -97,14 +93,6 @@ export function NewLeadDialog({ services }: { services: { id: string; name: stri
                 id: p.id,
                 label: `${p.addressLine1}, ${p.city}`,
               }))
-            }
-          />
-          <EntityPicker
-            name="organizationId"
-            label="Organization (optional)"
-            placeholder="Search organizations…"
-            search={async (q) =>
-              (await searchOrganizationsAction(q)).map((o) => ({ id: o.id, label: o.name }))
             }
           />
           {services.length > 0 ? (

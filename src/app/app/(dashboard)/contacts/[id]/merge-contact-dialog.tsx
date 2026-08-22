@@ -128,7 +128,7 @@ export function MergeContactDialog({
                 <span className="font-medium text-destructive">Archive:</span> {target.displayName}
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
-                {target.displayName}&apos;s phones, emails, organizations, and properties move to{" "}
+                {target.displayName}&apos;s phones, emails, and properties move to{" "}
                 {contact.displayName}. {target.displayName} is archived, not deleted, and its
                 history is preserved.
               </p>

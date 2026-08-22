@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 // The job form's contact field is more capable than the generic
-// EntityPicker used by leads/organizations/properties: per
+// EntityPicker used by leads/properties: per
 // docs/PROJECT_SPEC.md §8.1 ("at the bottom of the job form, provide an
 // option to create/add the contact during submission"), it must support
 // creating a brand-new contact inline, not just searching existing ones.

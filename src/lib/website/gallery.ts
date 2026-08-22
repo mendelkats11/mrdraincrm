@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { galleryItems } from "@/lib/db/schema";
 import { recordActivity } from "@/lib/audit/activity";
@@ -21,6 +21,20 @@ export async function listPublishedGalleryItems<TQueryResult extends PgQueryResu
     .select()
     .from(galleryItems)
     .where(eq(galleryItems.hidden, false))
+    .orderBy(desc(galleryItems.featured), desc(galleryItems.createdAt));
+}
+
+/** Photos tagged to a specific service area in the Gallery admin
+ *  (galleryItems.serviceAreaId) — a separate concept from
+ *  serviceAreas.images (the hero background, set directly on the area
+ *  itself). Shown on that area's public page. */
+export async function listPublishedGalleryItemsForServiceArea<
+  TQueryResult extends PgQueryResultHKT,
+>(db: Db<TQueryResult>, serviceAreaId: string) {
+  return db
+    .select()
+    .from(galleryItems)
+    .where(and(eq(galleryItems.hidden, false), eq(galleryItems.serviceAreaId, serviceAreaId)))
     .orderBy(desc(galleryItems.featured), desc(galleryItems.createdAt));
 }
 

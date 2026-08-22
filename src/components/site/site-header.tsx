@@ -4,20 +4,30 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, Phone, X } from "lucide-react";
+import { ChevronDown, Menu, Phone, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/services", label: "Services" },
-  { href: "/service-areas", label: "Service Areas" },
   { href: "/gallery", label: "Gallery" },
   { href: "/reviews", label: "Reviews" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
 ] as const;
 
-export function SiteHeader({ trackingNumber }: { trackingNumber: string | null }) {
+export interface ServiceAreaNavItem {
+  slug: string;
+  name: string;
+}
+
+export function SiteHeader({
+  trackingNumber,
+  serviceAreas,
+}: {
+  trackingNumber: string | null;
+  serviceAreas: ServiceAreaNavItem[];
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -36,8 +46,54 @@ export function SiteHeader({ trackingNumber }: { trackingNumber: string | null }
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex">
-          {NAV_LINKS.map((link) => {
+          {NAV_LINKS.slice(0, 2).map((link) => {
             const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "rounded-full px-3 py-2 text-sm font-medium transition-colors",
+                  isActive ? "bg-secondary text-primary" : "text-foreground/80 hover:text-primary",
+                )}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
+
+          <div className="group relative">
+            <Link
+              href="/service-areas"
+              aria-current={pathname.startsWith("/service-areas") ? "page" : undefined}
+              className={cn(
+                "flex items-center gap-1 rounded-full px-3 py-2 text-sm font-medium transition-colors",
+                pathname.startsWith("/service-areas")
+                  ? "bg-secondary text-primary"
+                  : "text-foreground/80 hover:text-primary",
+              )}
+            >
+              Service Areas
+              <ChevronDown className="size-3.5" aria-hidden="true" />
+            </Link>
+            {serviceAreas.length > 0 ? (
+              <div className="invisible absolute top-full left-0 z-10 min-w-48 rounded-xl border border-black/5 bg-white p-1.5 opacity-0 shadow-lg transition-opacity group-hover:visible group-hover:opacity-100">
+                {serviceAreas.map((area) => (
+                  <Link
+                    key={area.slug}
+                    href={`/service-areas/${area.slug}`}
+                    className="block rounded-lg px-3 py-2 text-sm text-foreground/80 hover:bg-secondary hover:text-primary"
+                  >
+                    {area.name}
+                  </Link>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          {NAV_LINKS.slice(2).map((link) => {
+            const isActive = pathname.startsWith(link.href);
             return (
               <Link
                 key={link.href}
@@ -85,7 +141,24 @@ export function SiteHeader({ trackingNumber }: { trackingNumber: string | null }
 
       {open ? (
         <nav className="flex flex-col gap-1 border-t border-black/5 bg-white px-4 py-3 lg:hidden">
-          {NAV_LINKS.map((link) => (
+          {NAV_LINKS.slice(0, 2).map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={() => setOpen(false)}
+              className="rounded-md px-3 py-2 text-sm font-medium text-foreground/80 hover:bg-secondary hover:text-primary"
+            >
+              {link.label}
+            </Link>
+          ))}
+          <Link
+            href="/service-areas"
+            onClick={() => setOpen(false)}
+            className="rounded-md px-3 py-2 text-sm font-medium text-foreground/80 hover:bg-secondary hover:text-primary"
+          >
+            Service Areas
+          </Link>
+          {NAV_LINKS.slice(2).map((link) => (
             <Link
               key={link.href}
               href={link.href}

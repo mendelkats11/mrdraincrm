@@ -1,11 +1,7 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import {
-  type OrganizationSearchResult,
-  searchOrganizationsAction,
-} from "@/lib/crm/contact-actions";
 import { updatePropertyAction } from "@/lib/crm/property-actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -57,21 +53,6 @@ export function EditPropertyDialog({
   const [pending, startTransition] = useTransition();
   const router = useRouter();
 
-  const [orgQuery, setOrgQuery] = useState("");
-  const [orgResults, setOrgResults] = useState<OrganizationSearchResult[]>([]);
-  const [selectedOrg, setSelectedOrg] = useState<OrganizationSearchResult | null>(
-    property.organizationId
-      ? { id: property.organizationId, name: property.organizationName ?? "" }
-      : null,
-  );
-
-  useEffect(() => {
-    if (!orgQuery.trim()) return;
-    const timeout = setTimeout(() => searchOrganizationsAction(orgQuery).then(setOrgResults), 250);
-    return () => clearTimeout(timeout);
-  }, [orgQuery]);
-  const visibleOrgResults = orgQuery.trim() ? orgResults : [];
-
   function handleSubmit(formData: FormData) {
     startTransition(async () => {
       const result = await updatePropertyAction(undefined, formData);
@@ -102,7 +83,10 @@ export function EditPropertyDialog({
         </DialogHeader>
         <form action={handleSubmit} className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto">
           <input type="hidden" name="propertyId" value={property.id} />
-          <input type="hidden" name="organizationId" value={selectedOrg?.id ?? ""} />
+          {/* Organization is no longer editable from the UI, but the hidden
+              field preserves any existing legacy link on save instead of
+              silently clearing it. */}
+          <input type="hidden" name="organizationId" value={property.organizationId ?? ""} />
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="addressLine1">Address</Label>
@@ -164,43 +148,6 @@ export function EditPropertyDialog({
               name="businessName"
               defaultValue={property.businessName ?? ""}
             />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <Label>Organization</Label>
-            {selectedOrg ? (
-              <div className="flex items-center justify-between rounded-md border p-2 text-sm">
-                <span>{selectedOrg.name}</span>
-                <button
-                  type="button"
-                  onClick={() => setSelectedOrg(null)}
-                  className="text-xs text-muted-foreground hover:underline"
-                >
-                  Clear
-                </button>
-              </div>
-            ) : (
-              <>
-                <Input
-                  placeholder="Search organizations…"
-                  value={orgQuery}
-                  onChange={(e) => setOrgQuery(e.target.value)}
-                />
-                <ul className="flex flex-col gap-1">
-                  {visibleOrgResults.map((org) => (
-                    <li key={org.id}>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedOrg(org)}
-                        className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
-                      >
-                        {org.name}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
           </div>
 
           <div className="flex flex-col gap-1.5">

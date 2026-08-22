@@ -65,11 +65,7 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
                   }
                 : null
             }
-            initialOrganization={
-              quote.organizationId && quote.organizationName
-                ? { id: quote.organizationId, label: quote.organizationName }
-                : null
-            }
+            existingOrganizationId={quote.organizationId}
           />
         ) : null}
       </div>

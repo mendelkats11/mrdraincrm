@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-/** Generic detach/remove action button — used across contacts/organizations/properties. */
+/** Generic detach/remove action button — used across contacts/properties. */
 export function RemoveButton({
   onRemove,
   label,

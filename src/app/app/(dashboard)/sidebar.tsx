@@ -5,13 +5,13 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3,
   Bell,
-  Building2,
   Calendar,
   FileSignature,
   FileText,
   Globe,
   HardHat,
   Home,
+  Inbox,
   LayoutDashboard,
   MessageSquare,
   Phone,
@@ -26,6 +26,7 @@ import { SidebarCustomizer } from "./sidebar-customizer";
 const ICONS_BY_HREF = {
   "/": LayoutDashboard,
   "/leads": UserPlus,
+  "/forms": Inbox,
   "/jobs": Wrench,
   "/schedule": Calendar,
   "/contractors": HardHat,
@@ -35,7 +36,6 @@ const ICONS_BY_HREF = {
   "/calls": Phone,
   "/messages": MessageSquare,
   "/contacts": User,
-  "/organizations": Building2,
   "/properties": Home,
   "/website": Globe,
   "/reports": BarChart3,
@@ -44,6 +44,7 @@ const ICONS_BY_HREF = {
 const LABELS_BY_HREF: Record<(typeof NAV_HREFS)[number], string> = {
   "/": "Dashboard",
   "/leads": "Leads",
+  "/forms": "Form Submissions",
   "/jobs": "Jobs",
   "/schedule": "Schedule",
   "/contractors": "Contractors",
@@ -53,7 +54,6 @@ const LABELS_BY_HREF: Record<(typeof NAV_HREFS)[number], string> = {
   "/calls": "Calls",
   "/messages": "Messages",
   "/contacts": "Contacts",
-  "/organizations": "Organizations",
   "/properties": "Properties",
   "/website": "Website",
   "/reports": "Reports",
@@ -95,6 +95,16 @@ export function Sidebar({
         collapsed ? "w-14 items-center" : "w-56",
       )}
     >
+      <Link
+        href="/"
+        title={collapsed ? "Mr. Drain CRM" : undefined}
+        className={cn(
+          "mb-2 flex items-center gap-2 rounded-md px-3 py-2 font-heading font-bold tracking-tight text-primary",
+          collapsed ? "justify-center px-2 text-lg" : "text-lg",
+        )}
+      >
+        {collapsed ? "MD" : "Mr. Drain CRM"}
+      </Link>
       <div className="flex-1 flex flex-col gap-1 w-full">
         {items.map((item) => {
           const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);

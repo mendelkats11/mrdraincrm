@@ -21,7 +21,6 @@ type Db<TQueryResult extends PgQueryResultHKT> = PgDatabase<TQueryResult, any, a
 export interface SearchResult {
   type:
     | "contact"
-    | "organization"
     | "property"
     | "lead"
     | "job"
@@ -39,13 +38,17 @@ export interface SearchResult {
 const RESULTS_PER_TYPE = 10;
 
 /**
- * Basic cross-entity search — contacts, organizations, and properties only,
- * since those are the only entities that exist as of Phase 3. Structured so
- * later phases (leads, jobs, invoices, quotes, calls, messages, reminders —
+ * Basic cross-entity search — contacts and properties only, since those are
+ * the only entities that exist as of Phase 3. Structured so later phases
+ * (leads, jobs, invoices, quotes, calls, messages, reminders —
  * docs/PROJECT_SPEC.md §7) can append their own query + result mapping here
  * without changing this function's shape. The *polished*, unified,
  * live-typeahead search experience is an explicit docs/ROADMAP.md Phase 17
  * deliverable ("global search polish") — this is the functional baseline.
+ *
+ * Organizations are intentionally not searched here: the org detail page
+ * and pickers were removed from the UI, so surfacing an org search result
+ * would only produce a dead link (docs: organizations UI removal).
  */
 export async function searchCrm<TQueryResult extends PgQueryResultHKT>(
   db: Db<TQueryResult>,
@@ -68,12 +71,6 @@ export async function searchCrm<TQueryResult extends PgQueryResultHKT>(
         ),
       ),
     )
-    .limit(RESULTS_PER_TYPE);
-
-  const organizationRows = await db
-    .select({ id: organizations.id, name: organizations.name })
-    .from(organizations)
-    .where(and(isNull(organizations.archivedAt), ilike(organizations.name, term)))
     .limit(RESULTS_PER_TYPE);
 
   const propertyRows = await db
@@ -228,13 +225,6 @@ export async function searchCrm<TQueryResult extends PgQueryResultHKT>(
       title: c.displayName,
       subtitle: "Contact",
       href: `/contacts/${c.id}`,
-    })),
-    ...organizationRows.map((o): SearchResult => ({
-      type: "organization",
-      id: o.id,
-      title: o.name,
-      subtitle: "Organization",
-      href: `/organizations/${o.id}`,
     })),
     ...propertyRows.map((p): SearchResult => ({
       type: "property",

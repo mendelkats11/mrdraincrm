@@ -181,10 +181,9 @@ export function QuoteActionsBar({
           <AlertDialogHeader>
             <AlertDialogTitle>Convert this quote into a job?</AlertDialogTitle>
             <AlertDialogDescription>
-              Creates a new job carrying over the contact, property, organization, and description
-              from this quote. The job&apos;s own financial fields (job amount, materials,
-              contractor payout) are entered separately afterward — they&apos;re never copied from
-              the quote total.
+              Creates a new job carrying over the contact, property, and description from this
+              quote. The job&apos;s own financial fields (job amount, materials, contractor payout)
+              are entered separately afterward — they&apos;re never copied from the quote total.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

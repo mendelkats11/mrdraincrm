@@ -10,6 +10,7 @@ import {
 } from "@/lib/website/gallery-actions";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import type { galleryItems } from "@/lib/db/schema";
 
 type GalleryItem = typeof galleryItems.$inferSelect;
@@ -27,6 +28,19 @@ export function GalleryItemCard({ item }: { item: GalleryItem }) {
           fill
           className="object-cover"
         />
+        {/* Toggling Feature/Unfeature only changes this card's position on
+         *  the public site (it moves featured items first) — with just a
+         *  few photos that reorder can be easy to miss entirely, so this
+         *  badge is the actual visible confirmation the toggle did
+         *  something. */}
+        {item.featured ? (
+          <Badge className="absolute top-1.5 left-1.5 shadow">Featured</Badge>
+        ) : null}
+        {item.hidden ? (
+          <Badge variant="secondary" className="absolute top-1.5 right-1.5 shadow">
+            Hidden
+          </Badge>
+        ) : null}
       </div>
       {item.caption ? (
         <p className="truncate text-xs text-muted-foreground">{item.caption}</p>

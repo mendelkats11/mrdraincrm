@@ -3,11 +3,7 @@
 import { type FormEvent, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updateQuoteDetailsAction } from "@/lib/quotes/quote-actions";
-import {
-  searchContactsAction,
-  searchOrganizationsAction,
-  searchPropertiesAction,
-} from "@/lib/crm/contact-actions";
+import { searchContactsAction, searchPropertiesAction } from "@/lib/crm/contact-actions";
 import { EntityPicker, type PickerOption } from "@/components/entity-picker";
 import { centsToDollarsInputValue } from "@/lib/money";
 import { Button } from "@/components/ui/button";
@@ -35,13 +31,15 @@ export function QuoteDetailsDialog({
   quote,
   initialContact,
   initialProperty,
-  initialOrganization,
+  existingOrganizationId,
 }: {
   quoteId: string;
   quote: EditableQuoteDetails;
   initialContact: PickerOption | null;
   initialProperty: PickerOption | null;
-  initialOrganization: PickerOption | null;
+  /** Organization is no longer editable from the UI; this preserves any
+   *  existing legacy link on save instead of silently clearing it. */
+  existingOrganizationId: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,6 +80,7 @@ export function QuoteDetailsDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto">
           <input type="hidden" name="quoteId" value={quoteId} />
+          <input type="hidden" name="organizationId" value={existingOrganizationId ?? ""} />
 
           <EntityPicker
             name="contactId"
@@ -104,16 +103,6 @@ export function QuoteDetailsDialog({
               }))
             }
           />
-          <EntityPicker
-            name="organizationId"
-            label="Organization (optional)"
-            placeholder="Search organizations…"
-            initial={initialOrganization}
-            search={async (q) =>
-              (await searchOrganizationsAction(q)).map((o) => ({ id: o.id, label: o.name }))
-            }
-          />
-
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="description">Description</Label>
             <Textarea

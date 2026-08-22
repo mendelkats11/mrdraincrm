@@ -7,6 +7,7 @@
 export const NAV_HREFS = [
   "/",
   "/leads",
+  "/forms",
   "/jobs",
   "/schedule",
   "/contractors",
@@ -16,7 +17,6 @@ export const NAV_HREFS = [
   "/calls",
   "/messages",
   "/contacts",
-  "/organizations",
   "/properties",
   "/website",
   "/reports",

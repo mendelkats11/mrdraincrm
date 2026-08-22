@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createTestDb } from "../helpers/test-db";
 import { archiveContact, createContact } from "@/lib/crm/contacts";
 import { changeLeadStatus, createLead } from "@/lib/crm/leads";
-import { createOrganization } from "@/lib/crm/organizations";
 import { createProperty } from "@/lib/crm/properties";
 import { searchCrm } from "@/lib/crm/search";
 import { normalizePhone } from "@/lib/phone";
@@ -39,12 +38,6 @@ describe("searchCrm", () => {
     expect((await searchCrm(ctx.db, "findable")).map((r) => r.id)).toContain(contact.id);
   });
 
-  it("finds an organization by name", async () => {
-    const org = await createOrganization(ctx.db, { name: "Prairie Property Group" }, null);
-    const results = await searchCrm(ctx.db, "Prairie");
-    expect(results.some((r) => r.type === "organization" && r.id === org.id)).toBe(true);
-  });
-
   it("finds a property by address and city", async () => {
     const property = await createProperty(
       ctx.db,
@@ -60,9 +53,8 @@ describe("searchCrm", () => {
     expect((await searchCrm(ctx.db, "Martensville")).some((r) => r.id === property.id)).toBe(true);
   });
 
-  it("returns results across all three entity types for a broad query", async () => {
+  it("returns results across both entity types for a broad query", async () => {
     await createContact(ctx.db, { displayName: "Rosewood Resident" }, null);
-    await createOrganization(ctx.db, { name: "Rosewood Management" }, null);
     await createProperty(
       ctx.db,
       { addressLine1: "1 Rosewood Dr", city: "Rosewood", province: "SK", postalCode: "S0K 0A0" },
@@ -70,9 +62,7 @@ describe("searchCrm", () => {
     );
 
     const results = await searchCrm(ctx.db, "Rosewood");
-    expect(new Set(results.map((r) => r.type))).toEqual(
-      new Set(["contact", "organization", "property"]),
-    );
+    expect(new Set(results.map((r) => r.type))).toEqual(new Set(["contact", "property"]));
   });
 
   it("excludes archived contacts from results", async () => {

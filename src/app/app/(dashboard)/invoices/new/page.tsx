@@ -50,8 +50,8 @@ export default async function NewInvoicePage({
       <div>
         <h1 className="text-xl font-semibold text-foreground">New invoice</h1>
         <p className="text-sm text-muted-foreground">
-          Creates a new job behind the scenes to hold this invoice — you can attach a contact,
-          property, or organization below.
+          Creates a new job behind the scenes to hold this invoice — you can attach a contact or
+          property below.
         </p>
       </div>
       <NewInvoiceForm defaults={defaults} logoUrl={logoUrl} />
