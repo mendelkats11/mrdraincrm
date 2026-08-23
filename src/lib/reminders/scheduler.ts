@@ -15,11 +15,12 @@ export interface ProcessRemindersResult {
 }
 
 /**
- * The core logic behind the scheduled function (netlify/functions/
- * process-reminders.mts) — kept as a plain function, not tied to the
- * Netlify Functions runtime, so it can be called directly from integration
- * tests against PGlite and, if ever needed, from an authenticated manual
- * "run now" trigger.
+ * The core logic behind the recurring scheduler (src/instrumentation.ts,
+ * an in-process setInterval — originally a Netlify Scheduled Function
+ * before the move to Hostinger's persistent-process hosting) — kept as a
+ * plain function so it can be called directly from integration tests
+ * against PGlite and, if ever needed, from an authenticated manual "run
+ * now" trigger.
  *
  * Idempotency (Phase 10's core requirement) comes entirely from the
  * database: each (recipient, reminder, "reminder_due", today) combination
