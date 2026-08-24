@@ -37,7 +37,21 @@ const INTERVAL_MS = 2 * 60 * 1000;
  * windows) are no-ops rather than duplicates.
  */
 export function register() {
-  if (process.env.NEXT_RUNTIME !== "nodejs") return;
+  // Excludes Edge specifically, rather than requiring an exact "nodejs"
+  // match — confirmed by direct evidence this mattered: calls stopped
+  // arriving in production days after this was deployed even though the
+  // exact same poll logic worked flawlessly run locally against the same
+  // database, which only makes sense if register() was silently returning
+  // before ever arming the timer. Next.js's own docs example branches on
+  // `NEXT_RUNTIME === 'edge'`, not on requiring the Node value exactly —
+  // if Hostinger's process launcher ever left NEXT_RUNTIME unset or gave
+  // it an unexpected value, the old `!== "nodejs"` check would have
+  // silently disabled the scheduler entirely, with no error to see
+  // anywhere. This is strictly more permissive and still never runs
+  // setInterval/DB access on Edge, which doesn't support either.
+  if (process.env.NEXT_RUNTIME === "edge") return;
+
+  console.log("[scheduler] registered — reminders + CallRail poll every", INTERVAL_MS / 1000, "s");
 
   async function tick() {
     const db = getDb();
@@ -49,7 +63,12 @@ export function register() {
       console.error("Reminder scheduler tick failed:", error);
     }
     try {
-      await pollCallRail(db);
+      const result = await pollCallRail(db);
+      if (result) {
+        console.log(
+          `[scheduler] CallRail poll: ${result.callsCreated} new call(s), ${result.textsCreated} new text(s), ${result.errors} error(s)`,
+        );
+      }
     } catch (error) {
       console.error("CallRail poll tick failed:", error);
     }

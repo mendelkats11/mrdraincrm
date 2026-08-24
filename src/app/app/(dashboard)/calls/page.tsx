@@ -58,9 +58,13 @@ export default async function CallsPage({
   const params = await searchParams;
   const db = getDb();
 
+  // Defaults to "all", not "unmatched" — the previous unmatched-by-default
+  // repeatedly read as "recent calls are missing" (they weren't; matched
+  // calls were just filtered out of view), since the owner's most recent
+  // calls are often from already-matched repeat customers.
   const status = VALID_STATUSES.includes(params.status as NonNullable<ListCallsFilters["status"]>)
     ? (params.status as NonNullable<ListCallsFilters["status"]>)
-    : "unmatched";
+    : "all";
   const sort = VALID_SORTS.includes(params.sort as NonNullable<ListCallsFilters["sort"]>)
     ? (params.sort as NonNullable<ListCallsFilters["sort"]>)
     : "newest";
