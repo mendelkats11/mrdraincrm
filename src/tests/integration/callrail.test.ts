@@ -10,6 +10,8 @@ import {
   ignoreCall,
   listCalls,
   listMessages,
+  listMessagesForThread,
+  listMessageThreads,
   processCallWebhook,
   processMessageWebhook,
 } from "@/lib/callrail/calls";
@@ -202,6 +204,64 @@ describe("processMessageWebhook", () => {
   });
 });
 
+describe("message threads", () => {
+  let ctx: Awaited<ReturnType<typeof createTestDb>>;
+
+  beforeEach(async () => {
+    ctx = await createTestDb();
+  });
+  afterEach(async () => {
+    await ctx.client.close();
+  });
+
+  it("groups messages from the same number into one thread, most-recently-active first", async () => {
+    // Same sender, a month apart — must be ONE thread, not two.
+    await processMessageWebhook(ctx.db, {
+      id: "SMS-T-OLD",
+      customer_phone_number: "+13065551111",
+      text: "hi a month ago",
+      datetime: "2026-06-01T12:00:00Z",
+    });
+    await processMessageWebhook(ctx.db, {
+      id: "SMS-T-NEW",
+      customer_phone_number: "+13065551111",
+      text: "hi again today",
+      datetime: "2026-08-01T12:00:00Z",
+    });
+    // A different sender, more recent than either of the above.
+    await processMessageWebhook(ctx.db, {
+      id: "SMS-T-OTHER",
+      customer_phone_number: "+13065552222",
+      text: "different customer",
+      datetime: "2026-08-15T12:00:00Z",
+    });
+
+    const { rows, total } = await listMessageThreads(ctx.db);
+    expect(total).toBe(2);
+    // Most-recently-active thread first.
+    expect(rows.map((r) => r.phoneNumber)).toEqual(["+13065552222", "+13065551111"]);
+    expect(rows[1]?.lastBody).toBe("hi again today");
+  });
+
+  it("listMessagesForThread returns every message for that number in chronological order", async () => {
+    await processMessageWebhook(ctx.db, {
+      id: "SMS-C-1",
+      customer_phone_number: "+13065551111",
+      text: "first",
+      datetime: "2026-06-01T12:00:00Z",
+    });
+    await processMessageWebhook(ctx.db, {
+      id: "SMS-C-2",
+      customer_phone_number: "+13065551111",
+      text: "second",
+      datetime: "2026-08-01T12:00:00Z",
+    });
+
+    const thread = await listMessagesForThread(ctx.db, "13065551111");
+    expect(thread.map((m) => m.body)).toEqual(["first", "second"]);
+  });
+});
+
 describe("ignoreCall", () => {
   let ctx: Awaited<ReturnType<typeof createTestDb>>;
 
@@ -346,6 +406,91 @@ describe("listCalls filters", () => {
     const ignoredRows = (await listCalls(ctx.db, { status: "ignored" })).rows;
     expect(ignoredRows.map((r) => r.id)).toContain(toIgnore.callId);
     expect(unmatchedRows.map((r) => r.id)).not.toContain(toIgnore.callId);
+  });
+
+  it("status 'all' includes matched, unmatched, and ignored calls together", async () => {
+    const matched = await processCallWebhook(ctx.db, {
+      id: "CAL-ALL-1",
+      customer_phone_number: "+13065551111",
+    });
+    await createContact(
+      ctx.db,
+      { displayName: "Jane", phone: { e164: "+13065551111", normalized: "13065551111" } },
+      null,
+    );
+    const toIgnore = await processCallWebhook(ctx.db, {
+      id: "CAL-ALL-2",
+      customer_phone_number: "+13065552222",
+    });
+    if (!toIgnore.ok || toIgnore.duplicate) throw new Error("expected ok");
+    await ignoreCall(ctx.db, toIgnore.callId, null);
+    const unmatched = await processCallWebhook(ctx.db, {
+      id: "CAL-ALL-3",
+      customer_phone_number: "+13065553333",
+    });
+
+    if (!matched.ok || matched.duplicate || !unmatched.ok || unmatched.duplicate) {
+      throw new Error("expected ok");
+    }
+    const allRows = (await listCalls(ctx.db, { status: "all" })).rows;
+    expect(allRows.map((r) => r.id)).toEqual(
+      expect.arrayContaining([matched.callId, toIgnore.callId, unmatched.callId]),
+    );
+  });
+
+  it("filters by service area and by answered/missed", async () => {
+    const [area] = await ctx.db
+      .insert(serviceAreas)
+      .values({ name: "Stonebridge", slug: "stonebridge", callrailTrackingNumber: "+13065559999" })
+      .returning();
+
+    const inArea = await processCallWebhook(ctx.db, {
+      id: "CAL-SA-1",
+      customer_phone_number: "+13065551111",
+      tracking_phone_number: "+13065559999",
+      answered: true,
+    });
+    const outsideArea = await processCallWebhook(ctx.db, {
+      id: "CAL-SA-2",
+      customer_phone_number: "+13065552222",
+      tracking_phone_number: "+13065551234",
+      answered: false,
+    });
+    if (!inArea.ok || inArea.duplicate || !outsideArea.ok || outsideArea.duplicate) {
+      throw new Error("expected ok");
+    }
+
+    const areaRows = (await listCalls(ctx.db, { serviceAreaId: area.id })).rows;
+    expect(areaRows.map((r) => r.id)).toEqual([inArea.callId]);
+
+    const answeredRows = (await listCalls(ctx.db, { answered: "yes" })).rows;
+    expect(answeredRows.map((r) => r.id)).toContain(inArea.callId);
+    expect(answeredRows.map((r) => r.id)).not.toContain(outsideArea.callId);
+
+    const missedRows = (await listCalls(ctx.db, { answered: "no" })).rows;
+    expect(missedRows.map((r) => r.id)).toContain(outsideArea.callId);
+  });
+
+  it("sorts by duration, longest and shortest first", async () => {
+    const short = await processCallWebhook(ctx.db, {
+      id: "CAL-DUR-1",
+      customer_phone_number: "+13065551111",
+      duration: 10,
+    });
+    const long = await processCallWebhook(ctx.db, {
+      id: "CAL-DUR-2",
+      customer_phone_number: "+13065552222",
+      duration: 500,
+    });
+    if (!short.ok || short.duplicate || !long.ok || long.duplicate) {
+      throw new Error("expected ok");
+    }
+
+    const longestFirst = (await listCalls(ctx.db, { sort: "longest" })).rows;
+    expect(longestFirst[0]?.id).toBe(long.callId);
+
+    const shortestFirst = (await listCalls(ctx.db, { sort: "shortest" })).rows;
+    expect(shortestFirst[0]?.id).toBe(short.callId);
   });
 });
 

@@ -144,6 +144,16 @@ export function ServiceAreaRowActions({ area }: { area: ServiceArea }) {
                 />
               </div>
               <div className="flex flex-col gap-1.5">
+                <Label htmlFor="region">Region (optional)</Label>
+                <Input
+                  id="region"
+                  name="region"
+                  defaultValue={area.region ?? ""}
+                  placeholder="e.g. SK, BC"
+                  className="w-32"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
                 <Label htmlFor="seoTitle">SEO title (optional)</Label>
                 <Input id="seoTitle" name="seoTitle" defaultValue={area.seoTitle ?? ""} />
               </div>

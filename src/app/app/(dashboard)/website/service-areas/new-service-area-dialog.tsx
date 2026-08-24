@@ -69,6 +69,10 @@ export function NewServiceAreaDialog() {
               placeholder="Uses the site default if left blank"
             />
           </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="region">Region (optional)</Label>
+            <Input id="region" name="region" placeholder="e.g. SK, BC" className="w-32" />
+          </div>
           {error ? (
             <p role="alert" className="text-sm text-destructive">
               {error}

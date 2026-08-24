@@ -4,7 +4,9 @@ import { createTestDb } from "../helpers/test-db";
 import {
   createServiceArea,
   getServiceAreaBySlug,
+  listDistinctServiceAreaRegions,
   listPublishedServiceAreas,
+  listServiceAreasForAdmin,
   updateServiceArea,
 } from "@/lib/website/service-areas";
 
@@ -66,5 +68,39 @@ describe("website service areas", () => {
 
     await updateServiceArea(ctx.db, area.id, { active: false }, null);
     expect(await getServiceAreaBySlug(ctx.db, area.slug)).toBeNull();
+  });
+
+  it("a hidden area (active: false) can still be created and stores a region — CRM-only attribution without a public page", async () => {
+    const area = await createServiceArea(
+      ctx.db,
+      { name: "White Rock", region: "BC", callrailTrackingNumber: "+16043300939" },
+      null,
+    );
+    await updateServiceArea(ctx.db, area.id, { active: false }, null);
+
+    expect(await getServiceAreaBySlug(ctx.db, area.slug)).toBeNull();
+    const [row] = await listServiceAreasForAdmin(ctx.db);
+    expect(row).toMatchObject({ name: "White Rock", region: "BC", active: false });
+  });
+
+  it("listServiceAreasForAdmin filters by region", async () => {
+    await createServiceArea(ctx.db, { name: "Rosewood", region: "SK" }, null);
+    await createServiceArea(ctx.db, { name: "Warman", region: "SK" }, null);
+    await createServiceArea(ctx.db, { name: "Coquitlam", region: "BC" }, null);
+
+    const skOnly = await listServiceAreasForAdmin(ctx.db, { region: "SK" });
+    expect(skOnly.map((a) => a.name).sort()).toEqual(["Rosewood", "Warman"]);
+
+    const all = await listServiceAreasForAdmin(ctx.db);
+    expect(all).toHaveLength(3);
+  });
+
+  it("listDistinctServiceAreaRegions returns each configured region once, skipping unset ones", async () => {
+    await createServiceArea(ctx.db, { name: "Rosewood", region: "SK" }, null);
+    await createServiceArea(ctx.db, { name: "Warman", region: "SK" }, null);
+    await createServiceArea(ctx.db, { name: "Coquitlam", region: "BC" }, null);
+    await createServiceArea(ctx.db, { name: "No Region Set" }, null);
+
+    expect((await listDistinctServiceAreaRegions(ctx.db)).sort()).toEqual(["BC", "SK"]);
   });
 });

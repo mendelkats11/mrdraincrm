@@ -1,13 +1,18 @@
+import Link from "next/link";
 import { getDb } from "@/lib/db/client";
-import { listMessages } from "@/lib/callrail/calls";
+import { listMessageThreads } from "@/lib/callrail/calls";
 import { formatPhoneForDisplay } from "@/lib/phone";
 import { Card, CardContent } from "@/components/ui/card";
+import { PaginationBar } from "@/components/pagination-bar";
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 50;
 const DATE_FMT = new Intl.DateTimeFormat("en-CA", { dateStyle: "medium", timeStyle: "short" });
 
-// Receive/view only — outgoing SMS is intentionally excluded from V1
-// (docs/PROJECT_SPEC.md §16.4), so there's no reply composer here.
+// One row per sender (a real chat-app inbox, not a flat message log) —
+// someone who texted a month ago and texts again today lands in the same
+// thread, opened at /messages/[phoneNumberNormalized]. Receive/view only —
+// outgoing SMS is intentionally excluded from V1 (docs/PROJECT_SPEC.md
+// §16.4), so there's no reply composer here.
 export default async function MessagesPage({
   searchParams,
 }: {
@@ -15,10 +20,8 @@ export default async function MessagesPage({
 }) {
   const params = await searchParams;
   const db = getDb();
-  const { rows, total } = await listMessages(db, {
-    page: params.page ? Number(params.page) : 1,
-    pageSize: PAGE_SIZE,
-  });
+  const page = params.page ? Number(params.page) : 1;
+  const { rows, total, pageSize } = await listMessageThreads(db, { page, pageSize: PAGE_SIZE });
 
   return (
     <div className="flex flex-col gap-6">
@@ -30,29 +33,27 @@ export default async function MessagesPage({
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {rows.map((message) => (
-            <Card key={message.id}>
-              <CardContent className="flex flex-col gap-1 py-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">
-                    {message.contactName ?? formatPhoneForDisplay(message.phoneNumber)}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {DATE_FMT.format(message.occurredAt)}
-                  </span>
-                </div>
-                {message.body ? <p className="text-muted-foreground">{message.body}</p> : null}
-              </CardContent>
-            </Card>
+          {rows.map((thread) => (
+            <Link key={thread.phoneNumberNormalized} href={`/messages/${thread.phoneNumberNormalized}`}>
+              <Card className="transition-colors hover:bg-muted/50">
+                <CardContent className="flex flex-col gap-1 py-3 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">
+                      {thread.contactName ?? formatPhoneForDisplay(thread.phoneNumber)}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {DATE_FMT.format(thread.lastOccurredAt)}
+                    </span>
+                  </div>
+                  <p className="truncate text-muted-foreground">{thread.lastBody ?? "(no text — photo/video)"}</p>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       )}
 
-      {total > PAGE_SIZE ? (
-        <p className="text-sm text-muted-foreground">
-          Showing {rows.length} of {total}
-        </p>
-      ) : null}
+      <PaginationBar page={page} pageSize={pageSize} total={total} basePath="/messages" />
     </div>
   );
 }

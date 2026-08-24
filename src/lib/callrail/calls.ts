@@ -1,4 +1,4 @@
-import { and, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import {
   calls,
@@ -59,7 +59,7 @@ export type ProcessWebhookResult =
  * for any real business, so normalizing in application code costs nothing
  * meaningful and avoids needing a second normalized-tracking-number column.
  */
-async function matchServiceAreaByTrackingNumber<TQueryResult extends PgQueryResultHKT>(
+export async function matchServiceAreaByTrackingNumber<TQueryResult extends PgQueryResultHKT>(
   tx: Db<TQueryResult>,
   trackingNumber: string,
 ): Promise<string | null> {
@@ -198,6 +198,9 @@ export async function processMessageWebhook<TQueryResult extends PgQueryResultHK
 
 export interface ListCallsFilters {
   status?: "unmatched" | "matched" | "ignored" | "all";
+  serviceAreaId?: string;
+  answered?: "yes" | "no";
+  sort?: "newest" | "oldest" | "longest" | "shortest";
   page?: number;
   pageSize?: number;
 }
@@ -223,7 +226,26 @@ export async function listCalls<TQueryResult extends PgQueryResultHKT>(
     default:
       break;
   }
+  if (filters.serviceAreaId) {
+    conditions.push(eq(calls.serviceAreaId, filters.serviceAreaId));
+  }
+  if (filters.answered) {
+    conditions.push(eq(calls.answered, filters.answered === "yes"));
+  }
   const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+  const orderBy = (() => {
+    switch (filters.sort) {
+      case "oldest":
+        return asc(calls.occurredAt);
+      case "longest":
+        return desc(calls.durationSeconds);
+      case "shortest":
+        return asc(calls.durationSeconds);
+      default:
+        return desc(calls.occurredAt);
+    }
+  })();
 
   const rows = await db
     .select({
@@ -242,7 +264,7 @@ export async function listCalls<TQueryResult extends PgQueryResultHKT>(
     .leftJoin(contacts, eq(calls.contactId, contacts.id))
     .leftJoin(serviceAreas, eq(calls.serviceAreaId, serviceAreas.id))
     .where(where)
-    .orderBy(desc(calls.occurredAt))
+    .orderBy(orderBy)
     .limit(pageSize)
     .offset((page - 1) * pageSize);
 
@@ -429,4 +451,81 @@ export async function listMessages<TQueryResult extends PgQueryResultHKT>(
   const [{ count }] = await db.select({ count: sql<number>`count(*)::int` }).from(messages);
 
   return { rows, total: count, page, pageSize };
+}
+
+export interface ListMessageThreadsFilters {
+  page?: number;
+  pageSize?: number;
+}
+
+export interface MessageThreadRow {
+  phoneNumber: string;
+  phoneNumberNormalized: string;
+  contactId: string | null;
+  contactName: string | null;
+  lastBody: string | null;
+  lastOccurredAt: Date;
+}
+
+/**
+ * Chat-app-style grouping: one row per distinct sender, most-recently-
+ * active thread first — someone who texted a month ago and texts again
+ * today is the same conversation, not two unrelated rows (docs: message
+ * layout redesign). Uses Postgres DISTINCT ON (Drizzle's selectDistinctOn)
+ * to pick each number's latest message; that forces the base query's
+ * ORDER BY to start with the grouping column, so the "most recently
+ * active thread first" ordering the UI actually wants is applied in an
+ * outer query over that as a subquery.
+ */
+export async function listMessageThreads<TQueryResult extends PgQueryResultHKT>(
+  db: Db<TQueryResult>,
+  filters: ListMessageThreadsFilters = {},
+): Promise<{ rows: MessageThreadRow[]; total: number; page: number; pageSize: number }> {
+  const page = filters.page && filters.page > 0 ? filters.page : 1;
+  const pageSize = filters.pageSize && filters.pageSize > 0 ? filters.pageSize : 25;
+
+  const latestPerThread = db
+    .selectDistinctOn([messages.phoneNumberNormalized], {
+      phoneNumber: messages.phoneNumber,
+      phoneNumberNormalized: messages.phoneNumberNormalized,
+      contactId: messages.contactId,
+      body: messages.body,
+      occurredAt: messages.occurredAt,
+    })
+    .from(messages)
+    .orderBy(messages.phoneNumberNormalized, desc(messages.occurredAt))
+    .as("latest_per_thread");
+
+  const rows = await db
+    .select({
+      phoneNumber: latestPerThread.phoneNumber,
+      phoneNumberNormalized: latestPerThread.phoneNumberNormalized,
+      contactId: latestPerThread.contactId,
+      contactName: contacts.displayName,
+      lastBody: latestPerThread.body,
+      lastOccurredAt: latestPerThread.occurredAt,
+    })
+    .from(latestPerThread)
+    .leftJoin(contacts, eq(latestPerThread.contactId, contacts.id))
+    .orderBy(desc(latestPerThread.occurredAt))
+    .limit(pageSize)
+    .offset((page - 1) * pageSize);
+
+  const [{ count }] = await db
+    .select({ count: sql<number>`count(distinct ${messages.phoneNumberNormalized})::int` })
+    .from(messages);
+
+  return { rows, total: count, page, pageSize };
+}
+
+/** Full history for one sender, oldest first (chat reading order) — the thread detail view behind listMessageThreads above. */
+export async function listMessagesForThread<TQueryResult extends PgQueryResultHKT>(
+  db: Db<TQueryResult>,
+  phoneNumberNormalized: string,
+) {
+  return db
+    .select()
+    .from(messages)
+    .where(eq(messages.phoneNumberNormalized, phoneNumberNormalized))
+    .orderBy(asc(messages.occurredAt));
 }

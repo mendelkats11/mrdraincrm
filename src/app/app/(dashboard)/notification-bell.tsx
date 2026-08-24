@@ -38,7 +38,10 @@ function linkFor(entityType: string | null, entityId: string | null): string | n
     case "call":
       return `/calls/${entityId}`;
     case "message":
-      // No message detail page exists (list-only) — see src/app/app/(dashboard)/messages/page.tsx.
+      // Thread detail pages exist (src/app/app/(dashboard)/messages/
+      // [phoneNumberNormalized]/), but this notification only carries the
+      // message's own row id, not the phone number needed to deep-link —
+      // land on the inbox, where the new message's thread sorts to the top.
       return "/messages";
     default:
       return null;

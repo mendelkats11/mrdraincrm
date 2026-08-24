@@ -1,0 +1,1 @@
+ALTER TABLE "service_areas" ADD COLUMN "region" text;

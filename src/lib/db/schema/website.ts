@@ -38,6 +38,12 @@ export const serviceAreas = pgTable("service_areas", {
   // CallRail tracking number for this area's "Call Now" CTA — see
   // docs/PROJECT_SPEC.md §16. Not a secret; safe as a plain column.
   callrailTrackingNumber: text("callrail_tracking_number"),
+  // Free text (e.g. "SK", "BC"), not an enum — grouping/filtering only
+  // (admin list page), never validated against a fixed province list.
+  // A service area can exist purely for CallRail/CRM attribution without
+  // a public page at all (active: false) — e.g. a region CallRail tracks
+  // that doesn't have its own marketing page yet.
+  region: text("region"),
   active: boolean("active").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

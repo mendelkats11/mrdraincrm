@@ -22,6 +22,7 @@ const areaFieldsSchema = z.object({
   seoTitle: z.string().trim().max(200).optional(),
   metaDescription: z.string().trim().max(300).optional(),
   callrailTrackingNumber: z.string().trim().max(32).optional(),
+  region: z.string().trim().max(50).optional(),
 });
 
 export type ServiceAreaFormState = { ok: true } | { ok: false; error: string } | undefined;
@@ -37,6 +38,7 @@ export async function createServiceAreaAction(
     seoTitle: formData.get("seoTitle") || undefined,
     metaDescription: formData.get("metaDescription") || undefined,
     callrailTrackingNumber: formData.get("callrailTrackingNumber") || undefined,
+    region: formData.get("region") || undefined,
   });
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input." };
@@ -51,6 +53,7 @@ export async function createServiceAreaAction(
       seoTitle: parsed.data.seoTitle || null,
       metaDescription: parsed.data.metaDescription || null,
       callrailTrackingNumber: parsed.data.callrailTrackingNumber || null,
+      region: parsed.data.region || null,
     },
     session.user.id,
   );
@@ -77,6 +80,7 @@ export async function updateServiceAreaAction(
     seoTitle: formData.get("seoTitle") || undefined,
     metaDescription: formData.get("metaDescription") || undefined,
     callrailTrackingNumber: formData.get("callrailTrackingNumber") || undefined,
+    region: formData.get("region") || undefined,
     active: formData.get("active") || undefined,
   });
   if (!parsed.success) {
@@ -93,6 +97,7 @@ export async function updateServiceAreaAction(
       seoTitle: parsed.data.seoTitle || null,
       metaDescription: parsed.data.metaDescription || null,
       callrailTrackingNumber: parsed.data.callrailTrackingNumber || null,
+      region: parsed.data.region || null,
       active: parsed.data.active === "on",
     },
     session.user.id,

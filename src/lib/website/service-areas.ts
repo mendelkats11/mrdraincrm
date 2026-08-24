@@ -9,11 +9,21 @@ type Db<TQueryResult extends PgQueryResultHKT> = PgDatabase<TQueryResult, any, a
 
 export async function listServiceAreasForAdmin<TQueryResult extends PgQueryResultHKT>(
   db: Db<TQueryResult>,
+  filters: { region?: string } = {},
 ) {
   return db
     .select()
     .from(serviceAreas)
+    .where(filters.region ? eq(serviceAreas.region, filters.region) : undefined)
     .orderBy(asc(serviceAreas.sortOrder), desc(serviceAreas.createdAt));
+}
+
+/** Distinct configured region values — powers the admin filter dropdown, not a fixed province list (see the region column's comment in the schema). */
+export async function listDistinctServiceAreaRegions<TQueryResult extends PgQueryResultHKT>(
+  db: Db<TQueryResult>,
+): Promise<string[]> {
+  const rows = await db.selectDistinct({ region: serviceAreas.region }).from(serviceAreas);
+  return rows.map((r) => r.region).filter((r): r is string => Boolean(r));
 }
 
 export async function listPublishedServiceAreas<TQueryResult extends PgQueryResultHKT>(
@@ -52,6 +62,7 @@ export interface CreateServiceAreaInput {
   seoTitle?: string | null;
   metaDescription?: string | null;
   callrailTrackingNumber?: string | null;
+  region?: string | null;
 }
 
 export async function createServiceArea<TQueryResult extends PgQueryResultHKT>(
@@ -89,6 +100,7 @@ export async function createServiceArea<TQueryResult extends PgQueryResultHKT>(
         seoTitle: input.seoTitle || null,
         metaDescription: input.metaDescription || null,
         callrailTrackingNumber: input.callrailTrackingNumber || null,
+        region: input.region || null,
         sortOrder: maxSort + 1,
       })
       .returning();
@@ -112,6 +124,7 @@ export interface UpdateServiceAreaInput {
   seoTitle?: string | null;
   metaDescription?: string | null;
   callrailTrackingNumber?: string | null;
+  region?: string | null;
   active?: boolean;
   sortOrder?: number;
 }
@@ -139,6 +152,7 @@ export async function updateServiceArea<TQueryResult extends PgQueryResultHKT>(
           input.callrailTrackingNumber !== undefined
             ? input.callrailTrackingNumber || null
             : undefined,
+        region: input.region !== undefined ? input.region || null : undefined,
         active: input.active,
         sortOrder: input.sortOrder,
       })
