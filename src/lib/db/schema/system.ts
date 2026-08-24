@@ -58,6 +58,12 @@ export const appSettings = pgTable("app_settings", {
   aboutBody: text("about_body"),
   publicContactEmail: text("public_contact_email"),
   defaultCallrailTrackingNumber: text("default_callrail_tracking_number"),
+  // Private — never shown on the public site. The phone CallRail dials
+  // FIRST when the owner clicks "Call back" on a missed call (src/lib/
+  // callrail/callback.ts); once answered, CallRail bridges to the
+  // customer using the original tracking number as caller ID, same as any
+  // other CallRail Call Connect setup.
+  ownerCallbackPhoneNumber: text("owner_callback_phone_number"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

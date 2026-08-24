@@ -6,7 +6,6 @@
 // server code tries to actually use it as data (e.g. `new Set(fn)`).
 export const NAV_HREFS = [
   "/",
-  "/leads",
   "/forms",
   "/jobs",
   "/schedule",

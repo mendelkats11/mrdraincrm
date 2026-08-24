@@ -2,11 +2,7 @@
 
 import { type FormEvent, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import {
-  createContactFromCallAction,
-  createLeadFromCallAction,
-  ignoreCallAction,
-} from "@/lib/callrail/call-actions";
+import { createContactFromCallAction, createLeadFromCallAction } from "@/lib/callrail/call-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,18 +50,6 @@ export function UnknownCallerActions({
     });
   }
 
-  function handleIgnore() {
-    startTransition(async () => {
-      const result = await ignoreCallAction(callId);
-      if (result?.ok) {
-        setError(null);
-        router.refresh();
-      } else {
-        setError(result?.error ?? "Something went wrong.");
-      }
-    });
-  }
-
   return (
     <Card>
       <CardHeader>
@@ -79,9 +63,6 @@ export function UnknownCallerActions({
             </Button>
             <Button type="button" variant="outline" onClick={() => setMode("lead")}>
               Create Lead
-            </Button>
-            <Button type="button" variant="ghost" disabled={pending} onClick={handleIgnore}>
-              Ignore
             </Button>
           </div>
         ) : null}

@@ -34,7 +34,10 @@ export default async function MessagesPage({
       ) : (
         <div className="flex flex-col gap-2">
           {rows.map((thread) => (
-            <Link key={thread.phoneNumberNormalized} href={`/messages/${thread.phoneNumberNormalized}`}>
+            <Link
+              key={thread.phoneNumberNormalized}
+              href={`/messages/${thread.phoneNumberNormalized}`}
+            >
               <Card className="transition-colors hover:bg-muted/50">
                 <CardContent className="flex flex-col gap-1 py-3 text-sm">
                   <div className="flex items-center justify-between">
@@ -45,7 +48,9 @@ export default async function MessagesPage({
                       {DATE_FMT.format(thread.lastOccurredAt)}
                     </span>
                   </div>
-                  <p className="truncate text-muted-foreground">{thread.lastBody ?? "(no text — photo/video)"}</p>
+                  <p className="truncate text-muted-foreground">
+                    {thread.lastBody ?? "(no text — photo/video)"}
+                  </p>
                 </CardContent>
               </Card>
             </Link>

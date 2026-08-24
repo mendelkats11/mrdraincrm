@@ -1,6 +1,6 @@
 {
-  "id": "0c9d604f-2d44-4901-b05a-fea1191d0f19",
-  "prevId": "87ef4e46-d4aa-4395-ae28-ae511c608220",
+  "id": "2fed78fd-2934-4b8b-9159-696c67c4e91f",
+  "prevId": "58f194e9-cfd9-4052-9246-6117897f8ba9",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -2757,6 +2757,13 @@
           "notNull": true,
           "default": false
         },
+        "direction": {
+          "name": "direction",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'inbound'"
+        },
         "duration_seconds": {
           "name": "duration_seconds",
           "type": "integer",
@@ -3568,6 +3575,12 @@
         },
         "default_callrail_tracking_number": {
           "name": "default_callrail_tracking_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "owner_callback_phone_number": {
+          "name": "owner_callback_phone_number",
           "type": "text",
           "primaryKey": false,
           "notNull": false

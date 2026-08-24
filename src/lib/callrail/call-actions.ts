@@ -5,6 +5,7 @@ import { z } from "zod";
 import { getDb } from "@/lib/db/client";
 import { requireUser } from "@/lib/auth/require-user";
 import { createContactFromCall, createLeadFromCall, ignoreCall } from "./calls";
+import { initiateCallback } from "./callback";
 
 export type CallMutationFormState = { ok: true } | { ok: false; error: string } | undefined;
 
@@ -108,4 +109,21 @@ export async function createLeadFromCallAction(
   revalidatePath(`/calls/${parsed.data.callId}`);
   revalidatePath("/leads");
   return { ok: true, leadId: result.leadId };
+}
+
+export type CallBackFormState = { ok: true } | { ok: false; error: string } | undefined;
+
+export async function callBackAction(callId: string): Promise<CallBackFormState> {
+  const session = await requireUser();
+  const zCallId = z.string().uuid().safeParse(callId);
+  if (!zCallId.success) return { ok: false, error: "Invalid call." };
+
+  const db = getDb();
+  const result = await initiateCallback(db, zCallId.data, session.user.id);
+  if (!result.ok) {
+    if (result.error === "not_found") return { ok: false, error: "Call not found." };
+    return { ok: false, error: result.message ?? "Callback failed." };
+  }
+
+  return { ok: true };
 }

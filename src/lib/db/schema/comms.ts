@@ -34,6 +34,11 @@ export const calls = pgTable(
     contactId: uuid("contact_id").references(() => contacts.id, { onDelete: "restrict" }),
     matched: boolean("matched").notNull().default(false),
     answered: boolean("answered").notNull().default(false),
+    // "inbound" (the customer called us — the overwhelming majority) or
+    // "outbound" (we called them, e.g. the "Call back" feature — see
+    // src/lib/callrail/callback.ts). Defaults to inbound since that's what
+    // every row before this column existed was.
+    direction: text("direction").notNull().default("inbound"),
     durationSeconds: integer("duration_seconds"),
     occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
     sourceMetadata: jsonb("source_metadata").$type<Record<string, unknown>>(),

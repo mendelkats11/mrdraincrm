@@ -10,11 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export function CallFilters({
-  serviceAreas,
-}: {
-  serviceAreas: { id: string; name: string }[];
-}) {
+export function CallFilters({ serviceAreas }: { serviceAreas: { id: string; name: string }[] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
@@ -40,7 +36,6 @@ export function CallFilters({
           <SelectItem value="all">All calls</SelectItem>
           <SelectItem value="unmatched">Unmatched</SelectItem>
           <SelectItem value="matched">Matched</SelectItem>
-          <SelectItem value="ignored">Ignored</SelectItem>
         </SelectContent>
       </Select>
 

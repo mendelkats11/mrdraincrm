@@ -4,10 +4,11 @@ import { getDb } from "@/lib/db/client";
 import { getCall, listJobsForContact } from "@/lib/callrail/calls";
 import { getEntityTimeline } from "@/lib/audit/activity";
 import { formatPhoneForDisplay } from "@/lib/phone";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityTimeline } from "@/components/activity-timeline";
+import { CallDirectionIcon } from "@/components/call-direction-icon";
+import { CallBackButton } from "./call-back-button";
 import { UnknownCallerActions } from "./unknown-caller-actions";
 
 const DATE_FMT = new Intl.DateTimeFormat("en-CA", { dateStyle: "medium", timeStyle: "short" });
@@ -33,12 +34,22 @@ export default async function CallDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-xl font-semibold text-foreground">
-          {call.contactName ?? formatPhoneForDisplay(call.callerNumber)}
-          {call.ignored ? <Badge variant="secondary">Ignored</Badge> : null}
-        </h1>
-        <p className="text-sm text-muted-foreground">{formatPhoneForDisplay(call.callerNumber)}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="flex items-center gap-2 text-xl font-semibold text-foreground">
+            <CallDirectionIcon direction={call.direction} />
+            {call.contactName ?? formatPhoneForDisplay(call.callerNumber)}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {formatPhoneForDisplay(call.callerNumber)}
+          </p>
+        </div>
+        {!call.answered && call.direction === "inbound" ? (
+          <CallBackButton
+            callId={call.id}
+            callerNumber={formatPhoneForDisplay(call.callerNumber)}
+          />
+        ) : null}
       </div>
 
       <Card>
@@ -46,6 +57,9 @@ export default async function CallDetailPage({ params }: { params: Promise<{ id:
           <CardTitle className="text-base">Call details</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-1 text-sm">
+          <p>
+            Direction: <span className="text-muted-foreground capitalize">{call.direction}</span>
+          </p>
           <p>
             Tracking number: <span className="text-muted-foreground">{call.trackingNumber}</span>
           </p>

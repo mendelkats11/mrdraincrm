@@ -38,6 +38,23 @@ describe("searchCrm", () => {
     expect((await searchCrm(ctx.db, "findable")).map((r) => r.id)).toContain(contact.id);
   });
 
+  it("finds a contact by phone number typed with real-world formatting (dashes, parens, a leading +1)", async () => {
+    // Regression: contact_phones.phone_normalized is stored digits-only
+    // ("13065557777"), but people type/paste phone numbers formatted —
+    // comparing the raw typed query against a normalized column meant this
+    // never matched unless you happened to type digits-only already.
+    const phone = normalizePhone("306-555-7777")!;
+    const contact = await createContact(
+      ctx.db,
+      { displayName: "Formatted Phone Person", phone },
+      null,
+    );
+
+    expect((await searchCrm(ctx.db, "306-555-7777")).map((r) => r.id)).toContain(contact.id);
+    expect((await searchCrm(ctx.db, "(306) 555-7777")).map((r) => r.id)).toContain(contact.id);
+    expect((await searchCrm(ctx.db, "+1 306 555 7777")).map((r) => r.id)).toContain(contact.id);
+  });
+
   it("finds a property by address and city", async () => {
     const property = await createProperty(
       ctx.db,
@@ -119,5 +136,34 @@ describe("searchCrm", () => {
     await changeJobStatus(ctx.db, job.id, "cancelled", null);
     const results = await searchCrm(ctx.db, job.jobNumber);
     expect(results.some((r) => r.type === "job")).toBe(false);
+  });
+
+  it("finds a call by phone number typed with real-world formatting", async () => {
+    const { processCallWebhook } = await import("@/lib/callrail/calls");
+    const result = await processCallWebhook(ctx.db, {
+      id: "CAL-SEARCH-1",
+      customer_phone_number: "+13065558888",
+    });
+    if (!result.ok || result.duplicate) throw new Error("expected ok");
+
+    expect((await searchCrm(ctx.db, "(306) 555-8888")).some((r) => r.id === result.callId)).toBe(
+      true,
+    );
+  });
+
+  it("finds a message by phone number typed with real-world formatting", async () => {
+    const { processMessageWebhook } = await import("@/lib/callrail/calls");
+    const result = await processMessageWebhook(ctx.db, {
+      id: "SMS-SEARCH-1",
+      customer_phone_number: "+13065559999",
+      text: "hi",
+    });
+    if (!result.ok || result.duplicate) throw new Error("expected ok");
+
+    expect(
+      (await searchCrm(ctx.db, "306-555-9999")).some(
+        (r) => r.type === "message" && r.id === result.callId,
+      ),
+    ).toBe(true);
   });
 });

@@ -44,6 +44,62 @@ async function callRailGet(
   return response.json();
 }
 
+async function callRailPost(
+  apiKey: string,
+  path: string,
+  body: Record<string, string>,
+): Promise<unknown> {
+  const response = await fetch(`${CALLRAIL_API_BASE}${path}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Token token=${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    // CallRail's error body (e.g. "read-only key", a bad/unverified
+    // number) is genuinely useful to the caller here, unlike the GET
+    // helper above — this is a real write with real-world side effects
+    // (an actual phone call), so surface CallRail's own explanation rather
+    // than a generic status code.
+    let detail = response.statusText;
+    try {
+      const errorBody = (await response.json()) as { error?: string };
+      if (errorBody.error) detail = errorBody.error;
+    } catch {
+      // Body wasn't JSON — fall back to statusText.
+    }
+    throw new CallRailApiError(`CallRail API request failed: ${detail}`, response.status);
+  }
+  return response.json();
+}
+
+/**
+ * "Call back" (docs: owner-initiated callback on a missed call) — CallRail
+ * dials business_phone_number (the owner) first; once answered, it bridges
+ * to customer_phone_number using caller_id (the original tracking number)
+ * as the caller ID the customer sees, so the callback looks like it's
+ * coming from the same number that rang them originally. Confirmed via
+ * CallRail's own API docs (POST /v3/a/{account}/calls.json) — not yet
+ * exercised against a real call, since the API key configured for this
+ * account is deliberately read-only (see src/lib/callrail/poll.ts's
+ * comment on why polling uses a read-only key) and a write-scoped key is
+ * required for this specific feature.
+ */
+export async function createOutboundCall(
+  apiKey: string,
+  accountId: string,
+  input: { callerId: string; customerPhoneNumber: string; businessPhoneNumber: string },
+): Promise<{ id: string }> {
+  const result = (await callRailPost(apiKey, `/a/${accountId}/calls.json`, {
+    caller_id: input.callerId,
+    customer_phone_number: input.customerPhoneNumber,
+    business_phone_number: input.businessPhoneNumber,
+  })) as { id: string };
+  return result;
+}
+
 /**
  * Raw call objects, already in the shape processCallWebhook/
  * parseCallWebhookPayload expect — deliberately typed loosely

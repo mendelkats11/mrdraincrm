@@ -57,6 +57,16 @@ export async function searchCrm<TQueryResult extends PgQueryResultHKT>(
   const trimmed = query.trim();
   if (!trimmed) return [];
   const term = `%${trimmed}%`;
+  // Phone columns (contactPhones.phoneNormalized, calls.
+  // callerNumberNormalized, messages.phoneNumberNormalized) store
+  // digits-only, no "+"/spaces/dashes/parens — matching them against the
+  // raw typed query broke as soon as someone typed a phone number with any
+  // formatting at all (a dash, a space, "(306)", a leading "+1"), which is
+  // how phone numbers are normally typed/pasted. Stripping the query down
+  // to digits-only for these comparisons fixes that; skipped entirely when
+  // the query has no digits, so a name-only search isn't affected.
+  const digitsOnly = trimmed.replace(/\D/g, "");
+  const phoneTerm = digitsOnly ? `%${digitsOnly}%` : null;
 
   const contactRows = await db
     .select({ id: contacts.id, displayName: contacts.displayName })
@@ -66,7 +76,9 @@ export async function searchCrm<TQueryResult extends PgQueryResultHKT>(
         isNull(contacts.archivedAt),
         or(
           ilike(contacts.displayName, term),
-          sql`exists (select 1 from ${contactPhones} where ${contactPhones.contactId} = ${contacts.id} and ${contactPhones.phoneNormalized} ilike ${term})`,
+          phoneTerm
+            ? sql`exists (select 1 from ${contactPhones} where ${contactPhones.contactId} = ${contacts.id} and ${contactPhones.phoneNormalized} ilike ${phoneTerm})`
+            : sql`false`,
           sql`exists (select 1 from ${contactEmails} where ${contactEmails.contactId} = ${contacts.id} and ${contactEmails.email} ilike ${term})`,
         ),
       ),
@@ -103,7 +115,9 @@ export async function searchCrm<TQueryResult extends PgQueryResultHKT>(
         ne(leads.status, "lost"),
         or(
           ilike(contacts.displayName, term),
-          sql`exists (select 1 from ${contactPhones} where ${contactPhones.contactId} = ${contacts.id} and ${contactPhones.phoneNormalized} ilike ${term})`,
+          phoneTerm
+            ? sql`exists (select 1 from ${contactPhones} where ${contactPhones.contactId} = ${contacts.id} and ${contactPhones.phoneNormalized} ilike ${phoneTerm})`
+            : sql`false`,
           sql`exists (select 1 from ${contactEmails} where ${contactEmails.contactId} = ${contacts.id} and ${contactEmails.email} ilike ${term})`,
         ),
       ),
@@ -127,7 +141,9 @@ export async function searchCrm<TQueryResult extends PgQueryResultHKT>(
           ilike(jobs.jobNumber, term),
           ilike(jobs.issueDescription, term),
           sql`exists (select 1 from ${contacts} where ${contacts.id} = ${jobs.contactId} and ${contacts.displayName} ilike ${term})`,
-          sql`exists (select 1 from ${contactPhones} where ${contactPhones.contactId} = ${jobs.contactId} and ${contactPhones.phoneNormalized} ilike ${term})`,
+          phoneTerm
+            ? sql`exists (select 1 from ${contactPhones} where ${contactPhones.contactId} = ${jobs.contactId} and ${contactPhones.phoneNormalized} ilike ${phoneTerm})`
+            : sql`false`,
           sql`exists (select 1 from ${contactEmails} where ${contactEmails.contactId} = ${jobs.contactId} and ${contactEmails.email} ilike ${term})`,
         ),
       ),
@@ -186,37 +202,59 @@ export async function searchCrm<TQueryResult extends PgQueryResultHKT>(
   // Matched by caller/phone number or the linked contact's name —
   // docs/PROJECT_SPEC.md §7 lists calls/messages as searchable, by "phone"
   // among other identifiers.
-  const callRows = await db
-    .select({
-      id: calls.id,
-      callerNumber: calls.callerNumber,
-      contactName: contacts.displayName,
-    })
-    .from(calls)
-    .leftJoin(contacts, eq(calls.contactId, contacts.id))
-    .where(
-      or(
-        ilike(calls.callerNumber, term),
-        sql`exists (select 1 from ${contacts} where ${contacts.id} = ${calls.contactId} and ${contacts.displayName} ilike ${term})`,
-      ),
-    )
-    .limit(RESULTS_PER_TYPE);
+  const callRows = phoneTerm
+    ? await db
+        .select({
+          id: calls.id,
+          callerNumber: calls.callerNumber,
+          contactName: contacts.displayName,
+        })
+        .from(calls)
+        .leftJoin(contacts, eq(calls.contactId, contacts.id))
+        .where(
+          or(
+            ilike(calls.callerNumberNormalized, phoneTerm),
+            sql`exists (select 1 from ${contacts} where ${contacts.id} = ${calls.contactId} and ${contacts.displayName} ilike ${term})`,
+          ),
+        )
+        .limit(RESULTS_PER_TYPE)
+    : await db
+        .select({
+          id: calls.id,
+          callerNumber: calls.callerNumber,
+          contactName: contacts.displayName,
+        })
+        .from(calls)
+        .innerJoin(contacts, eq(calls.contactId, contacts.id))
+        .where(ilike(contacts.displayName, term))
+        .limit(RESULTS_PER_TYPE);
 
-  const messageRows = await db
-    .select({
-      id: messages.id,
-      phoneNumber: messages.phoneNumber,
-      contactName: contacts.displayName,
-    })
-    .from(messages)
-    .leftJoin(contacts, eq(messages.contactId, contacts.id))
-    .where(
-      or(
-        ilike(messages.phoneNumber, term),
-        sql`exists (select 1 from ${contacts} where ${contacts.id} = ${messages.contactId} and ${contacts.displayName} ilike ${term})`,
-      ),
-    )
-    .limit(RESULTS_PER_TYPE);
+  const messageRows = phoneTerm
+    ? await db
+        .select({
+          id: messages.id,
+          phoneNumber: messages.phoneNumber,
+          contactName: contacts.displayName,
+        })
+        .from(messages)
+        .leftJoin(contacts, eq(messages.contactId, contacts.id))
+        .where(
+          or(
+            ilike(messages.phoneNumberNormalized, phoneTerm),
+            sql`exists (select 1 from ${contacts} where ${contacts.id} = ${messages.contactId} and ${contacts.displayName} ilike ${term})`,
+          ),
+        )
+        .limit(RESULTS_PER_TYPE)
+    : await db
+        .select({
+          id: messages.id,
+          phoneNumber: messages.phoneNumber,
+          contactName: contacts.displayName,
+        })
+        .from(messages)
+        .innerJoin(contacts, eq(messages.contactId, contacts.id))
+        .where(ilike(contacts.displayName, term))
+        .limit(RESULTS_PER_TYPE);
 
   return [
     ...contactRows.map((c): SearchResult => ({

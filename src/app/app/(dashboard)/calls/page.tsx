@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { PaginationBar } from "@/components/pagination-bar";
+import { CallDirectionIcon } from "@/components/call-direction-icon";
 import { CallFilters } from "./call-filters";
 
 // Filters/sort read searchParams every request — never statically cached,
@@ -63,7 +64,8 @@ export default async function CallsPage({
   const sort = VALID_SORTS.includes(params.sort as NonNullable<ListCallsFilters["sort"]>)
     ? (params.sort as NonNullable<ListCallsFilters["sort"]>)
     : "newest";
-  const answered = params.answered === "yes" || params.answered === "no" ? params.answered : undefined;
+  const answered =
+    params.answered === "yes" || params.answered === "no" ? params.answered : undefined;
   const page = params.page ? Number(params.page) : 1;
 
   const [{ rows, total, pageSize }, serviceAreas] = await Promise.all([
@@ -105,9 +107,12 @@ export default async function CallsPage({
               {rows.map((call) => (
                 <TableRow key={call.id}>
                   <TableCell>
-                    <Link href={`/calls/${call.id}`} className="font-medium hover:underline">
-                      {call.contactName ?? formatPhoneForDisplay(call.callerNumber)}
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <CallDirectionIcon direction={call.direction} />
+                      <Link href={`/calls/${call.id}`} className="font-medium hover:underline">
+                        {call.contactName ?? formatPhoneForDisplay(call.callerNumber)}
+                      </Link>
+                    </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {call.serviceAreaName ?? "—"}

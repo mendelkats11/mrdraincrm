@@ -11,6 +11,7 @@ export interface ParsedCallEvent {
   callerNumber: string;
   trackingNumber: string;
   answered: boolean;
+  direction: "inbound" | "outbound";
   durationSeconds: number | null;
   occurredAt: Date;
 }
@@ -78,12 +79,14 @@ export function parseCallWebhookPayload(payload: Record<string, unknown>): Parse
   const trackingNumber =
     firstString(payload, ["tracking_phone_number", "tracking_number", "callercountry"]) ??
     "unknown";
+  const rawDirection = firstString(payload, ["direction"]);
 
   return {
     callrailCallId,
     callerNumber,
     trackingNumber,
     answered: firstBoolean(payload, ["answered"]) ?? true,
+    direction: rawDirection === "outbound" ? "outbound" : "inbound",
     durationSeconds: firstNumber(payload, ["duration", "duration_seconds", "call_duration"]),
     occurredAt: firstDate(payload, ["start_time", "datetime", "created_at", "timestamp"]),
   };

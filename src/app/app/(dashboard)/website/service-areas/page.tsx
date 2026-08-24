@@ -1,5 +1,8 @@
 import { getDb } from "@/lib/db/client";
-import { listDistinctServiceAreaRegions, listServiceAreasForAdmin } from "@/lib/website/service-areas";
+import {
+  listDistinctServiceAreaRegions,
+  listServiceAreasForAdmin,
+} from "@/lib/website/service-areas";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 import {
   Table,
@@ -34,8 +37,8 @@ export default async function WebsiteServiceAreasPage({
           <div>
             <h1 className="text-xl font-semibold text-foreground">Service Areas</h1>
             <p className="text-sm text-muted-foreground">
-              {areas.length} areas — active ones each get their own public page with unique copy
-              and imagery. Hidden areas still count toward CallRail attribution/reporting.
+              {areas.length} areas — active ones each get their own public page with unique copy and
+              imagery. Hidden areas still count toward CallRail attribution/reporting.
             </p>
           </div>
           <div className="flex items-center gap-2">

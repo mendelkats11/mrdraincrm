@@ -16,7 +16,6 @@ import {
   MessageSquare,
   Phone,
   User,
-  UserPlus,
   Wrench,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -25,7 +24,6 @@ import { SidebarCustomizer } from "./sidebar-customizer";
 
 const ICONS_BY_HREF = {
   "/": LayoutDashboard,
-  "/leads": UserPlus,
   "/forms": Inbox,
   "/jobs": Wrench,
   "/schedule": Calendar,
@@ -43,7 +41,6 @@ const ICONS_BY_HREF = {
 
 const LABELS_BY_HREF: Record<(typeof NAV_HREFS)[number], string> = {
   "/": "Dashboard",
-  "/leads": "Leads",
   "/forms": "Form Submissions",
   "/jobs": "Jobs",
   "/schedule": "Schedule",

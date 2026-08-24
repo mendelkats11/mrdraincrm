@@ -16,9 +16,30 @@ describe("parseCallWebhookPayload", () => {
       callerNumber: "+13065551234",
       trackingNumber: "+13065559999",
       answered: true,
+      direction: "inbound",
       durationSeconds: 125,
       occurredAt: new Date("2026-06-15T14:30:00Z"),
     });
+  });
+
+  it("parses direction, defaulting to inbound when absent or unrecognized", () => {
+    expect(
+      parseCallWebhookPayload({
+        id: "CAL-OUT",
+        customer_phone_number: "+13065551234",
+        direction: "outbound",
+      })?.direction,
+    ).toBe("outbound");
+    expect(
+      parseCallWebhookPayload({ id: "CAL-IN", customer_phone_number: "+13065551234" })?.direction,
+    ).toBe("inbound");
+    expect(
+      parseCallWebhookPayload({
+        id: "CAL-WEIRD",
+        customer_phone_number: "+13065551234",
+        direction: "sideways",
+      })?.direction,
+    ).toBe("inbound");
   });
 
   it("accepts alternate field name variants", () => {
