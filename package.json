@@ -42,7 +42,6 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.5",
-    "@netlify/functions": "^6.0.0",
     "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^7.0.1",
@@ -62,5 +61,12 @@
     "tsx": "^4.23.12",
     "typescript": "^5",
     "vitest": "^4.1.10"
+  },
+  "overrides": {
+    "esbuild": "^0.28.2"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "unrs-resolver@1.12.2": true
   }
 }

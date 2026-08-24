@@ -2,7 +2,7 @@ import { getDb } from "@/lib/db/client";
 import { processReminders } from "@/lib/reminders/scheduler";
 import { pollCallRail } from "@/lib/callrail/poll";
 
-// Same cadence as the old Netlify Scheduled Function this replaces
+// Originally matched the old Netlify Scheduled Function this replaces
 // (netlify/functions/process-reminders.mts, "*/15 * * * *") — that function
 // stopped running entirely when the app moved off Netlify to Hostinger
 // (Hostinger's Node.js Web App is a persistent process with no scheduled-
@@ -10,7 +10,12 @@ import { pollCallRail } from "@/lib/callrail/poll";
 // stopped firing. Hostinger's persistent-process model is actually a better
 // fit for a plain in-process interval than trying to reintroduce a
 // Netlify-style scheduled function elsewhere.
-const INTERVAL_MS = 15 * 60 * 1000;
+//
+// Tightened to 2 minutes (owner decision) so CallRail calls/texts show up
+// close to real-time via polling. Both Hostinger instances run this
+// independently, so CallRail's API sees roughly 2x this rate — accepted
+// tradeoff, not a rate limit CallRail is known to enforce.
+const INTERVAL_MS = 2 * 60 * 1000;
 
 /**
  * Next.js's documented "run once when a new server instance starts" hook
