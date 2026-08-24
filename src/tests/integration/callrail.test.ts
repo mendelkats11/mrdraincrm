@@ -104,6 +104,45 @@ describe("processCallWebhook", () => {
     expect(call?.serviceAreaName).toBe("Stonebridge");
   });
 
+  it("resolves the service area even when the stored tracking number and the incoming one are formatted differently", async () => {
+    // Real-world bug: the Service Area settings screen accepts free-text
+    // (an admin might type "(306) 555-9999"), while CallRail's API/webhook
+    // payloads always send E.164 ("+13065559999") — an exact-string match
+    // between the two would never resolve, even for the identical number.
+    const [area] = await ctx.db
+      .insert(serviceAreas)
+      .values({
+        name: "Brighton",
+        slug: "brighton",
+        callrailTrackingNumber: "(306) 555-9999",
+      })
+      .returning();
+
+    const result = await processCallWebhook(ctx.db, {
+      id: "CAL-AREA-FORMAT",
+      customer_phone_number: "+13065551234",
+      tracking_phone_number: "+13065559999",
+    });
+    if (!result.ok || result.duplicate) throw new Error("expected ok");
+    const call = await getCall(ctx.db, result.callId);
+    expect(call?.serviceAreaId).toBe(area.id);
+  });
+
+  it("leaves the service area unset when no configured tracking number matches", async () => {
+    await ctx.db
+      .insert(serviceAreas)
+      .values({ name: "Warman", slug: "warman", callrailTrackingNumber: null });
+
+    const result = await processCallWebhook(ctx.db, {
+      id: "CAL-NO-AREA",
+      customer_phone_number: "+13065551234",
+      tracking_phone_number: "+13065551111",
+    });
+    if (!result.ok || result.duplicate) throw new Error("expected ok");
+    const call = await getCall(ctx.db, result.callId);
+    expect(call?.serviceAreaId).toBeNull();
+  });
+
   it("returns unparseable_payload for a payload with no identifiable fields", async () => {
     const result = await processCallWebhook(ctx.db, { irrelevant: "data" });
     expect(result).toEqual({ ok: false, error: "unparseable_payload" });

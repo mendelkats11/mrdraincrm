@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import {
   calls,
@@ -49,6 +49,37 @@ export type ProcessWebhookResult =
   | { ok: false; error: "unparseable_payload" };
 
 /**
+ * Matches a call's tracking number to a configured service area by
+ * normalized phone number, not a raw string comparison — the Service Area
+ * settings screen accepts the CallRail tracking number as free text (e.g.
+ * "(306) 555-0142"), while CallRail's own API/webhook payloads always send
+ * E.164 (e.g. "+13065550142"); an exact-string eq() between the two would
+ * never match even for the identical real number. Fetches every configured
+ * service area rather than a single indexed lookup — a small, bounded list
+ * for any real business, so normalizing in application code costs nothing
+ * meaningful and avoids needing a second normalized-tracking-number column.
+ */
+async function matchServiceAreaByTrackingNumber<TQueryResult extends PgQueryResultHKT>(
+  tx: Db<TQueryResult>,
+  trackingNumber: string,
+): Promise<string | null> {
+  const target = normalizePhone(trackingNumber);
+  if (!target) return null;
+
+  const areas = await tx
+    .select({ id: serviceAreas.id, callrailTrackingNumber: serviceAreas.callrailTrackingNumber })
+    .from(serviceAreas)
+    .where(isNotNull(serviceAreas.callrailTrackingNumber));
+
+  for (const area of areas) {
+    if (!area.callrailTrackingNumber) continue;
+    const candidate = normalizePhone(area.callrailTrackingNumber);
+    if (candidate && candidate.normalized === target.normalized) return area.id;
+  }
+  return null;
+}
+
+/**
  * Unknown callers never automatically become contacts (docs/CLAUDE.md §6,
  * docs/PROJECT_SPEC.md §16.2) — this only ever matches against existing
  * contact_phones, never creates one.
@@ -74,10 +105,7 @@ export async function processCallWebhook<TQueryResult extends PgQueryResultHKT>(
       contactId = match?.contactId ?? null;
     }
 
-    const [serviceArea] = await tx
-      .select({ id: serviceAreas.id })
-      .from(serviceAreas)
-      .where(eq(serviceAreas.callrailTrackingNumber, parsed.trackingNumber));
+    const serviceAreaId = await matchServiceAreaByTrackingNumber(tx, parsed.trackingNumber);
 
     const [call] = await tx
       .insert(calls)
@@ -86,7 +114,7 @@ export async function processCallWebhook<TQueryResult extends PgQueryResultHKT>(
         callerNumber: parsed.callerNumber,
         callerNumberNormalized: normalized?.normalized ?? parsed.callerNumber.replace(/\D/g, ""),
         trackingNumber: parsed.trackingNumber,
-        serviceAreaId: serviceArea?.id ?? null,
+        serviceAreaId,
         contactId,
         matched: contactId !== null,
         answered: parsed.answered,
