@@ -44,7 +44,7 @@ export default async function CallDetailPage({ params }: { params: Promise<{ id:
             {formatPhoneForDisplay(call.callerNumber)}
           </p>
         </div>
-        {!call.answered && call.direction === "inbound" ? (
+        {call.direction === "inbound" ? (
           <CallBackButton
             callId={call.id}
             callerNumber={formatPhoneForDisplay(call.callerNumber)}
