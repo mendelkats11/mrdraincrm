@@ -1,5 +1,6 @@
 import { getDb } from "@/lib/db/client";
 import { processReminders } from "@/lib/reminders/scheduler";
+import { pollCallRail } from "@/lib/callrail/poll";
 
 // Same cadence as the old Netlify Scheduled Function this replaces
 // (netlify/functions/process-reminders.mts, "*/15 * * * *") — that function
@@ -24,17 +25,28 @@ const INTERVAL_MS = 15 * 60 * 1000;
  * (notifications_reminder_dedupe_idx, see src/lib/reminders/scheduler.ts),
  * so two processes ticking at once just means the second's INSERT ...
  * ON CONFLICT DO NOTHING inserts zero rows for anything the first already
- * handled.
+ * handled. The same reasoning covers pollCallRail below (see
+ * src/lib/callrail/poll.ts) — it reuses the exact same idempotent
+ * processCallWebhook/processMessageWebhook the CallRail webhook route
+ * uses, so redundant polls (from two instances, or overlapping lookback
+ * windows) are no-ops rather than duplicates.
  */
 export function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
 
   async function tick() {
+    const db = getDb();
+    // Independent try/catch per task — a CallRail API outage must never
+    // block reminder notifications from firing, and vice versa.
     try {
-      const db = getDb();
       await processReminders(db);
     } catch (error) {
       console.error("Reminder scheduler tick failed:", error);
+    }
+    try {
+      await pollCallRail(db);
+    } catch (error) {
+      console.error("CallRail poll tick failed:", error);
     }
   }
 
