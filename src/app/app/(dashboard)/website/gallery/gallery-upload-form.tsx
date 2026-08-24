@@ -51,19 +51,20 @@ export function GalleryUploadForm({
     >
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="gallery-file" className="text-xs">
-          Photo
+          Photos
         </Label>
         <Input
           id="gallery-file"
           name="image"
           type="file"
           accept="image/png,image/jpeg,image/webp"
+          multiple
           required
         />
       </div>
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="gallery-caption" className="text-xs">
-          Caption (optional)
+          Caption (optional, applied to all)
         </Label>
         <Input id="gallery-caption" name="caption" className="w-40" />
       </div>

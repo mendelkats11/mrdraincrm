@@ -17,37 +17,47 @@ const uuidOrEmpty = z
   .optional()
   .transform((v) => (v ? v : undefined));
 
+/**
+ * Accepts one or more files under the same "image" field (the form's file
+ * input has the `multiple` attribute) — every selected photo gets the same
+ * shared caption/before-after/service/area, uploaded as separate gallery
+ * items. Stops at the first failure rather than silently skipping it, so a
+ * bad file in the batch is never lost without the owner knowing.
+ */
 export async function uploadGalleryItemAction(
   _prevState: GalleryFormState,
   formData: FormData,
 ): Promise<GalleryFormState> {
   const session = await requireUser();
-  const file = formData.get("image");
+  const files = formData.getAll("image").filter((f): f is File => f instanceof File && f.size > 0);
   const captionField = formData.get("caption");
   const serviceIdField = uuidOrEmpty.safeParse(formData.get("serviceId") || undefined);
   const serviceAreaIdField = uuidOrEmpty.safeParse(formData.get("serviceAreaId") || undefined);
   const beforeAfterField = beforeAfterSchema.safeParse(formData.get("beforeAfter") || "na");
 
-  if (!(file instanceof File) || file.size === 0) {
-    return { ok: false, error: "Choose a photo first." };
+  if (files.length === 0) {
+    return { ok: false, error: "Choose at least one photo first." };
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
   const db = getDb();
-  const result = await uploadGalleryItem(
-    db,
-    getStorageProvider(),
-    {
-      buffer,
-      contentType: file.type,
-      caption: typeof captionField === "string" ? captionField || null : null,
-      serviceId: serviceIdField.success ? (serviceIdField.data ?? null) : null,
-      serviceAreaId: serviceAreaIdField.success ? (serviceAreaIdField.data ?? null) : null,
-      beforeAfter: beforeAfterField.success ? beforeAfterField.data : "na",
-    },
-    session.user.id,
-  );
-  if (!result.ok) return result;
+  const storage = getStorageProvider();
+  for (const file of files) {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const result = await uploadGalleryItem(
+      db,
+      storage,
+      {
+        buffer,
+        contentType: file.type,
+        caption: typeof captionField === "string" ? captionField || null : null,
+        serviceId: serviceIdField.success ? (serviceIdField.data ?? null) : null,
+        serviceAreaId: serviceAreaIdField.success ? (serviceAreaIdField.data ?? null) : null,
+        beforeAfter: beforeAfterField.success ? beforeAfterField.data : "na",
+      },
+      session.user.id,
+    );
+    if (!result.ok) return result;
+  }
 
   revalidatePath("/website/gallery");
   revalidatePath("/gallery");

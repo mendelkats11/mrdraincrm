@@ -148,6 +148,18 @@ export async function uploadServiceAreaImageAction(
   return { ok: true };
 }
 
+/** images[0] is the cover/hero image shown on the service-area listing and detail pages (src/app/(site)/service-areas/{page.tsx,[slug]/page.tsx}) — "cover" is just "first in the array," not a separate stored field. */
+export async function setServiceAreaCoverImageAction(areaId: string, key: string): Promise<void> {
+  const session = await requireUser();
+  const db = getDb();
+  const area = await getServiceArea(db, areaId);
+  if (!area) return;
+  const images = [key, ...area.images.filter((existing) => existing !== key)];
+  await updateServiceArea(db, areaId, { images }, session.user.id);
+  revalidatePath("/website/service-areas");
+  revalidatePath("/service-areas");
+}
+
 export async function removeServiceAreaImageAction(areaId: string, key: string): Promise<void> {
   const session = await requireUser();
   const db = getDb();

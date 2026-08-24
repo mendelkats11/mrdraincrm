@@ -3,9 +3,11 @@
 import { type ChangeEvent, type FormEvent, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { Star } from "lucide-react";
 import {
   removeServiceAreaImageAction,
   setServiceAreaActiveAction,
+  setServiceAreaCoverImageAction,
   updateServiceAreaAction,
   uploadServiceAreaImageAction,
 } from "@/lib/website/service-area-website-actions";
@@ -87,9 +89,11 @@ export function ServiceAreaRowActions({ area }: { area: ServiceArea }) {
           </DialogHeader>
           <div className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto">
             <div className="flex flex-col gap-2">
-              <Label className="text-xs">Images</Label>
+              <Label className="text-xs">
+                Images — the cover image is shown on the service area listing and its own page
+              </Label>
               <div className="flex flex-wrap gap-2">
-                {area.images.map((key) => (
+                {area.images.map((key, index) => (
                   <div key={key} className="group relative">
                     <Image
                       src={publicAssetUrl(key)}
@@ -98,6 +102,26 @@ export function ServiceAreaRowActions({ area }: { area: ServiceArea }) {
                       height={64}
                       className="size-16 rounded-lg border object-cover"
                     />
+                    {index === 0 ? (
+                      <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 rounded-full bg-primary px-1.5 py-0.5 text-[10px] leading-none whitespace-nowrap text-primary-foreground">
+                        Cover
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        className="absolute -bottom-1 -left-1 hidden size-5 items-center justify-center rounded-full bg-background text-muted-foreground shadow group-hover:flex hover:text-foreground"
+                        aria-label="Set as cover image"
+                        title="Set as cover image"
+                        onClick={() =>
+                          startImageTransition(async () => {
+                            await setServiceAreaCoverImageAction(area.id, key);
+                            router.refresh();
+                          })
+                        }
+                      >
+                        <Star className="size-3" />
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="absolute -right-1 -top-1 hidden size-5 items-center justify-center rounded-full bg-destructive text-xs text-white group-hover:flex"
