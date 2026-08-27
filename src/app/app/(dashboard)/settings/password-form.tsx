@@ -3,7 +3,7 @@
 import { useActionState, useEffect } from "react";
 import { changePasswordAction } from "@/lib/auth/account-actions";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -29,20 +29,18 @@ export function PasswordForm() {
         <form action={formAction} className="flex flex-col gap-3">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="currentPassword">Current password</Label>
-            <Input
+            <PasswordInput
               id="currentPassword"
               name="currentPassword"
-              type="password"
               required
               autoComplete="current-password"
             />
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="newPassword">New password</Label>
-            <Input
+            <PasswordInput
               id="newPassword"
               name="newPassword"
-              type="password"
               required
               minLength={8}
               autoComplete="new-password"
@@ -50,10 +48,9 @@ export function PasswordForm() {
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="confirmPassword">Confirm new password</Label>
-            <Input
+            <PasswordInput
               id="confirmPassword"
               name="confirmPassword"
-              type="password"
               required
               minLength={8}
               autoComplete="new-password"

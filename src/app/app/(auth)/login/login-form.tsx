@@ -5,6 +5,7 @@ import { loginAction } from "@/lib/auth/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 
 export function LoginForm({ next, notice }: { next?: string; notice?: string }) {
@@ -33,13 +34,7 @@ export function LoginForm({ next, notice }: { next?: string; notice?: string }) 
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-            />
+            <PasswordInput id="password" name="password" autoComplete="current-password" required />
           </div>
           {notice ? <p className="text-sm text-success">{notice}</p> : null}
           {state?.error ? (

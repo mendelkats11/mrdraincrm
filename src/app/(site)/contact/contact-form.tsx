@@ -40,7 +40,7 @@ export function ContactForm({ serviceAreas }: { serviceAreas: { id: string; name
           body: JSON.stringify({
             name: formData.get("name"),
             phone: formData.get("phone"),
-            email: formData.get("email") || undefined,
+            email: formData.get("email"),
             serviceAreaId: serviceAreaId || undefined,
             issueDescription: formData.get("issueDescription"),
             emergency: formData.get("emergency") === "on",
@@ -80,8 +80,8 @@ export function ContactForm({ serviceAreas }: { serviceAreas: { id: string; name
         <Input id="phone" name="phone" type="tel" required autoComplete="tel" />
       </div>
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="email">Email (optional)</Label>
-        <Input id="email" name="email" type="email" autoComplete="email" />
+        <Label htmlFor="email">Email</Label>
+        <Input id="email" name="email" type="email" autoComplete="email" required />
       </div>
       {serviceAreas.length > 0 ? (
         <div className="flex flex-col gap-1.5">

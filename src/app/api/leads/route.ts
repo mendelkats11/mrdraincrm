@@ -36,7 +36,7 @@ function leadNotificationRecipients(): string[] {
 const publicLeadSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(200),
   phone: z.string().trim().min(1, "Phone is required").max(32),
-  email: z.union([z.literal(""), z.string().trim().max(320).email()]).optional(),
+  email: z.string().trim().min(1, "Email is required").max(320).email(),
   serviceAreaId: z.union([z.literal(""), z.string().uuid()]).optional(),
   issueDescription: z.string().trim().min(1, "Please describe the issue").max(2000),
   emergency: z.boolean().optional(),

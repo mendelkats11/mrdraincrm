@@ -5,6 +5,7 @@ import { acceptInviteAction } from "@/lib/auth/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 
 export function AcceptInviteForm({ token }: { token: string }) {
@@ -24,10 +25,9 @@ export function AcceptInviteForm({ token }: { token: string }) {
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="password">Choose a password</Label>
-            <Input
+            <PasswordInput
               id="password"
               name="password"
-              type="password"
               autoComplete="new-password"
               minLength={8}
               required

@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { updateEmailAction } from "@/lib/auth/account-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -24,10 +25,9 @@ export function EmailForm({ email }: { email: string }) {
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="currentPasswordForEmail">Current password</Label>
-            <Input
+            <PasswordInput
               id="currentPasswordForEmail"
               name="currentPassword"
-              type="password"
               required
               autoComplete="current-password"
             />

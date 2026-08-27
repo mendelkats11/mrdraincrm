@@ -102,7 +102,7 @@ export function Sidebar({
       >
         {collapsed ? "MD" : "Mr. Drain CRM"}
       </Link>
-      <div className="flex-1 flex flex-col gap-1 w-full">
+      <div className="flex w-full flex-1 flex-col gap-1 overflow-y-auto">
         {items.map((item) => {
           const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
           const Icon = item.icon;

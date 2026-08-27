@@ -29,15 +29,20 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   );
 
   return (
-    <div className="flex min-h-screen bg-background">
+    // h-screen + overflow-hidden on the shell, rather than the old
+    // min-h-screen, is what actually locks the sidebar in place — with
+    // only min-h-screen, the whole page (sidebar included) was one single
+    // scroll region, so scrolling a long page dragged the sidebar off-
+    // screen with it. Only <main> below scrolls now.
+    <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar
         visibleOrder={visibleOrder}
         savedOrder={prefs.sidebarItemOrder}
         savedHidden={prefs.sidebarItemHidden}
         collapsed={prefs.sidebarCollapsed}
       />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between gap-4 border-b px-6 py-4">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="flex shrink-0 items-center justify-between gap-4 border-b px-6 py-4">
           <HeaderSearch />
           <div className="flex shrink-0 items-center gap-4">
             <QuickActionsMenu />
@@ -45,7 +50,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
             <ProfileMenu name={session.user.name} email={session.user.email} />
           </div>
         </header>
-        <main className="flex-1 p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
     </div>
   );
