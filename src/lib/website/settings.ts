@@ -10,6 +10,7 @@ export interface WebsiteSettings {
   businessName: string | null;
   businessAddress: string | null;
   tagline: string | null;
+  footerTagline: string | null;
   aboutHeading: string | null;
   aboutBody: string | null;
   publicContactEmail: string | null;
@@ -25,6 +26,7 @@ export async function getWebsiteSettings<TQueryResult extends PgQueryResultHKT>(
     businessName: settings?.businessName ?? null,
     businessAddress: settings?.businessAddress ?? null,
     tagline: settings?.tagline ?? null,
+    footerTagline: settings?.footerTagline ?? null,
     aboutHeading: settings?.aboutHeading ?? null,
     aboutBody: settings?.aboutBody ?? null,
     publicContactEmail: settings?.publicContactEmail ?? null,
@@ -37,6 +39,7 @@ export interface UpdateWebsiteSettingsInput {
   businessName?: string | null;
   businessAddress?: string | null;
   tagline?: string | null;
+  footerTagline?: string | null;
   aboutHeading?: string | null;
   aboutBody?: string | null;
   publicContactEmail?: string | null;
@@ -64,6 +67,7 @@ export async function updateWebsiteSettings<TQueryResult extends PgQueryResultHK
         businessAddress:
           input.businessAddress !== undefined ? input.businessAddress || null : undefined,
         tagline: input.tagline !== undefined ? input.tagline || null : undefined,
+        footerTagline: input.footerTagline !== undefined ? input.footerTagline || null : undefined,
         aboutHeading: input.aboutHeading !== undefined ? input.aboutHeading || null : undefined,
         aboutBody: input.aboutBody !== undefined ? input.aboutBody || null : undefined,
         publicContactEmail:

@@ -53,6 +53,15 @@ export function WebsiteSettingsForm({ settings }: { settings: WebsiteSettings })
         />
       </div>
       <div className="flex flex-col gap-1.5">
+        <Label htmlFor="footerTagline">Footer tagline</Label>
+        <Input
+          id="footerTagline"
+          name="footerTagline"
+          defaultValue={settings.footerTagline ?? ""}
+          placeholder="e.g. local, reliable plumbing"
+        />
+      </div>
+      <div className="flex flex-col gap-1.5">
         <Label htmlFor="publicContactEmail">Public contact email</Label>
         <Input
           id="publicContactEmail"

@@ -1,6 +1,10 @@
 import { Clock, DollarSign, MapPin, Sparkles } from "lucide-react";
 
-const POINTS = [
+// Icons are fixed per slot — only title/body are admin-editable (Website >
+// Homepage editor, config.points[n].{title,body}), matching how the
+// section's own heading/body already work: an empty override falls back
+// to this default rather than rendering blank.
+const DEFAULT_POINTS = [
   {
     icon: MapPin,
     title: "Local & family-owned",
@@ -23,7 +27,26 @@ const POINTS = [
   },
 ] as const;
 
-export function WhyMrDrainSection({ heading, body }: { heading?: string; body?: string }) {
+export interface WhyMrDrainPointOverride {
+  title?: string;
+  body?: string;
+}
+
+export function WhyMrDrainSection({
+  heading,
+  body,
+  points,
+}: {
+  heading?: string;
+  body?: string;
+  points?: WhyMrDrainPointOverride[];
+}) {
+  const resolvedPoints = DEFAULT_POINTS.map((defaultPoint, i) => ({
+    icon: defaultPoint.icon,
+    title: points?.[i]?.title || defaultPoint.title,
+    body: points?.[i]?.body || defaultPoint.body,
+  }));
+
   return (
     <section className="bg-secondary">
       <div className="mx-auto max-w-6xl px-4 py-16">
@@ -32,7 +55,7 @@ export function WhyMrDrainSection({ heading, body }: { heading?: string; body?: 
           {body ? <p className="max-w-xl text-foreground/70">{body}</p> : null}
         </div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {POINTS.map((point) => (
+          {resolvedPoints.map((point) => (
             <div key={point.title} className="flex flex-col items-center gap-3 text-center">
               <div className="flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <point.icon className="size-6" aria-hidden="true" />

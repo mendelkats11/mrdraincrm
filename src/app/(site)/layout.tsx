@@ -34,6 +34,8 @@ export default async function SiteLayout({ children }: LayoutProps<"/">) {
         businessAddress={settings.businessAddress}
         contactEmail={settings.publicContactEmail}
         trackingNumber={settings.defaultCallrailTrackingNumber}
+        footerTagline={settings.footerTagline}
+        reviewsEnabled={settings.reviewsPageEnabled}
         appUrl={getAppUrl()}
       />
     </div>

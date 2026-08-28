@@ -7,12 +7,16 @@ export function SiteFooter({
   businessAddress,
   contactEmail,
   trackingNumber,
+  footerTagline,
+  reviewsEnabled,
   appUrl,
 }: {
   businessName: string | null;
   businessAddress: string | null;
   contactEmail: string | null;
   trackingNumber: string | null;
+  footerTagline: string | null;
+  reviewsEnabled: boolean;
   appUrl: string;
 }) {
   return (
@@ -27,7 +31,7 @@ export function SiteFooter({
             className="h-14 w-auto self-start"
           />
           <p className="text-sm text-white/70">
-            {businessName ?? "Mr. Drain Plumbing"} — local, reliable plumbing.
+            {businessName ?? "Mr. Drain Plumbing"} — {footerTagline || "local, reliable plumbing"}.
           </p>
         </div>
 
@@ -70,9 +74,11 @@ export function SiteFooter({
           <Link href="/gallery" className="text-white/80 hover:text-white">
             Gallery
           </Link>
-          <Link href="/reviews" className="text-white/80 hover:text-white">
-            Reviews
-          </Link>
+          {reviewsEnabled ? (
+            <Link href="/reviews" className="text-white/80 hover:text-white">
+              Reviews
+            </Link>
+          ) : null}
         </div>
       </div>
 

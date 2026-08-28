@@ -21,6 +21,7 @@ describe("website settings", () => {
       businessName: null,
       businessAddress: null,
       tagline: null,
+      footerTagline: null,
       aboutHeading: null,
       aboutBody: null,
       publicContactEmail: null,

@@ -89,6 +89,39 @@ export function HomepageSectionForm({ section }: { section: HomepageSection }) {
         </>
       ) : null}
 
+      {section.sectionType === "why_mr_drain" ? (
+        <div className="flex flex-col gap-3 border-t pt-3">
+          <p className="text-xs text-muted-foreground">
+            The 4 points below (icons are fixed). Leave a field blank to keep its default text.
+          </p>
+          {([1, 2, 3, 4] as const).map((n) => {
+            const points = Array.isArray(config.points) ? config.points : [];
+            const point = (points[n - 1] ?? {}) as Record<string, unknown>;
+            return (
+              <div key={n} className="flex flex-col gap-1.5 rounded-md border p-2.5">
+                <Label htmlFor={`point${n}Title-${section.id}`} className="text-xs">
+                  Point {n} title
+                </Label>
+                <Input
+                  id={`point${n}Title-${section.id}`}
+                  name={`point${n}Title`}
+                  defaultValue={typeof point.title === "string" ? point.title : ""}
+                />
+                <Label htmlFor={`point${n}Body-${section.id}`} className="text-xs">
+                  Point {n} body
+                </Label>
+                <Textarea
+                  id={`point${n}Body-${section.id}`}
+                  name={`point${n}Body`}
+                  rows={2}
+                  defaultValue={typeof point.body === "string" ? point.body : ""}
+                />
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+
       {error ? (
         <p role="alert" className="text-sm text-destructive">
           {error}

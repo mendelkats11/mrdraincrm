@@ -54,6 +54,10 @@ export const appSettings = pgTable("app_settings", {
   // — service area pages use their own serviceAreas.callrailTrackingNumber
   // instead.
   tagline: text("tagline"),
+  // The short line under the logo in the site footer — distinct from
+  // `tagline` above (the homepage hero's headline). Falls back to a
+  // hardcoded default in SiteFooter when unset.
+  footerTagline: text("footer_tagline"),
   aboutHeading: text("about_heading"),
   aboutBody: text("about_body"),
   publicContactEmail: text("public_contact_email"),
