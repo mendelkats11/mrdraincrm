@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Phone } from "lucide-react";
+import { formatPhoneForDisplay } from "@/lib/phone";
 
 export function CtaSection({
   heading,
@@ -25,7 +26,7 @@ export function CtaSection({
               className="flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-md"
             >
               <Phone className="size-5" aria-hidden="true" />
-              Call Now
+              Call {formatPhoneForDisplay(trackingNumber)}
             </a>
           ) : null}
           <Link

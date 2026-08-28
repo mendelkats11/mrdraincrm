@@ -5,6 +5,7 @@ import { MapPin, Phone } from "lucide-react";
 import { getDb } from "@/lib/db/client";
 import { getServiceAreaBySlug } from "@/lib/website/service-areas";
 import { getWebsiteSettings } from "@/lib/website/settings";
+import { formatPhoneForDisplay } from "@/lib/phone";
 import { listPublishedGalleryItemsForServiceArea } from "@/lib/website/gallery";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import { MobileFloatingCta } from "@/components/site/mobile-floating-cta";
@@ -83,7 +84,7 @@ export default async function ServiceAreaDetailPage({
               className="flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-md"
             >
               <Phone className="size-5" aria-hidden="true" />
-              Call Now
+              Call {formatPhoneForDisplay(trackingNumber)}
             </a>
           ) : null}
           <a

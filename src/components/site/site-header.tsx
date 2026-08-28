@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, Menu, Phone, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatPhoneForDisplay } from "@/lib/phone";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
@@ -117,7 +118,7 @@ export function SiteHeader({
               className="flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-transform hover:scale-[1.02]"
             >
               <Phone className="size-4" aria-hidden="true" />
-              Call Now
+              {formatPhoneForDisplay(trackingNumber)}
             </a>
           ) : null}
           <Link

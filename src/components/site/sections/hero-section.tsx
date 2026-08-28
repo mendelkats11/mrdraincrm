@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Phone } from "lucide-react";
+import { formatPhoneForDisplay } from "@/lib/phone";
 
 export function HeroSection({
   businessName,
@@ -32,7 +33,7 @@ export function HeroSection({
                 className="flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-md transition-transform hover:scale-[1.02]"
               >
                 <Phone className="size-5" aria-hidden="true" />
-                Call Now
+                Call {formatPhoneForDisplay(trackingNumber)}
               </a>
             ) : null}
             <Link

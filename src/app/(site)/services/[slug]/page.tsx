@@ -5,6 +5,7 @@ import { Phone, Wrench } from "lucide-react";
 import { getDb } from "@/lib/db/client";
 import { getServiceBySlug } from "@/lib/website/services";
 import { getWebsiteSettings } from "@/lib/website/settings";
+import { formatPhoneForDisplay } from "@/lib/phone";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import { MobileFloatingCta } from "@/components/site/mobile-floating-cta";
 
@@ -65,7 +66,7 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
             className="flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-md"
           >
             <Phone className="size-5" aria-hidden="true" />
-            Call Now
+            Call {formatPhoneForDisplay(settings.defaultCallrailTrackingNumber)}
           </a>
         ) : null}
         <a
