@@ -1,9 +1,15 @@
 import { getDb } from "@/lib/db/client";
 import { getWebsiteSettings } from "@/lib/website/settings";
 import { getPublicSiteOrigin } from "@/lib/site-url";
+import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
+import {
+  updateContactBackgroundAction,
+  updateServicesBackgroundAction,
+} from "@/lib/website/settings-actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SitePreviewPane } from "@/components/site-preview-pane";
 import { WebsiteSettingsForm } from "./website-settings-form";
+import { BackgroundImageForm } from "./background-image-form";
 
 export default async function WebsiteSettingsPage() {
   const db = getDb();
@@ -26,6 +32,32 @@ export default async function WebsiteSettingsPage() {
           </CardHeader>
           <CardContent>
             <WebsiteSettingsForm settings={settings} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Page backgrounds</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-6">
+            <BackgroundImageForm
+              label="Contact page background"
+              imageUrl={
+                settings.contactBackgroundImageKey
+                  ? publicAssetUrl(settings.contactBackgroundImageKey)
+                  : null
+              }
+              action={updateContactBackgroundAction}
+            />
+            <BackgroundImageForm
+              label="Services page background"
+              imageUrl={
+                settings.servicesBackgroundImageKey
+                  ? publicAssetUrl(settings.servicesBackgroundImageKey)
+                  : null
+              }
+              action={updateServicesBackgroundAction}
+            />
           </CardContent>
         </Card>
       </div>

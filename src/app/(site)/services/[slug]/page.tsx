@@ -35,46 +35,54 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
   if (!service) notFound();
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-16">
-      <div className="mb-8 flex items-start gap-4">
-        <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary/10 text-primary">
-          {service.imageKey ? (
-            <Image
-              src={publicAssetUrl(service.imageKey)}
-              alt=""
-              width={64}
-              height={64}
-              className="size-full object-cover"
-            />
-          ) : (
-            <Wrench className="size-8" aria-hidden="true" />
-          )}
+    <div>
+      {service.imageKey ? (
+        <div className="relative h-64 w-full sm:h-80">
+          <Image
+            src={publicAssetUrl(service.imageKey)}
+            alt=""
+            fill
+            priority
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+          <div className="absolute inset-0 flex items-end">
+            <div className="mx-auto flex w-full max-w-3xl items-center gap-2 px-4 pb-8 text-white">
+              <h1 className="text-3xl font-bold sm:text-4xl">{service.name}</h1>
+            </div>
+          </div>
         </div>
-        <div>
-          <h1 className="text-3xl font-bold text-brand-navy">{service.name}</h1>
+      ) : (
+        <div className="flex items-center gap-3 bg-brand-navy py-16">
+          <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 text-white">
+            <Wrench className="size-7" aria-hidden="true" />
+            <h1 className="text-3xl font-bold sm:text-4xl">{service.name}</h1>
+          </div>
         </div>
-      </div>
+      )}
 
-      {service.description ? (
-        <p className="text-lg text-foreground/80">{service.description}</p>
-      ) : null}
-
-      <div className="mt-10 flex flex-wrap gap-3 border-t border-border pt-8">
-        {settings.defaultCallrailTrackingNumber ? (
-          <a
-            href={`tel:${settings.defaultCallrailTrackingNumber}`}
-            className="flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-md"
-          >
-            <Phone className="size-5" aria-hidden="true" />
-            Call {formatPhoneForDisplay(settings.defaultCallrailTrackingNumber)}
-          </a>
+      <div className="mx-auto max-w-3xl px-4 py-12">
+        {service.description ? (
+          <p className="text-lg text-foreground/80">{service.description}</p>
         ) : null}
-        <a
-          href="/contact"
-          className="flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-base font-semibold text-accent-foreground shadow-md"
-        >
-          Get a Free Quote
-        </a>
+
+        <div className="mt-10 flex flex-wrap gap-3 border-t border-border pt-8">
+          {settings.defaultCallrailTrackingNumber ? (
+            <a
+              href={`tel:${settings.defaultCallrailTrackingNumber}`}
+              className="flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-md"
+            >
+              <Phone className="size-5" aria-hidden="true" />
+              Call {formatPhoneForDisplay(settings.defaultCallrailTrackingNumber)}
+            </a>
+          ) : null}
+          <a
+            href="/contact"
+            className="flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-base font-semibold text-accent-foreground shadow-md"
+          >
+            Get a Free Quote
+          </a>
+        </div>
       </div>
 
       <MobileFloatingCta trackingNumber={settings.defaultCallrailTrackingNumber} />

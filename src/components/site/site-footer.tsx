@@ -88,10 +88,18 @@ export function SiteFooter({
             &copy; {new Date().getFullYear()} {businessName ?? "Mr. Drain Plumbing"}. All rights
             reserved.
           </p>
-          {/* Subtle, not part of primary navigation — docs/PROJECT_SPEC.md §2.3. */}
-          <a href={appUrl} className="text-white/40 hover:text-white/70">
-            Log In
-          </a>
+          <div className="flex items-center gap-4">
+            <Link href="/terms" className="text-white/40 hover:text-white/70">
+              Terms of Service
+            </Link>
+            <Link href="/privacy" className="text-white/40 hover:text-white/70">
+              Privacy Policy
+            </Link>
+            {/* Subtle, not part of primary navigation — docs/PROJECT_SPEC.md §2.3. */}
+            <a href={appUrl} className="text-white/40 hover:text-white/70">
+              Log In
+            </a>
+          </div>
         </div>
       </div>
     </footer>

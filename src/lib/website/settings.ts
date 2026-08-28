@@ -16,6 +16,10 @@ export interface WebsiteSettings {
   publicContactEmail: string | null;
   defaultCallrailTrackingNumber: string | null;
   reviewsPageEnabled: boolean;
+  contactBackgroundImageKey: string | null;
+  servicesBackgroundImageKey: string | null;
+  termsOfServiceContent: string | null;
+  privacyPolicyContent: string | null;
 }
 
 export async function getWebsiteSettings<TQueryResult extends PgQueryResultHKT>(
@@ -32,6 +36,10 @@ export async function getWebsiteSettings<TQueryResult extends PgQueryResultHKT>(
     publicContactEmail: settings?.publicContactEmail ?? null,
     defaultCallrailTrackingNumber: settings?.defaultCallrailTrackingNumber ?? null,
     reviewsPageEnabled: settings?.reviewsPageEnabled ?? false,
+    contactBackgroundImageKey: settings?.contactBackgroundImageKey ?? null,
+    servicesBackgroundImageKey: settings?.servicesBackgroundImageKey ?? null,
+    termsOfServiceContent: settings?.termsOfServiceContent ?? null,
+    privacyPolicyContent: settings?.privacyPolicyContent ?? null,
   };
 }
 
@@ -45,6 +53,10 @@ export interface UpdateWebsiteSettingsInput {
   publicContactEmail?: string | null;
   defaultCallrailTrackingNumber?: string | null;
   reviewsPageEnabled?: boolean;
+  contactBackgroundImageKey?: string | null;
+  servicesBackgroundImageKey?: string | null;
+  termsOfServiceContent?: string | null;
+  privacyPolicyContent?: string | null;
 }
 
 /** Same find-or-create-the-singleton-row pattern as
@@ -78,6 +90,20 @@ export async function updateWebsiteSettings<TQueryResult extends PgQueryResultHK
             : undefined,
         reviewsPageEnabled:
           input.reviewsPageEnabled !== undefined ? input.reviewsPageEnabled : undefined,
+        contactBackgroundImageKey:
+          input.contactBackgroundImageKey !== undefined
+            ? input.contactBackgroundImageKey || null
+            : undefined,
+        servicesBackgroundImageKey:
+          input.servicesBackgroundImageKey !== undefined
+            ? input.servicesBackgroundImageKey || null
+            : undefined,
+        termsOfServiceContent:
+          input.termsOfServiceContent !== undefined
+            ? input.termsOfServiceContent || null
+            : undefined,
+        privacyPolicyContent:
+          input.privacyPolicyContent !== undefined ? input.privacyPolicyContent || null : undefined,
         updatedAt: new Date(),
       })
       .where(eq(appSettings.id, settingsId));

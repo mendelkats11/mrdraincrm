@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getDb } from "@/lib/db/client";
 import { requireUser } from "@/lib/auth/require-user";
+import { getStorageProvider } from "@/lib/storage";
+import { uploadPublicAsset } from "@/lib/storage/public-asset-upload";
 import { updateHomepageSection } from "./homepage";
 
 export type HomepageSectionFormState = { ok: true } | { ok: false; error: string } | undefined;
@@ -75,6 +77,34 @@ export async function updateHomepageSectionAction(
     body: parsed.data[`point${n}Body` as const],
   }));
   if (points.some((p) => p.title || p.body)) config.points = points;
+
+  // Hero collage photos — file inputs aren't part of configSchema (zod
+  // string parsing doesn't fit File), handled directly against formData.
+  // Each of the 3 slots independently: a newly uploaded file replaces it,
+  // "remove" clears it, otherwise the existing key (carried via a hidden
+  // field, since this form has no server-side read of the current row)
+  // is kept as-is.
+  const storage = getStorageProvider();
+  const photoKeys: string[] = [];
+  for (const n of [1, 2, 3] as const) {
+    const file = formData.get(`photo${n}`);
+    const existingKey = formData.get(`existingPhoto${n}Key`);
+    const remove = formData.get(`removePhoto${n}`) === "on";
+
+    if (file instanceof File && file.size > 0) {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const result = await uploadPublicAsset(storage, {
+        buffer,
+        contentType: file.type,
+        category: "hero",
+      });
+      if (!result.ok) return { ok: false, error: result.error };
+      photoKeys.push(result.key);
+    } else if (!remove && typeof existingKey === "string" && existingKey) {
+      photoKeys.push(existingKey);
+    }
+  }
+  if (photoKeys.length > 0) config.photoKeys = photoKeys;
 
   const db = getDb();
   await updateHomepageSection(

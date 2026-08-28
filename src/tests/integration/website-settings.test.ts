@@ -27,6 +27,10 @@ describe("website settings", () => {
       publicContactEmail: null,
       defaultCallrailTrackingNumber: null,
       reviewsPageEnabled: false,
+      contactBackgroundImageKey: null,
+      servicesBackgroundImageKey: null,
+      termsOfServiceContent: null,
+      privacyPolicyContent: null,
     });
   });
 

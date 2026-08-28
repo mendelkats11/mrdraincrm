@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getDb } from "@/lib/db/client";
 import { requireUser } from "@/lib/auth/require-user";
+import { getStorageProvider } from "@/lib/storage";
+import { uploadPublicAsset } from "@/lib/storage/public-asset-upload";
 import { updateWebsiteSettings } from "./settings";
 
 const settingsSchema = z.object({
@@ -16,6 +18,8 @@ const settingsSchema = z.object({
   publicContactEmail: z.union([z.literal(""), z.string().trim().email()]).optional(),
   defaultCallrailTrackingNumber: z.string().trim().max(32).optional(),
   reviewsPageEnabled: z.boolean(),
+  termsOfServiceContent: z.string().trim().max(20000).optional(),
+  privacyPolicyContent: z.string().trim().max(20000).optional(),
 });
 
 export type WebsiteSettingsFormState = { ok: true } | { ok: false; error: string } | undefined;
@@ -35,6 +39,8 @@ export async function updateWebsiteSettingsAction(
     publicContactEmail: formData.get("publicContactEmail") || undefined,
     defaultCallrailTrackingNumber: formData.get("defaultCallrailTrackingNumber") || undefined,
     reviewsPageEnabled: formData.get("reviewsPageEnabled") === "on",
+    termsOfServiceContent: formData.get("termsOfServiceContent") || undefined,
+    privacyPolicyContent: formData.get("privacyPolicyContent") || undefined,
   });
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input." };
@@ -53,6 +59,8 @@ export async function updateWebsiteSettingsAction(
       publicContactEmail: parsed.data.publicContactEmail || null,
       defaultCallrailTrackingNumber: parsed.data.defaultCallrailTrackingNumber || null,
       reviewsPageEnabled: parsed.data.reviewsPageEnabled,
+      termsOfServiceContent: parsed.data.termsOfServiceContent || null,
+      privacyPolicyContent: parsed.data.privacyPolicyContent || null,
     },
     session.user.id,
   );
@@ -62,5 +70,62 @@ export async function updateWebsiteSettingsAction(
   revalidatePath("/about");
   revalidatePath("/contact");
   revalidatePath("/reviews");
+  revalidatePath("/terms");
+  revalidatePath("/privacy");
   return { ok: true };
+}
+
+export type BackgroundImageFormState = { ok: true } | { ok: false; error: string } | undefined;
+
+/**
+ * Shared by the Contact and Services page background-photo uploaders
+ * (Website > Settings) — each is a single optional full-bleed image behind
+ * otherwise-plain page content, same upload-or-remove shape as the invoice
+ * logo (src/lib/invoices/invoice-actions.ts's uploadInvoiceLogoAction), just
+ * targeting a public asset instead of the private invoice-logo bucket key.
+ */
+async function updateBackgroundImage(
+  formData: FormData,
+  field: "contactBackgroundImageKey" | "servicesBackgroundImageKey",
+  revalidate: string,
+): Promise<BackgroundImageFormState> {
+  const session = await requireUser();
+  const file = formData.get("image");
+  const remove = formData.get("remove") === "on";
+
+  let key: string | null | undefined;
+  if (file instanceof File && file.size > 0) {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const result = await uploadPublicAsset(getStorageProvider(), {
+      buffer,
+      contentType: file.type,
+      category: "backgrounds",
+    });
+    if (!result.ok) return { ok: false, error: result.error };
+    key = result.key;
+  } else if (remove) {
+    key = null;
+  } else {
+    return { ok: false, error: "Choose an image first." };
+  }
+
+  const db = getDb();
+  await updateWebsiteSettings(db, { [field]: key }, session.user.id);
+  revalidatePath("/website/settings");
+  revalidatePath(revalidate);
+  return { ok: true };
+}
+
+export async function updateContactBackgroundAction(
+  _prevState: BackgroundImageFormState,
+  formData: FormData,
+): Promise<BackgroundImageFormState> {
+  return updateBackgroundImage(formData, "contactBackgroundImageKey", "/contact");
+}
+
+export async function updateServicesBackgroundAction(
+  _prevState: BackgroundImageFormState,
+  formData: FormData,
+): Promise<BackgroundImageFormState> {
+  return updateBackgroundImage(formData, "servicesBackgroundImageKey", "/services");
 }

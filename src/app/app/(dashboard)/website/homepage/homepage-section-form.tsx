@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import type { homepageSections } from "@/lib/db/schema";
 
 type HomepageSection = typeof homepageSections.$inferSelect;
@@ -37,7 +38,7 @@ export function HomepageSectionForm({ section }: { section: HomepageSection }) {
   const config = section.config as Record<string, unknown>;
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3" encType="multipart/form-data">
       <input type="hidden" name="sectionId" value={section.id} />
       <div className="flex items-center gap-2">
         <Checkbox id={`active-${section.id}`} name="active" defaultChecked={section.active} />
@@ -116,6 +117,48 @@ export function HomepageSectionForm({ section }: { section: HomepageSection }) {
                   rows={2}
                   defaultValue={typeof point.body === "string" ? point.body : ""}
                 />
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {section.sectionType === "hero" ? (
+        <div className="flex flex-col gap-3 border-t pt-3">
+          <p className="text-xs text-muted-foreground">
+            Pick up to 3 photos for a collage in place of the logo. Leave a slot untouched to keep
+            its current photo, or check Remove to clear it. With none set, the logo is shown
+            instead.
+          </p>
+          {([1, 2, 3] as const).map((n) => {
+            const photoKeys = Array.isArray(config.photoKeys) ? (config.photoKeys as string[]) : [];
+            const existingKey = photoKeys[n - 1];
+            return (
+              <div key={n} className="flex flex-col gap-1.5 rounded-md border p-2.5">
+                <Label htmlFor={`photo${n}-${section.id}`} className="text-xs">
+                  Photo {n}
+                </Label>
+                {existingKey ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- admin preview thumbnail, same pattern as invoice-settings-form.tsx
+                  <img
+                    src={publicAssetUrl(existingKey)}
+                    alt=""
+                    className="h-20 w-28 rounded-md border object-cover"
+                  />
+                ) : null}
+                <input type="hidden" name={`existingPhoto${n}Key`} value={existingKey ?? ""} />
+                <Input
+                  id={`photo${n}-${section.id}`}
+                  name={`photo${n}`}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                />
+                {existingKey ? (
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <input type="checkbox" name={`removePhoto${n}`} />
+                    Remove this photo
+                  </label>
+                ) : null}
               </div>
             );
           })}

@@ -6,6 +6,7 @@ import { listPublishedServiceAreas } from "@/lib/website/service-areas";
 import { listPublishedGalleryItems } from "@/lib/website/gallery";
 import { listPublishedReviews } from "@/lib/website/reviews";
 import { HeroSection } from "@/components/site/sections/hero-section";
+import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import { ServicesSection } from "@/components/site/sections/services-section";
 import {
   WhyMrDrainSection,
@@ -27,6 +28,13 @@ function configLimit(config: Record<string, unknown>): number | undefined {
 function configString(config: Record<string, unknown>, key: string): string | undefined {
   const value = config[key];
   return typeof value === "string" ? value : undefined;
+}
+
+function configPhotoUrls(config: Record<string, unknown>): string[] | undefined {
+  const value = config.photoKeys;
+  if (!Array.isArray(value)) return undefined;
+  const keys = value.filter((k): k is string => typeof k === "string");
+  return keys.length > 0 ? keys.map(publicAssetUrl) : undefined;
 }
 
 function configPoints(config: Record<string, unknown>): WhyMrDrainPointOverride[] | undefined {
@@ -63,6 +71,7 @@ export default async function HomePage() {
                 businessName={settings.businessName}
                 tagline={settings.tagline}
                 trackingNumber={settings.defaultCallrailTrackingNumber}
+                photoUrls={configPhotoUrls(section.config)}
               />
             );
           case "services":

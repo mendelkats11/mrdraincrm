@@ -7,11 +7,17 @@ export function HeroSection({
   businessName,
   tagline,
   trackingNumber,
+  photoUrls,
 }: {
   businessName: string | null;
   tagline: string | null;
   trackingNumber: string | null;
+  /** 1-3 admin-picked photo URLs (Website > Homepage > Hero); falls back
+   *  to the plain logo when empty/unset — the safe default until photos
+   *  are actually chosen. */
+  photoUrls?: string[];
 }) {
+  const photos = photoUrls?.slice(0, 3) ?? [];
   return (
     <section className="relative overflow-hidden bg-brand-cream">
       <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 sm:py-24 lg:grid-cols-2">
@@ -45,14 +51,43 @@ export function HeroSection({
           </div>
         </div>
         <div className="relative mx-auto w-full max-w-sm">
-          <Image
-            src="/logo.png"
-            alt={businessName ?? "Mr. Drain Plumbing"}
-            width={1024}
-            height={754}
-            priority
-            className="w-full drop-shadow-xl"
-          />
+          {photos.length === 0 ? (
+            <Image
+              src="/logo.png"
+              alt={businessName ?? "Mr. Drain Plumbing"}
+              width={1024}
+              height={754}
+              priority
+              className="w-full drop-shadow-xl"
+            />
+          ) : photos.length === 1 ? (
+            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl shadow-xl">
+              <Image src={photos[0]} alt="" fill priority className="object-cover" />
+            </div>
+          ) : photos.length === 2 ? (
+            <div className="grid grid-cols-2 gap-3">
+              {photos.map((url, i) => (
+                <div
+                  key={url}
+                  className="relative aspect-[3/4] overflow-hidden rounded-2xl shadow-xl"
+                >
+                  <Image src={url} alt="" fill priority={i === 0} className="object-cover" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 grid-rows-2 gap-3">
+              <div className="relative row-span-2 overflow-hidden rounded-2xl shadow-xl">
+                <Image src={photos[0]} alt="" fill priority className="object-cover" />
+              </div>
+              <div className="relative aspect-square overflow-hidden rounded-2xl shadow-xl">
+                <Image src={photos[1]} alt="" fill className="object-cover" />
+              </div>
+              <div className="relative aspect-square overflow-hidden rounded-2xl shadow-xl">
+                <Image src={photos[2]} alt="" fill className="object-cover" />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </section>

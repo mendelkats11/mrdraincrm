@@ -74,6 +74,17 @@ export const appSettings = pgTable("app_settings", {
   // off per the site owner's explicit preference when reviews content
   // was still a placeholder.
   reviewsPageEnabled: boolean("reviews_page_enabled").notNull().default(false),
+  // Public-asset storage keys (see public-asset-upload.ts — same
+  // "public-assets/" prefix as gallery/service/hero images), each an
+  // optional full-bleed background photo behind its page's content. Null
+  // means no background (the page's plain default background color).
+  contactBackgroundImageKey: text("contact_background_image_key"),
+  servicesBackgroundImageKey: text("services_background_image_key"),
+  // Plain text body for /terms and /privacy — admin-editable placeholder
+  // content, not real legal language (the business owner is responsible
+  // for supplying/reviewing actual legal text before relying on these).
+  termsOfServiceContent: text("terms_of_service_content"),
+  privacyPolicyContent: text("privacy_policy_content"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

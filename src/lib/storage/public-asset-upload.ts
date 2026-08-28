@@ -8,7 +8,7 @@ export type UploadPublicAssetResult = { ok: true; key: string } | { ok: false; e
 
 /**
  * Shared by every Website CMS image upload (service images, service-area
- * images, gallery photos) — all land under the same "public-assets/"
+ * images, gallery photos, hero collage photos) — all land under the same "public-assets/"
  * prefix the read-only streaming route (public-asset-handler.ts) is
  * allowlisted to serve. SVG excluded for the same stored-XSS reason as the
  * invoice logo (src/lib/pdf/logo.ts) — these URLs are directly navigable.
@@ -18,7 +18,7 @@ export async function uploadPublicAsset(
   input: {
     buffer: Buffer;
     contentType: string;
-    category: "services" | "service-areas" | "gallery";
+    category: "services" | "service-areas" | "gallery" | "hero" | "backgrounds";
   },
 ): Promise<UploadPublicAssetResult> {
   if (!ALLOWED_CONTENT_TYPES.includes(input.contentType)) {

@@ -100,6 +100,30 @@ export function WebsiteSettingsForm({ settings }: { settings: WebsiteSettings })
           defaultValue={settings.aboutBody ?? ""}
         />
       </div>
+      <div className="flex flex-col gap-1.5 border-t pt-4">
+        <Label htmlFor="termsOfServiceContent">Terms of Service (/terms)</Label>
+        <p className="text-xs text-muted-foreground">
+          Placeholder content only — have this reviewed before relying on it as real legal text.
+        </p>
+        <Textarea
+          id="termsOfServiceContent"
+          name="termsOfServiceContent"
+          rows={8}
+          defaultValue={settings.termsOfServiceContent ?? ""}
+        />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="privacyPolicyContent">Privacy Policy (/privacy)</Label>
+        <p className="text-xs text-muted-foreground">
+          Placeholder content only — have this reviewed before relying on it as real legal text.
+        </p>
+        <Textarea
+          id="privacyPolicyContent"
+          name="privacyPolicyContent"
+          rows={8}
+          defaultValue={settings.privacyPolicyContent ?? ""}
+        />
+      </div>
       {error ? (
         <p role="alert" className="text-sm text-destructive">
           {error}

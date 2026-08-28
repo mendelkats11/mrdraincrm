@@ -23,27 +23,30 @@ export function ServicesSection({ services, limit }: { services: Service[]; limi
           <Link
             key={service.id}
             href={`/services/${service.slug}`}
-            className="group flex flex-col gap-3 rounded-2xl border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md"
+            className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md"
           >
-            <div className="flex size-12 items-center justify-center overflow-hidden rounded-xl bg-primary/10 text-primary">
+            <div className="relative h-40 w-full overflow-hidden bg-primary/10">
               {service.imageKey ? (
                 <Image
                   src={publicAssetUrl(service.imageKey)}
                   alt=""
-                  width={48}
-                  height={48}
-                  className="size-full object-cover"
+                  fill
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
                 />
               ) : (
-                <Wrench className="size-6" aria-hidden="true" />
+                <div className="flex size-full items-center justify-center text-primary">
+                  <Wrench className="size-8" aria-hidden="true" />
+                </div>
               )}
             </div>
-            <h3 className="font-semibold text-brand-navy group-hover:text-primary">
-              {service.name}
-            </h3>
-            {service.description ? (
-              <p className="line-clamp-2 text-sm text-foreground/70">{service.description}</p>
-            ) : null}
+            <div className="flex flex-col gap-2 p-5">
+              <h3 className="font-semibold text-brand-navy group-hover:text-primary">
+                {service.name}
+              </h3>
+              {service.description ? (
+                <p className="line-clamp-2 text-sm text-foreground/70">{service.description}</p>
+              ) : null}
+            </div>
           </Link>
         ))}
       </div>
