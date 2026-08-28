@@ -78,14 +78,16 @@ async function callRailPost(
 /**
  * "Call back" (docs: owner-initiated callback on a missed call) — CallRail
  * dials business_phone_number (the owner) first; once answered, it bridges
- * to customer_phone_number using caller_id (the original tracking number)
- * as the caller ID the customer sees, so the callback looks like it's
- * coming from the same number that rang them originally. Confirmed via
- * CallRail's own API docs (POST /v3/a/{account}/calls.json) — not yet
- * exercised against a real call, since the API key configured for this
- * account is deliberately read-only (see src/lib/callrail/poll.ts's
- * comment on why polling uses a read-only key) and a write-scoped key is
- * required for this specific feature.
+ * to customer_phone_number using caller_id as the caller ID the customer
+ * sees, so the callback looks like it's coming from the same number that
+ * rang them originally. Per CallRail's official API docs (POST
+ * /v3/a/{account}/calls.json, "Creating an Outbound Phone Call"),
+ * caller_id is the tracking phone number itself (or a verified external
+ * number) in plain E.164 form — NOT an internal tracker ID. An earlier
+ * version of this function resolved the tracking number to its tracker ID
+ * (e.g. "TRK019ddb...") and passed that instead, which is what caused
+ * CallRail to reject the request as "not found" — confirmed against the
+ * official docs, not a guess.
  */
 export async function createOutboundCall(
   apiKey: string,
@@ -98,44 +100,6 @@ export async function createOutboundCall(
     business_phone_number: input.businessPhoneNumber,
   })) as { id: string };
   return result;
-}
-
-interface CallRailTracker {
-  id: string;
-  tracking_numbers?: unknown;
-}
-
-/**
- * Real, confirmed root cause of the "CallRail API request failed: not
- * found" callback error: createOutboundCall's `caller_id` is not the
- * tracking phone number itself — it's the internal tracker ID CallRail
- * assigns to that number (e.g. "TRK019ddb55e5ce7dcf948fc0a6e702a03c"),
- * confirmed against GET /v3/a/{account}/trackers.json on the real account.
- * This resolves a call's plain phone-number tracking number to that ID.
- */
-export async function fetchTrackerIdForNumber(
-  apiKey: string,
-  accountId: string,
-  trackingNumber: string,
-): Promise<string | null> {
-  let page = 1;
-  const perPage = "250";
-
-  for (;;) {
-    const data = (await callRailGet(apiKey, `/a/${accountId}/trackers.json`, {
-      per_page: perPage,
-      page: String(page),
-    })) as { trackers?: unknown; total_pages?: number };
-
-    const trackers = Array.isArray(data.trackers) ? (data.trackers as CallRailTracker[]) : [];
-    for (const tracker of trackers) {
-      const numbers = Array.isArray(tracker.tracking_numbers) ? tracker.tracking_numbers : [];
-      if (numbers.includes(trackingNumber)) return tracker.id;
-    }
-
-    if (!data.total_pages || page >= data.total_pages || trackers.length === 0) return null;
-    page += 1;
-  }
 }
 
 /**

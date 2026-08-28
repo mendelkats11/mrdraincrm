@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { appSettings, calls } from "@/lib/db/schema";
 import { recordActivity } from "@/lib/audit/activity";
-import { createOutboundCall, fetchTrackerIdForNumber, CallRailApiError } from "./api-client";
+import { createOutboundCall, CallRailApiError } from "./api-client";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db<TQueryResult extends PgQueryResultHKT> = PgDatabase<TQueryResult, any, any>;
@@ -72,17 +72,8 @@ export async function initiateCallback<TQueryResult extends PgQueryResultHKT>(
   }
 
   try {
-    const trackerId = await fetchTrackerIdForNumber(apiKey, accountId, call.trackingNumber);
-    if (!trackerId) {
-      return {
-        ok: false,
-        error: "api_error",
-        message: `Couldn't find a CallRail tracker for ${call.trackingNumber}.`,
-      };
-    }
-
     const outbound = await createOutboundCall(apiKey, accountId, {
-      callerId: trackerId,
+      callerId: call.trackingNumber,
       customerPhoneNumber: call.callerNumber,
       businessPhoneNumber,
     });
