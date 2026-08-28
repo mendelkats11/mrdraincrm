@@ -14,6 +14,7 @@ const settingsSchema = z.object({
   aboutBody: z.string().trim().max(3000).optional(),
   publicContactEmail: z.union([z.literal(""), z.string().trim().email()]).optional(),
   defaultCallrailTrackingNumber: z.string().trim().max(32).optional(),
+  reviewsPageEnabled: z.boolean(),
 });
 
 export type WebsiteSettingsFormState = { ok: true } | { ok: false; error: string } | undefined;
@@ -31,6 +32,7 @@ export async function updateWebsiteSettingsAction(
     aboutBody: formData.get("aboutBody") || undefined,
     publicContactEmail: formData.get("publicContactEmail") || undefined,
     defaultCallrailTrackingNumber: formData.get("defaultCallrailTrackingNumber") || undefined,
+    reviewsPageEnabled: formData.get("reviewsPageEnabled") === "on",
   });
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input." };
@@ -47,6 +49,7 @@ export async function updateWebsiteSettingsAction(
       aboutBody: parsed.data.aboutBody || null,
       publicContactEmail: parsed.data.publicContactEmail || null,
       defaultCallrailTrackingNumber: parsed.data.defaultCallrailTrackingNumber || null,
+      reviewsPageEnabled: parsed.data.reviewsPageEnabled,
     },
     session.user.id,
   );
@@ -55,5 +58,6 @@ export async function updateWebsiteSettingsAction(
   revalidatePath("/");
   revalidatePath("/about");
   revalidatePath("/contact");
+  revalidatePath("/reviews");
   return { ok: true };
 }

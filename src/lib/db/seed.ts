@@ -145,7 +145,11 @@ const HOMEPAGE_SECTIONS_SEED = [
   { sectionType: "why_mr_drain", sortOrder: 2, config: {} },
   { sectionType: "service_areas", sortOrder: 3, config: {} },
   { sectionType: "gallery", sortOrder: 4, config: {} },
-  { sectionType: "reviews", sortOrder: 5, config: {} },
+  // Off by default — see appSettings.reviewsPageEnabled for the standalone
+  // /reviews page's matching default. Reviews content was still a
+  // placeholder when this default was set; toggle back on in Website >
+  // Homepage once real reviews are in.
+  { sectionType: "reviews", sortOrder: 5, config: {}, active: false },
   { sectionType: "cta", sortOrder: 6, config: {} },
 ] as const;
 

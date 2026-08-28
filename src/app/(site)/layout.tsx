@@ -26,6 +26,7 @@ export default async function SiteLayout({ children }: LayoutProps<"/">) {
       <SiteHeader
         trackingNumber={settings.defaultCallrailTrackingNumber}
         serviceAreas={serviceAreas.map((area) => ({ slug: area.slug, name: area.name }))}
+        reviewsEnabled={settings.reviewsPageEnabled}
       />
       <main className="flex-1 pb-20 sm:pb-0">{children}</main>
       <SiteFooter

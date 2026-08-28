@@ -4,6 +4,7 @@ import { getDb } from "@/lib/db/client";
 import { getCall, listJobsForContact } from "@/lib/callrail/calls";
 import { getEntityTimeline } from "@/lib/audit/activity";
 import { formatPhoneForDisplay } from "@/lib/phone";
+import { BUSINESS_TIMEZONE } from "@/lib/reminders/timezone";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityTimeline } from "@/components/activity-timeline";
@@ -11,7 +12,13 @@ import { CallDirectionIcon } from "@/components/call-direction-icon";
 import { CallBackButton } from "./call-back-button";
 import { UnknownCallerActions } from "./unknown-caller-actions";
 
-const DATE_FMT = new Intl.DateTimeFormat("en-CA", { dateStyle: "medium", timeStyle: "short" });
+// Server-rendered — see calls/page.tsx's DATE_FMT comment for why timeZone
+// must be explicit here (server-timezone bug, not a client display issue).
+const DATE_FMT = new Intl.DateTimeFormat("en-CA", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: BUSINESS_TIMEZONE,
+});
 
 function formatDuration(seconds: number | null): string {
   if (seconds === null) return "—";

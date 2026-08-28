@@ -4,8 +4,14 @@ import { getDb } from "@/lib/db/client";
 import { listMessagesForThread } from "@/lib/callrail/calls";
 import { formatPhoneForDisplay } from "@/lib/phone";
 import { Card, CardContent } from "@/components/ui/card";
+import { BUSINESS_TIMEZONE } from "@/lib/reminders/timezone";
 
-const TIME_FMT = new Intl.DateTimeFormat("en-CA", { dateStyle: "medium", timeStyle: "short" });
+// Server-rendered — see calls/page.tsx's DATE_FMT comment.
+const TIME_FMT = new Intl.DateTimeFormat("en-CA", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: BUSINESS_TIMEZONE,
+});
 
 export default async function MessageThreadPage({
   params,

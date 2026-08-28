@@ -20,8 +20,14 @@ import {
 import { ReportNav } from "../report-nav";
 import { DateRangeFilter } from "../date-range-filter";
 import { QuerySelectFilter } from "../query-select-filter";
+import { BUSINESS_TIMEZONE } from "@/lib/reminders/timezone";
 
-const DATE_FMT = new Intl.DateTimeFormat("en-CA", { dateStyle: "medium", timeStyle: "short" });
+// Server-rendered — see calls/page.tsx's DATE_FMT comment.
+const DATE_FMT = new Intl.DateTimeFormat("en-CA", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: BUSINESS_TIMEZONE,
+});
 
 function formatDuration(seconds: number | null): string {
   if (seconds === null) return "—";

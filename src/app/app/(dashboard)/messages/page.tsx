@@ -4,9 +4,17 @@ import { listMessageThreads } from "@/lib/callrail/calls";
 import { formatPhoneForDisplay } from "@/lib/phone";
 import { Card, CardContent } from "@/components/ui/card";
 import { PaginationBar } from "@/components/pagination-bar";
+import { BUSINESS_TIMEZONE } from "@/lib/reminders/timezone";
 
 const PAGE_SIZE = 50;
-const DATE_FMT = new Intl.DateTimeFormat("en-CA", { dateStyle: "medium", timeStyle: "short" });
+// Server-rendered — see calls/page.tsx's DATE_FMT comment: without an
+// explicit timeZone this formats in the server's own timezone (UTC in
+// production), not the business's.
+const DATE_FMT = new Intl.DateTimeFormat("en-CA", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: BUSINESS_TIMEZONE,
+});
 
 // One row per sender (a real chat-app inbox, not a flat message log) —
 // someone who texted a month ago and texts again today lands in the same

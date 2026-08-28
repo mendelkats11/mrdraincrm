@@ -15,7 +15,7 @@ describe("website settings", () => {
     await ctx.client.close();
   });
 
-  it("returns all-null defaults when no appSettings row exists", async () => {
+  it("returns all-null defaults (reviewsPageEnabled off) when no appSettings row exists", async () => {
     const settings = await getWebsiteSettings(ctx.db);
     expect(settings).toEqual({
       businessName: null,
@@ -25,7 +25,16 @@ describe("website settings", () => {
       aboutBody: null,
       publicContactEmail: null,
       defaultCallrailTrackingNumber: null,
+      reviewsPageEnabled: false,
     });
+  });
+
+  it("turns the standalone reviews page on and back off", async () => {
+    await updateWebsiteSettings(ctx.db, { reviewsPageEnabled: true }, null);
+    expect((await getWebsiteSettings(ctx.db)).reviewsPageEnabled).toBe(true);
+
+    await updateWebsiteSettings(ctx.db, { reviewsPageEnabled: false }, null);
+    expect((await getWebsiteSettings(ctx.db)).reviewsPageEnabled).toBe(false);
   });
 
   it("creates the singleton row on first use", async () => {

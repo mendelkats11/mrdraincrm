@@ -64,6 +64,12 @@ export const appSettings = pgTable("app_settings", {
   // customer using the original tracking number as caller ID, same as any
   // other CallRail Call Connect setup.
   ownerCallbackPhoneNumber: text("owner_callback_phone_number"),
+  // Whether the standalone /reviews page is reachable at all — separate
+  // from the homepage's own reviews section, which is toggled per-row via
+  // homepage_sections.active (Website > Homepage editor) instead. Defaults
+  // off per the site owner's explicit preference when reviews content
+  // was still a placeholder.
+  reviewsPageEnabled: boolean("reviews_page_enabled").notNull().default(false),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

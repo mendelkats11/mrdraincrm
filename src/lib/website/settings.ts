@@ -14,6 +14,7 @@ export interface WebsiteSettings {
   aboutBody: string | null;
   publicContactEmail: string | null;
   defaultCallrailTrackingNumber: string | null;
+  reviewsPageEnabled: boolean;
 }
 
 export async function getWebsiteSettings<TQueryResult extends PgQueryResultHKT>(
@@ -28,6 +29,7 @@ export async function getWebsiteSettings<TQueryResult extends PgQueryResultHKT>(
     aboutBody: settings?.aboutBody ?? null,
     publicContactEmail: settings?.publicContactEmail ?? null,
     defaultCallrailTrackingNumber: settings?.defaultCallrailTrackingNumber ?? null,
+    reviewsPageEnabled: settings?.reviewsPageEnabled ?? false,
   };
 }
 
@@ -39,6 +41,7 @@ export interface UpdateWebsiteSettingsInput {
   aboutBody?: string | null;
   publicContactEmail?: string | null;
   defaultCallrailTrackingNumber?: string | null;
+  reviewsPageEnabled?: boolean;
 }
 
 /** Same find-or-create-the-singleton-row pattern as
@@ -69,6 +72,8 @@ export async function updateWebsiteSettings<TQueryResult extends PgQueryResultHK
           input.defaultCallrailTrackingNumber !== undefined
             ? input.defaultCallrailTrackingNumber || null
             : undefined,
+        reviewsPageEnabled:
+          input.reviewsPageEnabled !== undefined ? input.reviewsPageEnabled : undefined,
         updatedAt: new Date(),
       })
       .where(eq(appSettings.id, settingsId));

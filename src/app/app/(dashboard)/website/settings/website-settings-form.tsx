@@ -70,6 +70,14 @@ export function WebsiteSettingsForm({ settings }: { settings: WebsiteSettings })
           placeholder="Used on pages without a more specific service-area number"
         />
       </div>
+      <label className="flex items-center gap-2 text-sm text-foreground">
+        <input
+          type="checkbox"
+          name="reviewsPageEnabled"
+          defaultChecked={settings.reviewsPageEnabled}
+        />
+        Show the standalone Reviews page (/reviews)
+      </label>
       <div className="flex flex-col gap-1.5 border-t pt-4">
         <Label htmlFor="aboutHeading">About page heading</Label>
         <Input id="aboutHeading" name="aboutHeading" defaultValue={settings.aboutHeading ?? ""} />

@@ -3,6 +3,7 @@ import { getDb } from "@/lib/db/client";
 import { listCalls, type ListCallsFilters } from "@/lib/callrail/calls";
 import { listServiceAreasForAdmin } from "@/lib/website/service-areas";
 import { formatPhoneForDisplay } from "@/lib/phone";
+import { BUSINESS_TIMEZONE } from "@/lib/reminders/timezone";
 import {
   Table,
   TableBody,
@@ -35,7 +36,17 @@ const VALID_SORTS: NonNullable<ListCallsFilters["sort"]>[] = [
   "shortest",
 ];
 
-const DATE_FMT = new Intl.DateTimeFormat("en-CA", { dateStyle: "medium", timeStyle: "short" });
+// This renders server-side (force-dynamic, no "use client"), so without an
+// explicit timeZone it formats in whatever timezone the server process
+// runs in (UTC on the production host) rather than the business's own
+// timezone — the exact cause of calls appearing hours off. See
+// src/lib/reminders/timezone.ts's BUSINESS_TIMEZONE for the same fix
+// already applied to reminders.
+const DATE_FMT = new Intl.DateTimeFormat("en-CA", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: BUSINESS_TIMEZONE,
+});
 
 function formatDuration(seconds: number | null): string {
   if (seconds === null) return "—";

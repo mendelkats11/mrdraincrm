@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { Star } from "lucide-react";
 import { getDb } from "@/lib/db/client";
 import { listPublishedReviews } from "@/lib/website/reviews";
@@ -29,6 +30,7 @@ function Stars({ rating }: { rating: number }) {
 export default async function ReviewsPage() {
   const db = getDb();
   const [reviews, settings] = await Promise.all([listPublishedReviews(db), getWebsiteSettings(db)]);
+  if (!settings.reviewsPageEnabled) notFound();
 
   return (
     <>

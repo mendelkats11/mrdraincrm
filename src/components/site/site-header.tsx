@@ -8,7 +8,7 @@ import { ChevronDown, Menu, Phone, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatPhoneForDisplay } from "@/lib/phone";
 
-const NAV_LINKS = [
+const BASE_NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/services", label: "Services" },
   { href: "/gallery", label: "Gallery" },
@@ -25,12 +25,17 @@ export interface ServiceAreaNavItem {
 export function SiteHeader({
   trackingNumber,
   serviceAreas,
+  reviewsEnabled,
 }: {
   trackingNumber: string | null;
   serviceAreas: ServiceAreaNavItem[];
+  reviewsEnabled: boolean;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const NAV_LINKS = reviewsEnabled
+    ? BASE_NAV_LINKS
+    : BASE_NAV_LINKS.filter((link) => link.href !== "/reviews");
 
   return (
     <header className="sticky top-0 z-30 border-b border-black/5 bg-white/95 backdrop-blur">
