@@ -78,7 +78,17 @@ describe("initiateCallback", () => {
     if (!result.ok) expect(result.error).toBe("not_configured");
   });
 
-  it("calls CallRail with the call's caller number, tracking number, and the configured owner phone, and records activity on success", async () => {
+  function stubTrackerLookup(trackingNumber: string, trackerId: string) {
+    return new Response(
+      JSON.stringify({
+        trackers: [{ id: trackerId, tracking_numbers: [trackingNumber] }],
+        total_pages: 1,
+      }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    );
+  }
+
+  it("resolves the tracker ID for the call's tracking number and uses it as caller_id — the real bug this fixes (CallRail's caller_id is a tracker ID, not a phone number)", async () => {
     process.env.CALLRAIL_API_KEY = "test-key";
     process.env.CALLRAIL_ACCOUNT_ID = "123";
     await setOwnerCallbackPhoneNumber(ctx.db, "+13065550000", null);
@@ -91,9 +101,13 @@ describe("initiateCallback", () => {
     if (!call.ok || call.duplicate) throw new Error("expected ok");
 
     const fetchMock = vi.fn(async (url: string | URL, init?: RequestInit) => {
-      expect(url.toString()).toBe("https://api.callrail.com/v3/a/123/calls.json");
+      const href = url.toString();
+      if (href.includes("/trackers.json")) {
+        return stubTrackerLookup("+13065559999", "TRK_ABC123");
+      }
+      expect(href).toBe("https://api.callrail.com/v3/a/123/calls.json");
       expect(JSON.parse(init!.body as string)).toEqual({
-        caller_id: "+13065559999",
+        caller_id: "TRK_ABC123",
         customer_phone_number: "+13065551111",
         business_phone_number: "+13065550000",
       });
@@ -106,10 +120,37 @@ describe("initiateCallback", () => {
 
     const result = await initiateCallback(ctx.db, call.callId, null);
     expect(result).toEqual({ ok: true, outboundCallrailCallId: "CAL-OUTBOUND-1" });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it("surfaces CallRail's error message when the API call fails (e.g. a read-only key)", async () => {
+  it("fails clearly when no tracker matches the call's tracking number", async () => {
+    process.env.CALLRAIL_API_KEY = "test-key";
+    process.env.CALLRAIL_ACCOUNT_ID = "123";
+    await setOwnerCallbackPhoneNumber(ctx.db, "+13065550000", null);
+
+    const call = await processCallWebhook(ctx.db, {
+      id: "CAL-CB-5",
+      customer_phone_number: "+13065551111",
+      tracking_phone_number: "+13065559999",
+    });
+    if (!call.ok || call.duplicate) throw new Error("expected ok");
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        stubTrackerLookup("+13065550001" /* different number */, "TRK_OTHER"),
+      ),
+    );
+
+    const result = await initiateCallback(ctx.db, call.callId, null);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toBe("api_error");
+      expect(result.message).toContain("+13065559999");
+    }
+  });
+
+  it("surfaces CallRail's error message when the outbound call itself fails (e.g. a read-only key)", async () => {
     process.env.CALLRAIL_API_KEY = "test-key";
     process.env.CALLRAIL_ACCOUNT_ID = "123";
     await setOwnerCallbackPhoneNumber(ctx.db, "+13065550000", null);
@@ -123,15 +164,17 @@ describe("initiateCallback", () => {
 
     vi.stubGlobal(
       "fetch",
-      vi.fn(
-        async () =>
-          new Response(
-            JSON.stringify({
-              error: "This API key is read-only and cannot be used to make changes.",
-            }),
-            { status: 403, headers: { "content-type": "application/json" } },
-          ),
-      ),
+      vi.fn(async (url: string | URL) => {
+        if (url.toString().includes("/trackers.json")) {
+          return stubTrackerLookup("+13065559999", "TRK_ABC123");
+        }
+        return new Response(
+          JSON.stringify({
+            error: "This API key is read-only and cannot be used to make changes.",
+          }),
+          { status: 403, headers: { "content-type": "application/json" } },
+        );
+      }),
     );
 
     const result = await initiateCallback(ctx.db, call.callId, null);

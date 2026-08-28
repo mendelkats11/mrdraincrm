@@ -100,6 +100,44 @@ export async function createOutboundCall(
   return result;
 }
 
+interface CallRailTracker {
+  id: string;
+  tracking_numbers?: unknown;
+}
+
+/**
+ * Real, confirmed root cause of the "CallRail API request failed: not
+ * found" callback error: createOutboundCall's `caller_id` is not the
+ * tracking phone number itself — it's the internal tracker ID CallRail
+ * assigns to that number (e.g. "TRK019ddb55e5ce7dcf948fc0a6e702a03c"),
+ * confirmed against GET /v3/a/{account}/trackers.json on the real account.
+ * This resolves a call's plain phone-number tracking number to that ID.
+ */
+export async function fetchTrackerIdForNumber(
+  apiKey: string,
+  accountId: string,
+  trackingNumber: string,
+): Promise<string | null> {
+  let page = 1;
+  const perPage = "250";
+
+  for (;;) {
+    const data = (await callRailGet(apiKey, `/a/${accountId}/trackers.json`, {
+      per_page: perPage,
+      page: String(page),
+    })) as { trackers?: unknown; total_pages?: number };
+
+    const trackers = Array.isArray(data.trackers) ? (data.trackers as CallRailTracker[]) : [];
+    for (const tracker of trackers) {
+      const numbers = Array.isArray(tracker.tracking_numbers) ? tracker.tracking_numbers : [];
+      if (numbers.includes(trackingNumber)) return tracker.id;
+    }
+
+    if (!data.total_pages || page >= data.total_pages || trackers.length === 0) return null;
+    page += 1;
+  }
+}
+
 /**
  * Raw call objects, already in the shape processCallWebhook/
  * parseCallWebhookPayload expect — deliberately typed loosely
