@@ -69,7 +69,7 @@ const ACTION_LABELS: Record<string, string> = {
   service_area_tracking_number_updated: "Tracking number updated",
 };
 
-function humanizeAction(action: string): string {
+export function humanizeAction(action: string): string {
   return (
     ACTION_LABELS[action] ??
     action

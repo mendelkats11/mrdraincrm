@@ -1,15 +1,22 @@
 import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCents } from "@/lib/money";
 import type { OperationsWidgetData } from "@/lib/dashboard/operations-widgets";
 import type { listReminders } from "@/lib/reminders/reminders";
 import type { OperationsWidgetId } from "@/lib/dashboard/widgets";
 import { OPERATIONS_WIDGET_LABELS } from "@/lib/dashboard/widgets";
+import { humanizeAction } from "@/components/activity-timeline";
+import { BUSINESS_TIMEZONE } from "@/lib/reminders/timezone";
 import { ReminderStatusBadge } from "./reminders/reminder-status-badge";
 
-const DATE_FMT = new Intl.DateTimeFormat("en-CA", { dateStyle: "medium", timeStyle: "short" });
+// Server-rendered — see calls/page.tsx's DATE_FMT comment for why timeZone
+// must be explicit (server-timezone bug, not a client display issue).
+const DATE_FMT = new Intl.DateTimeFormat("en-CA", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: BUSINESS_TIMEZONE,
+});
 
 function WidgetCard({
   id,
@@ -169,12 +176,13 @@ export function OperationsWidgetGrid({
                 ) : (
                   data.recentActivity.map((entry) => (
                     <div key={entry.id} className="flex items-center justify-between gap-2 text-sm">
-                      <span className="truncate text-muted-foreground">
-                        <Badge variant="outline" className="mr-2">
-                          {entry.entityType}
-                        </Badge>
-                        {entry.action.replace(/_/g, " ")}
-                        {entry.actorName ? ` — ${entry.actorName}` : ""}
+                      <span className="truncate">
+                        <span className="font-medium text-foreground">
+                          {humanizeAction(entry.action)}
+                        </span>
+                        <span className="text-muted-foreground">
+                          {entry.actorName ? ` — ${entry.actorName}` : ""}
+                        </span>
                       </span>
                       <span className="shrink-0 text-xs text-muted-foreground">
                         {DATE_FMT.format(entry.createdAt)}

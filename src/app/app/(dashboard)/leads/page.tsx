@@ -152,7 +152,7 @@ export default async function LeadsPage({
                       {row.call.ignored ? (
                         <Badge variant="secondary">Ignored</Badge>
                       ) : row.call.matched ? (
-                        <Badge variant="default">Matched</Badge>
+                        <Badge variant="success">Matched</Badge>
                       ) : (
                         <Badge variant="outline">Unmatched</Badge>
                       )}

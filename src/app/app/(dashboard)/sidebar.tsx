@@ -93,8 +93,16 @@ export function Sidebar({
         // giving the sidebar its own subtle surface, distinct from the
         // main content area, rather than sharing the page background and
         // reading as one undifferentiated flat panel.
-        "flex shrink-0 flex-col gap-1 border-r border-sidebar-border bg-sidebar p-3 text-sidebar-foreground",
-        collapsed ? "w-14 items-center" : "w-56",
+        //
+        // Below lg, this is an off-canvas drawer (fixed, slid out via the
+        // "sidebar-toggle" checkbox in layout.tsx — peer-checked here, see
+        // that file's comment for why a checkbox rather than client state)
+        // rather than the permanent rail DESIGN_SYSTEM.md §6 specifies for
+        // desktop — there was previously no mobile nav at all, just this
+        // same full-width rail always rendered inline, forcing horizontal
+        // scroll on every single page on a phone.
+        "fixed inset-y-0 left-0 z-50 flex w-64 -translate-x-full flex-col gap-1 border-r border-sidebar-border bg-sidebar p-3 text-sidebar-foreground transition-transform duration-200 peer-checked:translate-x-0 lg:static lg:z-auto lg:w-56 lg:translate-x-0 lg:shrink-0",
+        collapsed && "lg:w-14 lg:items-center",
       )}
     >
       <Link
@@ -102,19 +110,13 @@ export function Sidebar({
         title={collapsed ? "Mr. Drain CRM" : undefined}
         className={cn(
           "mb-3 flex items-center gap-2 rounded-md px-3 py-2 font-heading text-lg font-bold tracking-tight text-primary",
-          collapsed ? "justify-center px-2" : "",
+          collapsed && "lg:justify-center lg:px-2",
         )}
       >
-        {collapsed ? (
-          "MD"
-        ) : (
-          <>
-            <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-primary text-sm text-primary-foreground">
-              M
-            </span>
-            Mr. Drain
-          </>
-        )}
+        <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-primary text-sm text-primary-foreground">
+          M
+        </span>
+        <span className={collapsed ? "lg:hidden" : undefined}>Mr. Drain</span>
       </Link>
       <div className="flex w-full flex-1 flex-col gap-0.5 overflow-y-auto">
         {items.map((item) => {
@@ -128,14 +130,14 @@ export function Sidebar({
               title={collapsed ? item.label : undefined}
               className={cn(
                 "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                collapsed && "justify-center px-2",
+                collapsed && "lg:justify-center lg:px-2",
                 isActive
                   ? "bg-sidebar-primary text-sidebar-primary-foreground"
                   : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
               )}
             >
               <Icon className="size-4 shrink-0" aria-hidden="true" />
-              {collapsed ? null : item.label}
+              <span className={collapsed ? "lg:hidden" : undefined}>{item.label}</span>
             </Link>
           );
         })}
