@@ -176,7 +176,7 @@ export function QuoteActionsBar({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Keep quote</AlertDialogCancel>
-            <AlertDialogAction disabled={pending} onClick={handleCancel}>
+            <AlertDialogAction variant="destructive" disabled={pending} onClick={handleCancel}>
               Cancel quote
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -195,7 +195,7 @@ export function QuoteActionsBar({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction disabled={pending} onClick={handleConvert}>
+            <AlertDialogAction variant="success" disabled={pending} onClick={handleConvert}>
               Convert to job
             </AlertDialogAction>
           </AlertDialogFooter>

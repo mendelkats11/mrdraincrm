@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ContractorJobRow } from "@/lib/contractors/assignments";
 import { formatCents } from "@/lib/money";
+import { BUSINESS_TIMEZONE } from "@/lib/reminders/timezone";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import {
   Table,
@@ -30,7 +31,10 @@ const ASSIGNMENT_STATUS_VARIANTS: Record<string, BadgeProps["variant"]> = {
   paid: "success",
 };
 
-const DATE_FMT = new Intl.DateTimeFormat("en-CA", { dateStyle: "medium" });
+const DATE_FMT = new Intl.DateTimeFormat("en-CA", {
+  dateStyle: "medium",
+  timeZone: BUSINESS_TIMEZONE,
+});
 
 export function PayoutHistory({ jobs }: { jobs: ContractorJobRow[] }) {
   if (jobs.length === 0) {

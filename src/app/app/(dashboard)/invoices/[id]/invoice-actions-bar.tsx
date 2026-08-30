@@ -126,7 +126,11 @@ export function InvoiceActionsBar({
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction disabled={pending || !voidReason.trim()} onClick={handleVoid}>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={pending || !voidReason.trim()}
+              onClick={handleVoid}
+            >
               Void invoice
             </AlertDialogAction>
           </AlertDialogFooter>

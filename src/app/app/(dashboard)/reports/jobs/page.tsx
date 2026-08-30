@@ -8,6 +8,7 @@ import {
 } from "@/lib/reports/resolve-range-from-search-params";
 import { listServicesForAdmin } from "@/lib/website/services";
 import { listContractors } from "@/lib/contractors/contractors";
+import { BUSINESS_TIMEZONE } from "@/lib/reminders/timezone";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,7 +33,10 @@ const STATUS_OPTIONS = [
   { value: "cancelled", label: "Cancelled" },
 ];
 
-const DATE_FMT = new Intl.DateTimeFormat("en-CA", { dateStyle: "medium" });
+const DATE_FMT = new Intl.DateTimeFormat("en-CA", {
+  dateStyle: "medium",
+  timeZone: BUSINESS_TIMEZONE,
+});
 
 export default async function JobsReportPage({
   searchParams,

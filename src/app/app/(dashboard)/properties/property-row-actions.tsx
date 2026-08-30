@@ -75,6 +75,7 @@ export function PropertyRowActions({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
+              variant="destructive"
               disabled={pending}
               onClick={() =>
                 startTransition(async () => {

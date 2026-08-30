@@ -167,7 +167,7 @@ export function ReviewRowActions({ review }: { review: Review }) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction disabled={pending} onClick={handleDelete}>
+            <AlertDialogAction variant="destructive" disabled={pending} onClick={handleDelete}>
               Delete review
             </AlertDialogAction>
           </AlertDialogFooter>

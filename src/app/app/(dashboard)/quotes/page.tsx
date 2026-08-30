@@ -2,6 +2,8 @@ import Link from "next/link";
 import { getDb } from "@/lib/db/client";
 import { listQuotes, type QuoteStatus } from "@/lib/quotes/quotes";
 import { formatCents } from "@/lib/money";
+import { BUSINESS_TIMEZONE } from "@/lib/reminders/timezone";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -23,7 +25,11 @@ const VALID_STATUSES: QuoteStatus[] = [
   "cancelled",
 ];
 
-const DATE_FMT = new Intl.DateTimeFormat("en-CA", { dateStyle: "medium", timeStyle: "short" });
+const DATE_FMT = new Intl.DateTimeFormat("en-CA", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: BUSINESS_TIMEZONE,
+});
 
 export default async function QuotesPage({
   searchParams,
@@ -48,9 +54,9 @@ export default async function QuotesPage({
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-foreground">Quotes</h1>
-        <Link href="/quotes/new" className="text-sm font-medium text-primary hover:underline">
-          + New Quote
-        </Link>
+        <Button asChild>
+          <Link href="/quotes/new">+ New Quote</Link>
+        </Button>
       </div>
 
       <QuoteFilters />

@@ -3,6 +3,7 @@ import { AlertTriangle } from "lucide-react";
 import { getDb } from "@/lib/db/client";
 import { listJobs } from "@/lib/jobs/jobs";
 import { formatScheduleSummary } from "@/lib/schedule/format";
+import { BUSINESS_TIMEZONE } from "@/lib/reminders/timezone";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +18,11 @@ import { JobFilters } from "./job-filters";
 import { StatusBadge } from "./status-badge";
 
 const PAGE_SIZE = 25;
+const DATE_FMT = new Intl.DateTimeFormat("en-CA", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: BUSINESS_TIMEZONE,
+});
 
 export default async function JobsPage({
   searchParams,
@@ -99,10 +105,7 @@ export default async function JobsPage({
                     {formatScheduleSummary(job)}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {new Intl.DateTimeFormat("en-CA", {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    }).format(job.createdAt)}
+                    {DATE_FMT.format(job.createdAt)}
                   </TableCell>
                 </TableRow>
               ))}

@@ -54,6 +54,7 @@ export function ArchiveButton({ propertyId, archived }: { propertyId: string; ar
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
+              variant="destructive"
               disabled={pending}
               onClick={() =>
                 startTransition(async () => {

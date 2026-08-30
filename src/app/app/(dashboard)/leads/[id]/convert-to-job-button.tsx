@@ -46,6 +46,7 @@ export function ConvertToJobButton({ leadId }: { leadId: string }) {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
+              variant="success"
               disabled={pending}
               onClick={(e) => {
                 e.preventDefault();

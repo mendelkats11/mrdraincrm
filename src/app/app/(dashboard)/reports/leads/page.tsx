@@ -6,6 +6,7 @@ import {
   type ReportSearchParams,
 } from "@/lib/reports/resolve-range-from-search-params";
 import { formatBasisPointsAsPercent } from "@/lib/financials/job-financials";
+import { BUSINESS_TIMEZONE } from "@/lib/reminders/timezone";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,7 +30,10 @@ const STATUS_OPTIONS = [
   { value: "lost", label: "Lost" },
 ];
 
-const DATE_FMT = new Intl.DateTimeFormat("en-CA", { dateStyle: "medium" });
+const DATE_FMT = new Intl.DateTimeFormat("en-CA", {
+  dateStyle: "medium",
+  timeZone: BUSINESS_TIMEZONE,
+});
 
 export default async function LeadsReportPage({
   searchParams,

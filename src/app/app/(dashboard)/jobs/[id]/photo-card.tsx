@@ -86,6 +86,7 @@ export function PhotoCard({ jobId, photo }: { jobId: string; photo: JobPhotoWith
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
+              variant="destructive"
               disabled={pending}
               onClick={() =>
                 startTransition(async () => {

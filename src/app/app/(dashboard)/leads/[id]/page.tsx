@@ -7,6 +7,7 @@ import { formatPhoneForDisplay } from "@/lib/phone";
 import { listQuotesForContact } from "@/lib/quotes/quotes";
 import { listRemindersForEntity } from "@/lib/reminders/reminders";
 import { getEntityTimeline } from "@/lib/audit/activity";
+import { BUSINESS_TIMEZONE } from "@/lib/reminders/timezone";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityTimeline } from "@/components/activity-timeline";
@@ -16,6 +17,12 @@ import { StatusSelect } from "./status-select";
 import { ConvertToJobButton } from "./convert-to-job-button";
 import { EditLeadDialog } from "./edit-lead-dialog";
 import { LeadQuotesCard } from "./lead-quotes-card";
+
+const DATE_FMT = new Intl.DateTimeFormat("en-CA", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: BUSINESS_TIMEZONE,
+});
 
 export default async function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -175,22 +182,12 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           <CardContent className="flex flex-col gap-1 text-sm">
             <p>
               Created:{" "}
-              <span className="text-muted-foreground">
-                {new Intl.DateTimeFormat("en-CA", {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                }).format(lead.createdAt)}
-              </span>
+              <span className="text-muted-foreground">{DATE_FMT.format(lead.createdAt)}</span>
             </p>
             <p>
               Converted:{" "}
               <span className="text-muted-foreground">
-                {lead.convertedAt
-                  ? new Intl.DateTimeFormat("en-CA", {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    }).format(lead.convertedAt)
-                  : "—"}
+                {lead.convertedAt ? DATE_FMT.format(lead.convertedAt) : "—"}
               </span>
             </p>
           </CardContent>

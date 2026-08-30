@@ -1,6 +1,7 @@
 import { getDb } from "@/lib/db/client";
 import { listReviewsForAdmin } from "@/lib/website/reviews";
 import { getPublicSiteOrigin } from "@/lib/site-url";
+import { BUSINESS_TIMEZONE } from "@/lib/reminders/timezone";
 import {
   Table,
   TableBody,
@@ -14,7 +15,10 @@ import { SitePreviewPane } from "@/components/site-preview-pane";
 import { NewReviewDialog } from "./new-review-dialog";
 import { ReviewRowActions } from "./review-row-actions";
 
-const DATE_FMT = new Intl.DateTimeFormat("en-CA", { dateStyle: "medium" });
+const DATE_FMT = new Intl.DateTimeFormat("en-CA", {
+  dateStyle: "medium",
+  timeZone: BUSINESS_TIMEZONE,
+});
 
 export default async function WebsiteReviewsPage() {
   const db = getDb();

@@ -9,6 +9,7 @@ import { listServicesForAdmin } from "@/lib/website/services";
 import { listContractors } from "@/lib/contractors/contractors";
 import { formatCents } from "@/lib/money";
 import { formatBasisPointsAsPercent } from "@/lib/financials/job-financials";
+import { BUSINESS_TIMEZONE } from "@/lib/reminders/timezone";
 import type { JobStatus } from "@/lib/jobs/jobs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,7 +35,10 @@ const STATUS_OPTIONS = [
   { value: "draft", label: "Draft" },
 ];
 
-const DATE_FMT = new Intl.DateTimeFormat("en-CA", { dateStyle: "medium" });
+const DATE_FMT = new Intl.DateTimeFormat("en-CA", {
+  dateStyle: "medium",
+  timeZone: BUSINESS_TIMEZONE,
+});
 
 export default async function FinancialReportPage({
   searchParams,

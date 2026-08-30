@@ -3,6 +3,7 @@ import { AlertTriangle } from "lucide-react";
 import { getDb } from "@/lib/db/client";
 import { listLeads } from "@/lib/crm/leads";
 import { formatPhoneForDisplay } from "@/lib/phone";
+import { BUSINESS_TIMEZONE } from "@/lib/reminders/timezone";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -15,7 +16,11 @@ import {
 import { StatusBadge } from "../leads/status-badge";
 
 const PAGE_SIZE = 25;
-const DATE_FMT = new Intl.DateTimeFormat("en-CA", { dateStyle: "medium", timeStyle: "short" });
+const DATE_FMT = new Intl.DateTimeFormat("en-CA", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: BUSINESS_TIMEZONE,
+});
 
 // The public quote-request form (src/app/api/leads/route.ts) always creates
 // a lead with originalSource "website" (src/lib/crm/leads.ts,

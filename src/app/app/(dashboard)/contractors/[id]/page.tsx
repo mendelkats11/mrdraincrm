@@ -5,6 +5,7 @@ import { getContractorStats, listJobsForContractor } from "@/lib/contractors/ass
 import { getEntityTimeline } from "@/lib/audit/activity";
 import { formatPhoneForDisplay } from "@/lib/phone";
 import { formatCents } from "@/lib/money";
+import { BUSINESS_TIMEZONE } from "@/lib/reminders/timezone";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityTimeline } from "@/components/activity-timeline";
@@ -13,7 +14,10 @@ import { EditContractorDialog } from "./edit-contractor-dialog";
 import { ActiveToggle } from "./active-toggle";
 import { PayoutHistory } from "./payout-history";
 
-const DATE_FMT = new Intl.DateTimeFormat("en-CA", { dateStyle: "medium" });
+const DATE_FMT = new Intl.DateTimeFormat("en-CA", {
+  dateStyle: "medium",
+  timeZone: BUSINESS_TIMEZONE,
+});
 
 export default async function ContractorDetailPage({
   params,

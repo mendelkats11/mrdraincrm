@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import Image from "next/image";
 import {
   deleteGalleryItemAction,
@@ -11,12 +11,23 @@ import {
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { galleryItems } from "@/lib/db/schema";
 
 type GalleryItem = typeof galleryItems.$inferSelect;
 
 export function GalleryItemCard({ item }: { item: GalleryItem }) {
   const router = useRouter();
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
   return (
@@ -79,16 +90,39 @@ export function GalleryItemCard({ item }: { item: GalleryItem }) {
           variant="destructive"
           size="sm"
           disabled={pending}
-          onClick={() =>
-            startTransition(async () => {
-              await deleteGalleryItemAction(item.id);
-              router.refresh();
-            })
-          }
+          onClick={() => setConfirmOpen(true)}
         >
           Delete
         </Button>
       </div>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this photo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the photo from storage and the public gallery. This cannot be
+              undone — use Hide instead if you just want it off the site for now.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={pending}
+              onClick={() =>
+                startTransition(async () => {
+                  await deleteGalleryItemAction(item.id);
+                  setConfirmOpen(false);
+                  router.refresh();
+                })
+              }
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

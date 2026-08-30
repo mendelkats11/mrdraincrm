@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getDb } from "@/lib/db/client";
 import { listInvoices, type InvoiceStatus } from "@/lib/invoices/invoices";
 import { formatCents } from "@/lib/money";
+import { BUSINESS_TIMEZONE } from "@/lib/reminders/timezone";
 import {
   Table,
   TableBody,
@@ -17,7 +18,11 @@ import { InvoiceStatusBadge } from "./invoice-status-badge";
 const PAGE_SIZE = 25;
 const VALID_STATUSES: InvoiceStatus[] = ["draft", "sent", "partially_paid", "paid", "void"];
 
-const DATE_FMT = new Intl.DateTimeFormat("en-CA", { dateStyle: "medium", timeStyle: "short" });
+const DATE_FMT = new Intl.DateTimeFormat("en-CA", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: BUSINESS_TIMEZONE,
+});
 
 export default async function InvoicesPage({
   searchParams,
