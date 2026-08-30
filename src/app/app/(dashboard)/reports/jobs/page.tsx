@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AlertTriangle } from "lucide-react";
 import { getDb } from "@/lib/db/client";
 import { getJobsReport } from "@/lib/reports/jobs-report";
 import {
@@ -128,7 +129,7 @@ export default async function JobsReportPage({
                     </Link>
                     {row.emergency ? (
                       <Badge variant="destructive" className="ml-2">
-                        Emergency
+                        <AlertTriangle /> Emergency
                       </Badge>
                     ) : null}
                   </TableCell>

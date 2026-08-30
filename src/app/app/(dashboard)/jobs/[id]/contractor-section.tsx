@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { AlertTriangle } from "lucide-react";
 import {
   assignContractorAction,
   checkContractorConflictAction,
@@ -325,9 +326,12 @@ export function ContractorSection({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Scheduling conflict</AlertDialogTitle>
-            <AlertDialogDescription>
-              ⚠️ {pendingContractor?.name} is already scheduled for job {conflict?.jobNumber} from{" "}
-              {conflict?.scheduleSummary} — you can still assign them to this job too.
+            <AlertDialogDescription className="flex items-start gap-2">
+              <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />
+              <span>
+                {pendingContractor?.name} is already scheduled for job {conflict?.jobNumber} from{" "}
+                {conflict?.scheduleSummary} — you can still assign them to this job too.
+              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatCents } from "@/lib/money";
 import type { InvoiceStatus } from "@/lib/invoices/invoices";
@@ -43,8 +44,9 @@ export function InvoicesCard({
                 </div>
                 <p className="text-muted-foreground">{formatCents(invoice.totalCents)}</p>
                 {mismatch ? (
-                  <p className="text-xs text-muted-foreground">
-                    ⚠️ Differs from job amount by{" "}
+                  <p className="flex items-center gap-1 text-xs text-warning">
+                    <AlertTriangle className="size-3 shrink-0" aria-hidden="true" />
+                    Differs from job amount by{" "}
                     {formatCents(Math.abs(invoice.totalCents - jobAmountCents))}
                   </p>
                 ) : null}
