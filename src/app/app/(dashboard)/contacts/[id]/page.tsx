@@ -9,6 +9,7 @@ import {
 } from "@/lib/crm/contact-actions";
 import { listContactProperties } from "@/lib/crm/relationships";
 import { listRemindersForEntity } from "@/lib/reminders/reminders";
+import { listJobsForContact } from "@/lib/jobs/jobs";
 import { getEntityTimeline } from "@/lib/audit/activity";
 import { formatPhoneForDisplay } from "@/lib/phone";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { RemindersCard } from "@/components/reminders-card";
+import { RelatedJobsCard } from "@/components/related-jobs-card";
 import { EditContactDialog } from "./edit-contact-dialog";
 import { MergeContactDialog } from "./merge-contact-dialog";
 import { DuplicatesSection } from "./duplicates-section";
@@ -43,10 +45,11 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
   const contact = await getContact(db, id);
   if (!contact) notFound();
 
-  const [properties, timeline, reminders] = await Promise.all([
+  const [properties, timeline, reminders, jobs] = await Promise.all([
     listContactProperties(db, id),
     getEntityTimeline(db, "contact", id),
     listRemindersForEntity(db, { contactId: id }),
+    listJobsForContact(db, id),
   ]);
 
   return (
@@ -63,6 +66,9 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
           ) : null}
         </div>
         <div className="flex gap-2">
+          <Button asChild variant="outline">
+            <Link href={`/quotes/new?contactId=${contact.id}`}>+ New Quote</Link>
+          </Button>
           <Button asChild variant="outline">
             <Link href={`/jobs/new?contactId=${contact.id}`}>+ New Job</Link>
           </Button>
@@ -177,6 +183,15 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Jobs</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <RelatedJobsCard jobs={jobs} />
+        </CardContent>
+      </Card>
 
       {contact.notes ? (
         <Card>

@@ -412,6 +412,57 @@ export async function listJobs<TQueryResult extends PgQueryResultHKT>(
   return { rows, total: count, page, pageSize };
 }
 
+export interface EntityJobRow {
+  id: string;
+  jobNumber: string;
+  status: JobStatus;
+  issueDescription: string | null;
+  emergency: boolean;
+  createdAt: Date;
+  scheduledStart: Date | null;
+  scheduledEnd: Date | null;
+  timeTbd: boolean;
+}
+
+const ENTITY_JOB_ROW_COLUMNS = {
+  id: jobs.id,
+  jobNumber: jobs.jobNumber,
+  status: jobs.status,
+  issueDescription: jobs.issueDescription,
+  emergency: jobs.emergency,
+  createdAt: jobs.createdAt,
+  scheduledStart: jobs.scheduledStart,
+  scheduledEnd: jobs.scheduledEnd,
+  timeTbd: jobs.timeTbd,
+};
+
+/** A contact's jobs, for the "Jobs" section on the Contact detail page —
+ *  overhaul.md §5/§9/§17: related records (here, jobs already tied to this
+ *  contact) should be visible and navigable from the contact itself, not
+ *  something the user has to go find via the Jobs list search. */
+export async function listJobsForContact<TQueryResult extends PgQueryResultHKT>(
+  db: Db<TQueryResult>,
+  contactId: string,
+): Promise<EntityJobRow[]> {
+  return db
+    .select(ENTITY_JOB_ROW_COLUMNS)
+    .from(jobs)
+    .where(eq(jobs.contactId, contactId))
+    .orderBy(desc(jobs.createdAt));
+}
+
+/** Same as listJobsForContact, for the Property detail page. */
+export async function listJobsForProperty<TQueryResult extends PgQueryResultHKT>(
+  db: Db<TQueryResult>,
+  propertyId: string,
+): Promise<EntityJobRow[]> {
+  return db
+    .select(ENTITY_JOB_ROW_COLUMNS)
+    .from(jobs)
+    .where(eq(jobs.propertyId, propertyId))
+    .orderBy(desc(jobs.createdAt));
+}
+
 export async function listActiveServices<TQueryResult extends PgQueryResultHKT>(
   db: Db<TQueryResult>,
 ): Promise<{ id: string; name: string }[]> {

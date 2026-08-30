@@ -8,6 +8,8 @@ import {
   createJob,
   getJob,
   listJobs,
+  listJobsForContact,
+  listJobsForProperty,
   removeJobCustomCharge,
   updateJob,
   updateJobFinancials,
@@ -317,6 +319,54 @@ describe("listJobs — Cancelled as the archive-equivalent", () => {
     const emergency = await createJob(ctx.db, { emergency: true }, null);
     const { rows } = await listJobs(ctx.db, { emergencyOnly: true });
     expect(rows.map((r) => r.id)).toEqual([emergency.id]);
+  });
+});
+
+describe("listJobsForContact / listJobsForProperty", () => {
+  let ctx: Awaited<ReturnType<typeof createTestDb>>;
+
+  beforeEach(async () => {
+    ctx = await createTestDb();
+    await seedJobSequence(ctx.db);
+  });
+
+  afterEach(async () => {
+    await ctx.client.close();
+  });
+
+  it("returns only jobs linked to that contact, newest first", async () => {
+    const contact = await createContact(ctx.db, { displayName: "Related Jobs Contact" }, null);
+    const other = await createContact(ctx.db, { displayName: "Other Contact" }, null);
+    const first = await createJob(ctx.db, { contactId: contact.id }, null);
+    const second = await createJob(ctx.db, { contactId: contact.id }, null);
+    await createJob(ctx.db, { contactId: other.id }, null);
+
+    const rows = await listJobsForContact(ctx.db, contact.id);
+    expect(rows.map((r) => r.id)).toEqual([second.id, first.id]);
+  });
+
+  it("returns only jobs linked to that property, newest first", async () => {
+    const property = await createProperty(
+      ctx.db,
+      { addressLine1: "123 Main St", city: "Saskatoon", province: "SK", postalCode: "S7K 0A1" },
+      null,
+    );
+    const other = await createProperty(
+      ctx.db,
+      { addressLine1: "456 Other St", city: "Saskatoon", province: "SK", postalCode: "S7K 0A2" },
+      null,
+    );
+    const first = await createJob(ctx.db, { propertyId: property.id }, null);
+    const second = await createJob(ctx.db, { propertyId: property.id }, null);
+    await createJob(ctx.db, { propertyId: other.id }, null);
+
+    const rows = await listJobsForProperty(ctx.db, property.id);
+    expect(rows.map((r) => r.id)).toEqual([second.id, first.id]);
+  });
+
+  it("returns an empty list for a contact/property with no jobs", async () => {
+    const contact = await createContact(ctx.db, { displayName: "No Jobs Contact" }, null);
+    expect(await listJobsForContact(ctx.db, contact.id)).toEqual([]);
   });
 });
 

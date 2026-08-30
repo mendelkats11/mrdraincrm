@@ -4,12 +4,14 @@ import { getDb } from "@/lib/db/client";
 import { getProperty } from "@/lib/crm/properties";
 import { detachContactFromPropertyAction } from "@/lib/crm/contact-actions";
 import { listPropertyContacts } from "@/lib/crm/relationships";
+import { listJobsForProperty } from "@/lib/jobs/jobs";
 import { getEntityTimeline } from "@/lib/audit/activity";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { RemoveButton } from "@/components/remove-button";
+import { RelatedJobsCard } from "@/components/related-jobs-card";
 import { BackLink } from "@/components/back-link";
 import { EditPropertyDialog } from "./edit-property-dialog";
 import { AttachContactDialog } from "./attach-contact-dialog";
@@ -40,9 +42,10 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
   const property = await getProperty(db, id);
   if (!property) notFound();
 
-  const [contacts, timeline] = await Promise.all([
+  const [contacts, timeline, jobs] = await Promise.all([
     listPropertyContacts(db, id),
     getEntityTimeline(db, "property", id),
+    listJobsForProperty(db, id),
   ]);
 
   return (
@@ -62,6 +65,9 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
           </p>
         </div>
         <div className="flex gap-2">
+          <Button asChild variant="outline">
+            <Link href={`/quotes/new?propertyId=${property.id}`}>+ New Quote</Link>
+          </Button>
           <Button asChild variant="outline">
             <Link href={`/jobs/new?propertyId=${property.id}`}>+ New Job</Link>
           </Button>
@@ -96,6 +102,15 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
               ))}
             </ul>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Jobs</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <RelatedJobsCard jobs={jobs} />
         </CardContent>
       </Card>
 
