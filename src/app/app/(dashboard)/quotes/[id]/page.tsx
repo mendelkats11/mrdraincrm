@@ -6,6 +6,7 @@ import { getEntityTimeline } from "@/lib/audit/activity";
 import { formatCents } from "@/lib/money";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityTimeline } from "@/components/activity-timeline";
+import { BackLink } from "@/components/back-link";
 import { QuoteStatusBadge } from "../quote-status-badge";
 import { LineItemsSection } from "./line-items-section";
 import { CustomChargesSection } from "./custom-charges-section";
@@ -26,6 +27,7 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
+      <BackLink href="/quotes" label="Back to Quotes" />
       <div className="flex items-start justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-xl font-semibold text-foreground">

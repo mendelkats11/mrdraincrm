@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { RemindersCard } from "@/components/reminders-card";
+import { BackLink } from "@/components/back-link";
 import { StatusSelect } from "./status-select";
 import { ConvertToJobButton } from "./convert-to-job-button";
 import { EditLeadDialog } from "./edit-lead-dialog";
@@ -48,6 +49,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
+      <BackLink href="/leads" label="Back to Leads" />
       <div className="flex items-start justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-xl font-semibold text-foreground">

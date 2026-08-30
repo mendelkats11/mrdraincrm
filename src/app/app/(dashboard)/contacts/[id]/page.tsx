@@ -23,6 +23,7 @@ import { AttachPropertyDialog } from "./attach-property-dialog";
 import { AddPhoneDialog } from "./add-phone-dialog";
 import { AddEmailDialog } from "./add-email-dialog";
 import { RemoveButton } from "@/components/remove-button";
+import { BackLink } from "@/components/back-link";
 import { ArchiveButton } from "./archive-button";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -50,6 +51,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
+      <BackLink href="/contacts" label="Back to Contacts" />
       <div className="flex items-start justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-xl font-semibold text-foreground">

@@ -145,7 +145,7 @@ export default async function CallsPage({
                     {call.ignored ? (
                       <Badge variant="secondary">Ignored</Badge>
                     ) : call.matched ? (
-                      <Badge variant="default">Matched</Badge>
+                      <Badge variant="success">Matched</Badge>
                     ) : (
                       <Badge variant="outline">Unmatched</Badge>
                     )}

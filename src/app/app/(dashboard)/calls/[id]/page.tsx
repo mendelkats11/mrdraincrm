@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { CallDirectionIcon } from "@/components/call-direction-icon";
+import { BackLink } from "@/components/back-link";
 import { CallBackButton } from "./call-back-button";
 import { UnknownCallerActions } from "./unknown-caller-actions";
 
@@ -41,6 +42,7 @@ export default async function CallDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
+      <BackLink href="/calls" label="Back to Calls" />
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="flex items-center gap-2 text-xl font-semibold text-foreground">

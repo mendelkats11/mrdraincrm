@@ -11,12 +11,12 @@ export const QUOTE_STATUS_LABELS: Record<QuoteStatus, string> = {
   cancelled: "Cancelled",
 };
 
-const STATUS_VARIANTS: Record<QuoteStatus, "default" | "outline" | "secondary" | "destructive"> = {
+const STATUS_VARIANTS: Record<QuoteStatus, "secondary" | "info" | "success" | "destructive"> = {
   draft: "secondary",
-  sent: "outline",
-  accepted: "default",
+  sent: "info",
+  accepted: "success",
   declined: "destructive",
-  expired: "destructive",
+  expired: "secondary",
   cancelled: "destructive",
 };
 

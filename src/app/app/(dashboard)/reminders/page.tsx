@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { NewReminderDialog } from "./new-reminder-dialog";
 import { ReminderFilters } from "./reminder-filters";
 import { ReminderStatusBadge } from "./reminder-status-badge";
@@ -22,6 +22,13 @@ import { ReminderRowActions } from "./reminder-row-actions";
 import { EditReminderDialog } from "./edit-reminder-dialog";
 
 const PAGE_SIZE = 50;
+// Priority was previously always shown as the same neutral outline badge
+// regardless of value — same bug class as the other status badges.
+const PRIORITY_VARIANTS: Record<string, BadgeProps["variant"]> = {
+  low: "outline",
+  medium: "info",
+  high: "warning",
+};
 const VALID_STATUSES: ReminderStatusFilter[] = [
   "active",
   "overdue",
@@ -120,7 +127,10 @@ export default async function RemindersPage({
                       />
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="capitalize">
+                      <Badge
+                        variant={PRIORITY_VARIANTS[reminder.priority] ?? "outline"}
+                        className="capitalize"
+                      >
                         {reminder.priority}
                       </Badge>
                     </TableCell>

@@ -4,6 +4,7 @@ import { getDb } from "@/lib/db/client";
 import { listMessagesForThread } from "@/lib/callrail/calls";
 import { formatPhoneForDisplay } from "@/lib/phone";
 import { Card, CardContent } from "@/components/ui/card";
+import { BackLink } from "@/components/back-link";
 import { BUSINESS_TIMEZONE } from "@/lib/reminders/timezone";
 
 // Server-rendered — see calls/page.tsx's DATE_FMT comment.
@@ -27,10 +28,8 @@ export default async function MessageThreadPage({
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4">
+      <BackLink href="/messages" label="Back to Messages" />
       <div>
-        <Link href="/messages" className="text-sm text-muted-foreground hover:underline">
-          ← All messages
-        </Link>
         <h1 className="text-xl font-semibold text-foreground">
           {first.contactId ? (
             <Link href={`/contacts/${first.contactId}`} className="hover:underline">

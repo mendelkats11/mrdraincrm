@@ -117,6 +117,7 @@ export function QuoteActionsBar({
         {canMarkAccepted ? (
           <Button
             type="button"
+            variant="success"
             size="sm"
             disabled={pending}
             onClick={() => runAction(() => markQuoteAcceptedAction(quoteId))}
@@ -136,7 +137,13 @@ export function QuoteActionsBar({
           </Button>
         ) : null}
         {canConvert ? (
-          <Button type="button" size="sm" disabled={pending} onClick={() => setConvertOpen(true)}>
+          <Button
+            type="button"
+            variant="success"
+            size="sm"
+            disabled={pending}
+            onClick={() => setConvertOpen(true)}
+          >
             Convert to Job
           </Button>
         ) : null}

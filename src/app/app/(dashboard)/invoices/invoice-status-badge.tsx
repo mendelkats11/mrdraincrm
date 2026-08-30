@@ -9,14 +9,16 @@ export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
   void: "Void",
 };
 
-const STATUS_VARIANTS: Record<InvoiceStatus, "default" | "outline" | "secondary" | "destructive"> =
-  {
-    draft: "secondary",
-    sent: "outline",
-    partially_paid: "outline",
-    paid: "default",
-    void: "destructive",
-  };
+const STATUS_VARIANTS: Record<
+  InvoiceStatus,
+  "secondary" | "info" | "warning" | "success" | "destructive"
+> = {
+  draft: "secondary",
+  sent: "info",
+  partially_paid: "warning",
+  paid: "success",
+  void: "destructive",
+};
 
 export function InvoiceStatusBadge({ status }: { status: InvoiceStatus }) {
   return <Badge variant={STATUS_VARIANTS[status]}>{INVOICE_STATUS_LABELS[status]}</Badge>;

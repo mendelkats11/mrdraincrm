@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { RemoveButton } from "@/components/remove-button";
+import { BackLink } from "@/components/back-link";
 import { EditPropertyDialog } from "./edit-property-dialog";
 import { AttachContactDialog } from "./attach-contact-dialog";
 import { ArchiveButton } from "./archive-button";
@@ -46,6 +47,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
+      <BackLink href="/properties" label="Back to Properties" />
       <div className="flex items-start justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-xl font-semibold text-foreground">

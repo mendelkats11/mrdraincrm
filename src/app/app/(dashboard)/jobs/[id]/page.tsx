@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { RemindersCard } from "@/components/reminders-card";
+import { BackLink } from "@/components/back-link";
 import { SendEmailDialog } from "@/components/send-email-dialog";
 import { resolveJobRecipientEmail, sendJobConfirmationEmailAction } from "@/lib/jobs/job-email";
 import { StatusSelect } from "./status-select";
@@ -76,6 +77,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
+      <BackLink href="/jobs" label="Back to Jobs" />
       <div className="flex items-start justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-xl font-semibold text-foreground">

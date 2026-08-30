@@ -12,11 +12,11 @@ export function ReminderStatusBadge({
   cancelledAt: Date | null;
   now?: Date;
 }) {
-  if (completedAt) return <Badge variant="default">Completed</Badge>;
+  if (completedAt) return <Badge variant="success">Completed</Badge>;
   if (cancelledAt) return <Badge variant="secondary">Hidden</Badge>;
 
   const timing = classifyReminderTiming(dueAt, now);
   if (timing === "overdue") return <Badge variant="destructive">Overdue</Badge>;
-  if (timing === "due_today") return <Badge variant="outline">Due today</Badge>;
-  return <Badge variant="secondary">Upcoming</Badge>;
+  if (timing === "due_today") return <Badge variant="warning">Due today</Badge>;
+  return <Badge variant="info">Upcoming</Badge>;
 }

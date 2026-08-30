@@ -10,14 +10,15 @@ export const STATUS_LABELS: Record<JobStatus, string> = {
   cancelled: "Cancelled",
 };
 
-const STATUS_VARIANTS: Record<JobStatus, "default" | "secondary" | "outline"> = {
-  draft: "outline",
-  open: "outline",
-  scheduled: "outline",
-  in_progress: "outline",
-  completed: "default",
-  cancelled: "secondary",
-};
+const STATUS_VARIANTS: Record<JobStatus, "outline" | "info" | "warning" | "success" | "secondary"> =
+  {
+    draft: "outline",
+    open: "info",
+    scheduled: "info",
+    in_progress: "warning",
+    completed: "success",
+    cancelled: "secondary",
+  };
 
 // Status is communicated by text + color, never color alone —
 // docs/DESIGN_SYSTEM.md §13.

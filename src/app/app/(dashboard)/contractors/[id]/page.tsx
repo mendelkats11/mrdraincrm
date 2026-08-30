@@ -8,6 +8,7 @@ import { formatCents } from "@/lib/money";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityTimeline } from "@/components/activity-timeline";
+import { BackLink } from "@/components/back-link";
 import { EditContractorDialog } from "./edit-contractor-dialog";
 import { ActiveToggle } from "./active-toggle";
 import { PayoutHistory } from "./payout-history";
@@ -33,12 +34,13 @@ export default async function ContractorDetailPage({
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
+      <BackLink href="/contractors" label="Back to Contractors" />
       <div className="flex items-start justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-xl font-semibold text-foreground">
             {contractor.name}
             {contractor.active ? (
-              <Badge variant="outline">Active</Badge>
+              <Badge variant="success">Active</Badge>
             ) : (
               <Badge variant="secondary">Inactive</Badge>
             )}

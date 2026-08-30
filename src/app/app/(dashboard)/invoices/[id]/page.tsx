@@ -11,6 +11,7 @@ import { toCustomerFacingInvoiceDocument } from "@/lib/pdf/invoice-document";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { InvoicePdfPreview } from "@/components/invoice-pdf-preview";
+import { BackLink } from "@/components/back-link";
 import { InvoiceStatusBadge } from "../invoice-status-badge";
 import { LineItemsSection } from "./line-items-section";
 import { InvoiceDetailsDialog } from "./invoice-details-dialog";
@@ -46,6 +47,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   return (
     <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
       <div className="flex flex-col gap-6">
+        <BackLink href="/invoices" label="Back to Invoices" />
         <div className="flex items-start justify-between">
           <div>
             <h1 className="flex items-center gap-2 text-xl font-semibold text-foreground">

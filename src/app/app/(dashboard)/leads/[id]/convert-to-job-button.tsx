@@ -26,7 +26,7 @@ export function ConvertToJobButton({ leadId }: { leadId: string }) {
 
   return (
     <>
-      <Button variant="outline" onClick={() => setOpen(true)}>
+      <Button variant="success" onClick={() => setOpen(true)}>
         Convert to Job
       </Button>
       <AlertDialog open={open} onOpenChange={setOpen}>

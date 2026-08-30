@@ -10,12 +10,15 @@ export const STATUS_LABELS: Record<LeadStatus, string> = {
   lost: "Lost",
 };
 
-const STATUS_VARIANTS: Record<LeadStatus, "default" | "secondary" | "outline"> = {
+const STATUS_VARIANTS: Record<
+  LeadStatus,
+  "outline" | "info" | "warning" | "success" | "secondary"
+> = {
   new: "outline",
-  contacted: "outline",
-  quoted: "outline",
-  follow_up: "outline",
-  won: "default",
+  contacted: "info",
+  quoted: "info",
+  follow_up: "warning",
+  won: "success",
   lost: "secondary",
 };
 
