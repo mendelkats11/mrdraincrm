@@ -29,7 +29,8 @@ export function HeaderSearch() {
         <Input
           name="q"
           type="search"
-          placeholder="Search contacts, properties, leads, jobs…"
+          aria-label="Search contacts, properties, leads, jobs"
+          placeholder="Search…"
           className="rounded-full pl-8"
         />
       </div>

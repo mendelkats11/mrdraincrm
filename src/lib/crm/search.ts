@@ -14,6 +14,7 @@ import {
   properties,
   quotes,
 } from "@/lib/db/schema";
+import { formatPhoneForDisplay } from "@/lib/phone";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db<TQueryResult extends PgQueryResultHKT> = PgDatabase<TQueryResult, any, any>;
@@ -261,7 +262,7 @@ export async function searchCrm<TQueryResult extends PgQueryResultHKT>(
       type: "contact",
       id: c.id,
       title: c.displayName,
-      subtitle: "Contact",
+      subtitle: null,
       href: `/contacts/${c.id}`,
     })),
     ...propertyRows.map((p): SearchResult => ({
@@ -274,7 +275,7 @@ export async function searchCrm<TQueryResult extends PgQueryResultHKT>(
     ...leadRows.map((l): SearchResult => ({
       type: "lead",
       id: l.id,
-      title: `Lead: ${l.contactName}`,
+      title: l.contactName,
       subtitle: l.issueDescription,
       href: `/leads/${l.id}`,
     })),
@@ -289,7 +290,7 @@ export async function searchCrm<TQueryResult extends PgQueryResultHKT>(
       type: "contractor",
       id: c.id,
       title: c.name,
-      subtitle: "Contractor",
+      subtitle: null,
       href: `/contractors/${c.id}`,
     })),
     ...invoiceRows.map((i): SearchResult => ({
@@ -309,15 +310,15 @@ export async function searchCrm<TQueryResult extends PgQueryResultHKT>(
     ...callRows.map((c): SearchResult => ({
       type: "call",
       id: c.id,
-      title: c.contactName ?? c.callerNumber,
-      subtitle: "Call",
+      title: c.contactName ?? formatPhoneForDisplay(c.callerNumber),
+      subtitle: c.contactName ? formatPhoneForDisplay(c.callerNumber) : null,
       href: `/calls/${c.id}`,
     })),
     ...messageRows.map((m): SearchResult => ({
       type: "message",
       id: m.id,
-      title: m.contactName ?? m.phoneNumber,
-      subtitle: "Message",
+      title: m.contactName ?? formatPhoneForDisplay(m.phoneNumber),
+      subtitle: m.contactName ? formatPhoneForDisplay(m.phoneNumber) : null,
       href: "/messages",
     })),
   ];
