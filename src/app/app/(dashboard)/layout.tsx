@@ -58,7 +58,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         className="fixed inset-0 z-40 hidden bg-black/40 peer-checked:block lg:hidden"
       />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="flex shrink-0 items-center justify-between gap-4 border-b px-6 py-4">
+        <header className="relative z-10 flex shrink-0 items-center justify-between gap-4 border-b bg-card px-6 py-4 shadow-xs">
           <div className="flex min-w-0 flex-1 items-center gap-3">
             <label
               htmlFor="sidebar-toggle"

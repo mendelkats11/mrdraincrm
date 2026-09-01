@@ -1,3 +1,4 @@
+import { AuthShell } from "../../auth-shell";
 import { ResetPasswordForm } from "./reset-password-form";
 
 export default async function ResetPasswordPage({
@@ -7,8 +8,8 @@ export default async function ResetPasswordPage({
 }) {
   const { token } = await params;
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+    <AuthShell>
       <ResetPasswordForm token={token} />
-    </div>
+    </AuthShell>
   );
 }

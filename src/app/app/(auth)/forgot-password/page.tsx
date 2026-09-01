@@ -1,9 +1,10 @@
+import { AuthShell } from "../auth-shell";
 import { ForgotPasswordForm } from "./forgot-password-form";
 
 export default function ForgotPasswordPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+    <AuthShell>
       <ForgotPasswordForm />
-    </div>
+    </AuthShell>
   );
 }

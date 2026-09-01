@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/lib/auth/require-user";
+import { AuthShell } from "../auth-shell";
 import { LoginForm } from "./login-form";
 
 export default async function LoginPage({
@@ -19,8 +20,8 @@ export default async function LoginPage({
         : undefined;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+    <AuthShell>
       <LoginForm next={params.next} notice={notice} />
-    </div>
+    </AuthShell>
   );
 }

@@ -9,7 +9,8 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/80",
+        default:
+          "bg-[image:var(--gradient-primary)] text-primary-foreground shadow-sm shadow-primary/25 hover:shadow-md hover:shadow-primary/30 hover:brightness-110",
         outline:
           "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:
@@ -23,7 +24,7 @@ const buttonVariants = cva(
         // for ordinary primary actions, so a positive outcome reads as
         // positive rather than just "the other blue button."
         success:
-          "bg-success text-success-foreground hover:bg-success/85 focus-visible:border-success/40 focus-visible:ring-success/30",
+          "bg-[image:var(--gradient-success)] text-success-foreground shadow-sm shadow-success/25 hover:shadow-md hover:shadow-success/30 hover:brightness-110 focus-visible:border-success/40 focus-visible:ring-success/30",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
