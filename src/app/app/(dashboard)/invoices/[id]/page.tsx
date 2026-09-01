@@ -4,13 +4,13 @@ import { getDb } from "@/lib/db/client";
 import { getInvoice } from "@/lib/invoices/invoices";
 import { getInvoiceBalance, listPaymentsForInvoice } from "@/lib/payments/payments";
 import { getEntityTimeline } from "@/lib/audit/activity";
-import { formatCents } from "@/lib/money";
 import { getStorageProvider } from "@/lib/storage";
 import { resolveLogoUrl } from "@/lib/pdf/logo";
 import { toCustomerFacingInvoiceDocument } from "@/lib/pdf/invoice-document";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { InvoicePdfPreview } from "@/components/invoice-pdf-preview";
+import { DocumentTotals } from "@/components/document-totals";
 import { BackLink } from "@/components/back-link";
 import { InvoiceStatusBadge } from "../invoice-status-badge";
 import { LineItemsSection } from "./line-items-section";
@@ -104,11 +104,11 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               lineItems={invoice.lineItems}
               editable={editable}
             />
-            <div className="flex flex-col items-end gap-1 border-t pt-3 text-sm">
-              <p>Subtotal: {formatCents(invoice.subtotalCents)}</p>
-              <p>Tax: {formatCents(invoice.taxCents)}</p>
-              <p className="text-base font-medium">Total: {formatCents(invoice.totalCents)}</p>
-            </div>
+            <DocumentTotals
+              subtotalCents={invoice.subtotalCents}
+              taxCents={invoice.taxCents}
+              totalCents={invoice.totalCents}
+            />
           </CardContent>
         </Card>
 

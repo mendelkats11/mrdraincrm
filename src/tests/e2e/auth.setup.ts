@@ -9,7 +9,12 @@ const authFile = "src/tests/e2e/.auth/e2e-owner.json";
 setup("authenticate", async ({ page }) => {
   await page.goto(`${APP}/login`);
   await page.getByLabel("Email").fill(E2E_OWNER_EMAIL);
-  await page.getByLabel("Password").fill(E2E_OWNER_PASSWORD);
+  // exact: true — Playwright's default label matching is a case-insensitive
+  // substring match, and the show/hide toggle button right next to this
+  // field has aria-label="Show password" (src/components/ui/password-
+  // input.tsx), which also contains "password" and was resolving as a
+  // second ambiguous match.
+  await page.getByLabel("Password", { exact: true }).fill(E2E_OWNER_PASSWORD);
   await page.getByRole("button", { name: "Log in" }).click();
   await expect(page.getByRole("heading", { name: /Welcome, E2E Test Owner/ })).toBeVisible({
     timeout: 15_000,

@@ -3,9 +3,9 @@ import Link from "next/link";
 import { getDb } from "@/lib/db/client";
 import { getQuote } from "@/lib/quotes/quotes";
 import { getEntityTimeline } from "@/lib/audit/activity";
-import { formatCents } from "@/lib/money";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityTimeline } from "@/components/activity-timeline";
+import { DocumentTotals } from "@/components/document-totals";
 import { BackLink } from "@/components/back-link";
 import { QuoteStatusBadge } from "../quote-status-badge";
 import { LineItemsSection } from "./line-items-section";
@@ -109,11 +109,11 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
             customCharges={quote.customCharges}
             editable={editable}
           />
-          <div className="flex flex-col items-end gap-1 border-t pt-3 text-sm">
-            <p>Subtotal: {formatCents(quote.subtotalCents)}</p>
-            <p>Tax: {formatCents(quote.taxCents)}</p>
-            <p className="text-base font-medium">Total: {formatCents(totalCents)}</p>
-          </div>
+          <DocumentTotals
+            subtotalCents={quote.subtotalCents}
+            taxCents={quote.taxCents}
+            totalCents={totalCents}
+          />
         </CardContent>
       </Card>
 

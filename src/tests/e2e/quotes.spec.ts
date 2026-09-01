@@ -9,7 +9,11 @@ const JOB_DETAIL_URL = /\/jobs\/[0-9a-f-]+$/;
 
 async function createQuote(page: import("@playwright/test").Page, description: string) {
   await page.goto(`${E2E_APP_ORIGIN}/quotes/new`);
-  await page.getByLabel("Description").fill(description);
+  // A bare getByLabel("Description") is ambiguous here: the form starts
+  // with one line item row already present, and each line item row has
+  // its own "Description" field/label (correctly, since there can be many)
+  // — targeting the quote-level field by its stable id instead.
+  await page.locator("#description").fill(description);
   await page.getByLabel("Tax amount").fill("10.00");
   await page.getByRole("button", { name: "Create quote" }).click();
   await page.waitForURL(QUOTE_DETAIL_URL);
