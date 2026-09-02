@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Reviews | Mr. Drain Plumbing",
   description: "See what customers are saying about Mr. Drain Plumbing.",
+  alternates: { canonical: "/reviews" },
 };
 
 const DATE_FMT = new Intl.DateTimeFormat("en-CA", { dateStyle: "medium" });

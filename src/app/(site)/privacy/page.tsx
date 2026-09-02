@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Privacy Policy | Mr. Drain Plumbing",
   description: "Privacy Policy for Mr. Drain Plumbing.",
+  alternates: { canonical: "/privacy" },
 };
 
 const PLACEHOLDER = `This is placeholder Privacy Policy content. It has not been reviewed by a lawyer and should not be relied on as legal text — replace it with a real privacy policy before this page is used in production.`;

@@ -14,6 +14,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Service Areas | Mr. Drain Plumbing",
   description: "Mr. Drain Plumbing proudly serves Saskatoon and the surrounding communities.",
+  alternates: { canonical: "/service-areas" },
 };
 
 export default async function ServiceAreasPage() {

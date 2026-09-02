@@ -10,6 +10,7 @@ import { listPublishedGalleryItemsForServiceArea } from "@/lib/website/gallery";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import { MobileFloatingCta } from "@/components/site/mobile-floating-cta";
 import { GallerySection } from "@/components/site/sections/gallery-section";
+import { breadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,7 @@ export async function generateMetadata({
   return {
     title: area.seoTitle || `Plumber in ${area.name} | Mr. Drain Plumbing`,
     description: area.metaDescription || area.copy || undefined,
+    alternates: { canonical: `/service-areas/${area.slug}` },
   };
 }
 
@@ -46,8 +48,18 @@ export default async function ServiceAreaDetailPage({
   // of its own — docs/PROJECT_SPEC.md §2.4.
   const trackingNumber = area.callrailTrackingNumber || settings.defaultCallrailTrackingNumber;
 
+  const breadcrumbs = breadcrumbSchema([
+    { name: "Home", path: "/" },
+    { name: "Service Areas", path: "/service-areas" },
+    { name: area.name, path: `/service-areas/${area.slug}` },
+  ]);
+
   return (
     <div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
+      />
       {area.images[0] ? (
         <div className="relative h-64 w-full sm:h-80">
           <Image

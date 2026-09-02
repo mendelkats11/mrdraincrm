@@ -15,6 +15,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Get a Free Quote | Mr. Drain Plumbing",
   description: "Request a free plumbing quote from Mr. Drain Plumbing — Saskatoon and area.",
+  alternates: { canonical: "/contact" },
 };
 
 export default async function ContactPage() {

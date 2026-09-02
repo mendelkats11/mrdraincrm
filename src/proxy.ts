@@ -78,13 +78,23 @@ export function proxy(request: NextRequest) {
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = "/login";
       loginUrl.search = `?next=${encodeURIComponent(pathname + search)}`;
-      return NextResponse.redirect(loginUrl);
+      return withNoindex(NextResponse.redirect(loginUrl));
     }
   }
 
   const rewritten = request.nextUrl.clone();
   rewritten.pathname = `/app${pathname}`;
-  return NextResponse.rewrite(rewritten);
+  return withNoindex(NextResponse.rewrite(rewritten));
+}
+
+// SEO audit (Sep 2026) P1 finding: app.<host> (the authenticated business
+// app) had no robots directive at all — its /login page was indexable by
+// default. Applied as a response header rather than per-page metadata
+// since it covers every route on this host (including ones that will
+// never get a metadata export, like API routes) in one place.
+function withNoindex(response: NextResponse): NextResponse {
+  response.headers.set("X-Robots-Tag", "noindex, nofollow");
+  return response;
 }
 
 export const config = {

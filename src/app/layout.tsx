@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { getPublicSiteOrigin } from "@/lib/site-url";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,6 +14,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  // Resolves relative canonical/OpenGraph URLs declared by individual pages
+  // — SEO audit (Sep 2026) finding: none of that resolved to an absolute
+  // URL anywhere on the site before this.
+  metadataBase: new URL(getPublicSiteOrigin()),
   title: "Mr. Drain",
   description: "Mr. Drain plumbing — public website and business platform.",
   icons: {

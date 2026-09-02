@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   title: "About Us | Mr. Drain Plumbing",
   description:
     "Learn about Mr. Drain Plumbing, a locally owned plumbing company serving Saskatoon and area.",
+  alternates: { canonical: "/about" },
 };
 
 export default async function AboutPage() {

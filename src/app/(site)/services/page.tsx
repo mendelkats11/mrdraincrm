@@ -12,9 +12,10 @@ import { CtaSection } from "@/components/site/sections/cta-section";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Plumbing Services | Mr. Drain Plumbing",
+  title: "Plumbing Services in Saskatoon | Mr. Drain Plumbing",
   description:
-    "Full-service residential plumbing — drain cleaning, water heaters, repiping, and more, serving Saskatoon and area.",
+    "Full-service residential plumbing in Saskatoon, SK — drain cleaning, water heaters, repiping, and more.",
+  alternates: { canonical: "/services" },
 };
 
 export default async function ServicesPage() {

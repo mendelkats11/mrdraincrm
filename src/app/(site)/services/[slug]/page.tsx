@@ -8,6 +8,7 @@ import { getWebsiteSettings } from "@/lib/website/settings";
 import { formatPhoneForDisplay } from "@/lib/phone";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import { MobileFloatingCta } from "@/components/site/mobile-floating-cta";
+import { breadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,7 @@ export async function generateMetadata({
   return {
     title: service.seoTitle || `${service.name} | Mr. Drain Plumbing`,
     description: service.metaDescription || service.description || undefined,
+    alternates: { canonical: `/services/${service.slug}` },
   };
 }
 
@@ -34,8 +36,18 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
   ]);
   if (!service) notFound();
 
+  const breadcrumbs = breadcrumbSchema([
+    { name: "Home", path: "/" },
+    { name: "Services", path: "/services" },
+    { name: service.name, path: `/services/${service.slug}` },
+  ]);
+
   return (
     <div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
+      />
       {service.imageKey ? (
         <div className="relative h-64 w-full sm:h-80">
           <Image

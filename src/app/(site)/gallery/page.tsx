@@ -12,6 +12,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Gallery | Mr. Drain Plumbing",
   description: "Real completed plumbing work from Mr. Drain Plumbing.",
+  alternates: { canonical: "/gallery" },
 };
 
 export default async function GalleryPage() {

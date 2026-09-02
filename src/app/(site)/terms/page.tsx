@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Terms of Service | Mr. Drain Plumbing",
   description: "Terms of Service for Mr. Drain Plumbing.",
+  alternates: { canonical: "/terms" },
 };
 
 const PLACEHOLDER = `This is placeholder Terms of Service content. It has not been reviewed by a lawyer and should not be relied on as legal text — replace it with real terms before this page is used in production.`;
