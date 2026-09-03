@@ -60,9 +60,13 @@ async function uniqueSlug<TQueryResult extends PgQueryResultHKT>(
   return candidate;
 }
 
+export type ServiceFaq = { question: string; answer: string };
+
 export interface CreateServiceInput {
   name: string;
   description?: string | null;
+  content?: string | null;
+  faqs?: ServiceFaq[];
   imageKey?: string | null;
   seoTitle?: string | null;
   metaDescription?: string | null;
@@ -91,6 +95,8 @@ export async function createService<TQueryResult extends PgQueryResultHKT>(
         name: input.name,
         slug,
         description: input.description || null,
+        content: input.content || null,
+        faqs: input.faqs ?? [],
         imageKey: input.imageKey || null,
         seoTitle: input.seoTitle || null,
         metaDescription: input.metaDescription || null,
@@ -113,6 +119,8 @@ export async function createService<TQueryResult extends PgQueryResultHKT>(
 export interface UpdateServiceInput {
   name?: string;
   description?: string | null;
+  content?: string | null;
+  faqs?: ServiceFaq[];
   imageKey?: string | null;
   seoTitle?: string | null;
   metaDescription?: string | null;
@@ -135,6 +143,8 @@ export async function updateService<TQueryResult extends PgQueryResultHKT>(
       .set({
         name: input.name,
         description: input.description !== undefined ? input.description || null : undefined,
+        content: input.content !== undefined ? input.content || null : undefined,
+        faqs: input.faqs,
         imageKey: input.imageKey !== undefined ? input.imageKey || null : undefined,
         seoTitle: input.seoTitle !== undefined ? input.seoTitle || null : undefined,
         metaDescription:

@@ -8,9 +8,39 @@ import { getStorageProvider } from "@/lib/storage";
 import { uploadPublicAsset } from "@/lib/storage/public-asset-upload";
 import { createService, updateService } from "./services";
 
+const faqSchema = z.object({
+  question: z.string().trim().min(1).max(300),
+  answer: z.string().trim().min(1).max(2000),
+});
+
+// FAQs are edited as client-side list state (add/remove rows), not native
+// form fields, so they arrive as one JSON-encoded string field rather than
+// repeated inputs — parsed and validated here rather than trusted as-is.
+const faqsJsonSchema = z
+  .string()
+  .optional()
+  .transform((val, ctx) => {
+    if (!val) return [];
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(val);
+    } catch {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid FAQ data." });
+      return z.NEVER;
+    }
+    const result = z.array(faqSchema).max(12).safeParse(parsed);
+    if (!result.success) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid FAQ data." });
+      return z.NEVER;
+    }
+    return result.data;
+  });
+
 const serviceFieldsSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(200),
   description: z.string().trim().max(2000).optional(),
+  content: z.string().trim().max(8000).optional(),
+  faqs: faqsJsonSchema,
   seoTitle: z.string().trim().max(200).optional(),
   metaDescription: z.string().trim().max(300).optional(),
 });
@@ -25,6 +55,8 @@ export async function createServiceAction(
   const parsed = serviceFieldsSchema.safeParse({
     name: formData.get("name"),
     description: formData.get("description") || undefined,
+    content: formData.get("content") || undefined,
+    faqs: formData.get("faqs") || undefined,
     seoTitle: formData.get("seoTitle") || undefined,
     metaDescription: formData.get("metaDescription") || undefined,
   });
@@ -38,6 +70,8 @@ export async function createServiceAction(
     {
       name: parsed.data.name,
       description: parsed.data.description || null,
+      content: parsed.data.content || null,
+      faqs: parsed.data.faqs,
       seoTitle: parsed.data.seoTitle || null,
       metaDescription: parsed.data.metaDescription || null,
     },
@@ -63,6 +97,8 @@ export async function updateServiceAction(
     serviceId: formData.get("serviceId"),
     name: formData.get("name"),
     description: formData.get("description") || undefined,
+    content: formData.get("content") || undefined,
+    faqs: formData.get("faqs") || undefined,
     seoTitle: formData.get("seoTitle") || undefined,
     metaDescription: formData.get("metaDescription") || undefined,
     active: formData.get("active") || undefined,
@@ -78,6 +114,8 @@ export async function updateServiceAction(
     {
       name: parsed.data.name,
       description: parsed.data.description || null,
+      content: parsed.data.content || null,
+      faqs: parsed.data.faqs,
       seoTitle: parsed.data.seoTitle || null,
       metaDescription: parsed.data.metaDescription || null,
       active: parsed.data.active === "on",

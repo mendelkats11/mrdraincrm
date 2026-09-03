@@ -18,7 +18,21 @@ export const services = pgTable("services", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
+  // Short blurb — used on the /services listing cards and as the meta
+  // description fallback. Kept separate from `content` (below) rather than
+  // reused for both, which is what the service detail page used to do —
+  // SEO audit (Sep 2026) P1 finding: that's why every service page had a
+  // one-sentence body and nothing else.
   description: text("description"),
+  // Full body content for the service's own detail page — one or more
+  // paragraphs, admin-editable, blank line separated. Optional: a service
+  // can exist with just the short description above until its detail page
+  // gets a real content pass.
+  content: text("content"),
+  // Structured FAQ pairs for the same page — also drives FAQPage schema
+  // (only emitted when non-empty, since the content has to actually be on
+  // the page for that schema to be legitimate).
+  faqs: jsonb("faqs").$type<{ question: string; answer: string }[]>().notNull().default([]),
   imageKey: text("image_key"),
   active: boolean("active").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
