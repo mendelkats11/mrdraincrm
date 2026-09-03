@@ -3,7 +3,7 @@
 import { type ChangeEvent, type FormEvent, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Star } from "lucide-react";
+import { Plus, Star, X } from "lucide-react";
 import {
   removeServiceAreaImageAction,
   setServiceAreaActiveAction,
@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { serviceAreas } from "@/lib/db/schema";
+import type { ServiceAreaFaq } from "@/lib/website/service-areas";
 
 type ServiceArea = typeof serviceAreas.$inferSelect;
 
@@ -34,11 +35,14 @@ export function ServiceAreaRowActions({ area }: { area: ServiceArea }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [imagePending, startImageTransition] = useTransition();
+  const [faqs, setFaqs] = useState<ServiceAreaFaq[]>(area.faqs);
   const router = useRouter();
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    const cleanFaqs = faqs.filter((f) => f.question.trim() && f.answer.trim());
+    formData.set("faqs", JSON.stringify(cleanFaqs));
     startTransition(async () => {
       const result = await updateServiceAreaAction(undefined, formData);
       if (result?.ok) {
@@ -49,6 +53,14 @@ export function ServiceAreaRowActions({ area }: { area: ServiceArea }) {
         setError(result?.error ?? "Something went wrong.");
       }
     });
+  }
+
+  function updateFaq(index: number, field: keyof ServiceAreaFaq, value: string) {
+    setFaqs((prev) => prev.map((f, i) => (i === index ? { ...f, [field]: value } : f)));
+  }
+
+  function removeFaq(index: number) {
+    setFaqs((prev) => prev.filter((_, i) => i !== index));
   }
 
   function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
@@ -157,6 +169,45 @@ export function ServiceAreaRowActions({ area }: { area: ServiceArea }) {
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="copy">Area description</Label>
                 <Textarea id="copy" name="copy" rows={4} defaultValue={area.copy ?? ""} />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label>Frequently asked questions</Label>
+                {faqs.map((faq, index) => (
+                  <div key={index} className="flex flex-col gap-1.5 rounded-lg border p-3">
+                    <div className="flex items-start gap-2">
+                      <Input
+                        placeholder="Question"
+                        value={faq.question}
+                        onChange={(e) => updateFaq(index, "question", e.target.value)}
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label="Remove FAQ"
+                        onClick={() => removeFaq(index)}
+                      >
+                        <X className="size-4" />
+                      </Button>
+                    </div>
+                    <Textarea
+                      placeholder="Answer"
+                      rows={2}
+                      value={faq.answer}
+                      onChange={(e) => updateFaq(index, "answer", e.target.value)}
+                    />
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setFaqs((prev) => [...prev, { question: "", answer: "" }])}
+                  className="self-start"
+                >
+                  <Plus className="size-4" /> Add FAQ
+                </Button>
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="callrailTrackingNumber">Call Now number (optional)</Label>

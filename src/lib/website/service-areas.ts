@@ -55,9 +55,12 @@ export async function getServiceArea<TQueryResult extends PgQueryResultHKT>(
   return row ?? null;
 }
 
+export type ServiceAreaFaq = { question: string; answer: string };
+
 export interface CreateServiceAreaInput {
   name: string;
   copy?: string | null;
+  faqs?: ServiceAreaFaq[];
   images?: string[];
   seoTitle?: string | null;
   metaDescription?: string | null;
@@ -96,6 +99,7 @@ export async function createServiceArea<TQueryResult extends PgQueryResultHKT>(
         name: input.name,
         slug,
         copy: input.copy || null,
+        faqs: input.faqs ?? [],
         images: input.images ?? [],
         seoTitle: input.seoTitle || null,
         metaDescription: input.metaDescription || null,
@@ -120,6 +124,7 @@ export async function createServiceArea<TQueryResult extends PgQueryResultHKT>(
 export interface UpdateServiceAreaInput {
   name?: string;
   copy?: string | null;
+  faqs?: ServiceAreaFaq[];
   images?: string[];
   seoTitle?: string | null;
   metaDescription?: string | null;
@@ -144,6 +149,7 @@ export async function updateServiceArea<TQueryResult extends PgQueryResultHKT>(
       .set({
         name: input.name,
         copy: input.copy !== undefined ? input.copy || null : undefined,
+        faqs: input.faqs,
         images: input.images,
         seoTitle: input.seoTitle !== undefined ? input.seoTitle || null : undefined,
         metaDescription:

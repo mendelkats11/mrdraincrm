@@ -1,16 +1,20 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { MapPin, Phone } from "lucide-react";
+import Link from "next/link";
+import { MapPin, Phone, Wrench } from "lucide-react";
 import { getDb } from "@/lib/db/client";
 import { getServiceAreaBySlug } from "@/lib/website/service-areas";
+import { listPublishedServices } from "@/lib/website/services";
 import { getWebsiteSettings } from "@/lib/website/settings";
 import { formatPhoneForDisplay } from "@/lib/phone";
 import { listPublishedGalleryItemsForServiceArea } from "@/lib/website/gallery";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import { MobileFloatingCta } from "@/components/site/mobile-floating-cta";
 import { GallerySection } from "@/components/site/sections/gallery-section";
+import { CtaSection } from "@/components/site/sections/cta-section";
 import { breadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
+import { faqSchema } from "@/lib/seo/faq-schema";
 
 export const dynamic = "force-dynamic";
 
@@ -36,9 +40,10 @@ export default async function ServiceAreaDetailPage({
 }) {
   const { slug } = await params;
   const db = getDb();
-  const [area, settings] = await Promise.all([
+  const [area, settings, services] = await Promise.all([
     getServiceAreaBySlug(db, slug),
     getWebsiteSettings(db),
+    listPublishedServices(db),
   ]);
   if (!area) notFound();
 
@@ -53,6 +58,7 @@ export default async function ServiceAreaDetailPage({
     { name: "Service Areas", path: "/service-areas" },
     { name: area.name, path: `/service-areas/${area.slug}` },
   ]);
+  const faqs = area.faqs;
 
   return (
     <div>
@@ -60,6 +66,12 @@ export default async function ServiceAreaDetailPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
       />
+      {faqs.length > 0 ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema(faqs)) }}
+        />
+      ) : null}
       {area.images[0] ? (
         <div className="relative h-64 w-full sm:h-80">
           <Image
@@ -89,7 +101,7 @@ export default async function ServiceAreaDetailPage({
       <div className="mx-auto max-w-3xl px-4 py-12">
         {area.copy ? <p className="text-lg text-foreground/80">{area.copy}</p> : null}
 
-        <div className="mt-10 flex flex-wrap gap-3 border-t border-border pt-8">
+        <div className="mt-6 flex flex-wrap gap-3">
           {trackingNumber ? (
             <a
               href={`tel:${trackingNumber}`}
@@ -99,16 +111,52 @@ export default async function ServiceAreaDetailPage({
               Call {formatPhoneForDisplay(trackingNumber)}
             </a>
           ) : null}
-          <a
+          <Link
             href="/contact"
             className="flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-base font-semibold text-accent-foreground shadow-md"
           >
             Get a Free Quote
-          </a>
+          </Link>
         </div>
+
+        {faqs.length > 0 ? (
+          <div className="mt-10 border-t border-border pt-8">
+            <h2 className="mb-4 text-2xl font-bold text-brand-navy">Frequently asked questions</h2>
+            <dl className="flex flex-col gap-5">
+              {faqs.map((faq, i) => (
+                <div key={i}>
+                  <dt className="font-semibold text-foreground">{faq.question}</dt>
+                  <dd className="mt-1 text-foreground/80">{faq.answer}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        ) : null}
+
+        {services.length > 0 ? (
+          <div className="mt-10 border-t border-border pt-8">
+            <h2 className="mb-3 text-lg font-semibold text-brand-navy">
+              Plumbing services in {area.name}
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {services.map((service) => (
+                <Link
+                  key={service.id}
+                  href={`/services/${service.slug}`}
+                  className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm text-foreground/80 hover:border-primary hover:text-primary"
+                >
+                  <Wrench className="size-3.5" aria-hidden="true" />
+                  {service.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <GallerySection items={areaGalleryItems} />
+
+      <CtaSection heading={`Need a plumber in ${area.name}?`} trackingNumber={trackingNumber} />
 
       <MobileFloatingCta trackingNumber={trackingNumber} />
     </div>

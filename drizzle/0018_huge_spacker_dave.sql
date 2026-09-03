@@ -1,0 +1,1 @@
+ALTER TABLE "service_areas" ADD COLUMN "faqs" jsonb DEFAULT '[]'::jsonb NOT NULL;

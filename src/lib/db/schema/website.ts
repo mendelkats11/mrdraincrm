@@ -46,6 +46,9 @@ export const serviceAreas = pgTable("service_areas", {
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   copy: text("copy"),
+  // Structured FAQ pairs for this area's own page — same shape and purpose
+  // as services.faqs (drives FAQPage schema, only when non-empty).
+  faqs: jsonb("faqs").$type<{ question: string; answer: string }[]>().notNull().default([]),
   images: jsonb("images").$type<string[]>().notNull().default([]),
   seoTitle: text("seo_title"),
   metaDescription: text("meta_description"),

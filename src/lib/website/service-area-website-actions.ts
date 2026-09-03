@@ -16,9 +16,37 @@ import { createServiceArea, getServiceArea, updateServiceArea } from "./service-
 // tracking-number page is left as-is per "don't rewrite working features
 // without a clear reason."
 
+const areaFaqSchema = z.object({
+  question: z.string().trim().min(1).max(300),
+  answer: z.string().trim().min(1).max(2000),
+});
+
+// FAQs are edited as client-side list state (add/remove rows), not native
+// form fields — same pattern as src/lib/website/service-actions.ts.
+const areaFaqsJsonSchema = z
+  .string()
+  .optional()
+  .transform((val, ctx) => {
+    if (!val) return [];
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(val);
+    } catch {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid FAQ data." });
+      return z.NEVER;
+    }
+    const result = z.array(areaFaqSchema).max(12).safeParse(parsed);
+    if (!result.success) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid FAQ data." });
+      return z.NEVER;
+    }
+    return result.data;
+  });
+
 const areaFieldsSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(200),
   copy: z.string().trim().max(3000).optional(),
+  faqs: areaFaqsJsonSchema,
   seoTitle: z.string().trim().max(200).optional(),
   metaDescription: z.string().trim().max(300).optional(),
   callrailTrackingNumber: z.string().trim().max(32).optional(),
@@ -35,6 +63,7 @@ export async function createServiceAreaAction(
   const parsed = areaFieldsSchema.safeParse({
     name: formData.get("name"),
     copy: formData.get("copy") || undefined,
+    faqs: formData.get("faqs") || undefined,
     seoTitle: formData.get("seoTitle") || undefined,
     metaDescription: formData.get("metaDescription") || undefined,
     callrailTrackingNumber: formData.get("callrailTrackingNumber") || undefined,
@@ -50,6 +79,7 @@ export async function createServiceAreaAction(
     {
       name: parsed.data.name,
       copy: parsed.data.copy || null,
+      faqs: parsed.data.faqs,
       seoTitle: parsed.data.seoTitle || null,
       metaDescription: parsed.data.metaDescription || null,
       callrailTrackingNumber: parsed.data.callrailTrackingNumber || null,
@@ -77,6 +107,7 @@ export async function updateServiceAreaAction(
     areaId: formData.get("areaId"),
     name: formData.get("name"),
     copy: formData.get("copy") || undefined,
+    faqs: formData.get("faqs") || undefined,
     seoTitle: formData.get("seoTitle") || undefined,
     metaDescription: formData.get("metaDescription") || undefined,
     callrailTrackingNumber: formData.get("callrailTrackingNumber") || undefined,
@@ -94,6 +125,7 @@ export async function updateServiceAreaAction(
     {
       name: parsed.data.name,
       copy: parsed.data.copy || null,
+      faqs: parsed.data.faqs,
       seoTitle: parsed.data.seoTitle || null,
       metaDescription: parsed.data.metaDescription || null,
       callrailTrackingNumber: parsed.data.callrailTrackingNumber || null,
