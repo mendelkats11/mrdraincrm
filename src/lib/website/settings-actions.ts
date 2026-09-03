@@ -129,3 +129,18 @@ export async function updateServicesBackgroundAction(
 ): Promise<BackgroundImageFormState> {
   return updateBackgroundImage(formData, "servicesBackgroundImageKey", "/services");
 }
+
+/** Website editor overhaul, phase 2 — sets a background from a key the
+ *  MediaPicker already resolved, rather than handling the file upload
+ *  here the way updateBackgroundImage above still does for "Remove". */
+export async function setBackgroundImageAction(
+  field: "contactBackgroundImageKey" | "servicesBackgroundImageKey",
+  key: string,
+): Promise<BackgroundImageFormState> {
+  const session = await requireUser();
+  const db = getDb();
+  await updateWebsiteSettings(db, { [field]: key }, session.user.id);
+  revalidatePath("/website/settings");
+  revalidatePath(field === "contactBackgroundImageKey" ? "/contact" : "/services");
+  return { ok: true };
+}

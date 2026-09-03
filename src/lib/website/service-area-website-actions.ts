@@ -148,6 +148,28 @@ export async function setServiceAreaActiveAction(areaId: string, active: boolean
   revalidatePath("/service-areas");
 }
 
+/** Website editor overhaul, phase 2 — appends an image the MediaPicker
+ *  already resolved, same effect as uploadServiceAreaImageAction below but
+ *  without re-uploading a file that's already in the library. */
+export async function addServiceAreaImageAction(
+  areaId: string,
+  key: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const session = await requireUser();
+  if (!z.string().uuid().safeParse(areaId).success) {
+    return { ok: false, error: "Invalid service area." };
+  }
+
+  const db = getDb();
+  const area = await getServiceArea(db, areaId);
+  const images = [...(area?.images ?? []), key];
+  await updateServiceArea(db, areaId, { images }, session.user.id);
+
+  revalidatePath("/website/service-areas");
+  revalidatePath("/service-areas");
+  return { ok: true };
+}
+
 export async function uploadServiceAreaImageAction(
   _prevState: ServiceAreaFormState,
   formData: FormData,

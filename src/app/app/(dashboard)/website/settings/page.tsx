@@ -47,7 +47,8 @@ export default async function WebsiteSettingsPage() {
                   ? publicAssetUrl(settings.contactBackgroundImageKey)
                   : null
               }
-              action={updateContactBackgroundAction}
+              field="contactBackgroundImageKey"
+              removeAction={updateContactBackgroundAction}
             />
             <BackgroundImageForm
               label="Services page background"
@@ -56,7 +57,8 @@ export default async function WebsiteSettingsPage() {
                   ? publicAssetUrl(settings.servicesBackgroundImageKey)
                   : null
               }
-              action={updateServicesBackgroundAction}
+              field="servicesBackgroundImageKey"
+              removeAction={updateServicesBackgroundAction}
             />
           </CardContent>
         </Card>

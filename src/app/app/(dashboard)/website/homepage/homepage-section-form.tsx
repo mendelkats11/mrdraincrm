@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { MediaPicker } from "@/components/website/media-picker";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import type { homepageSections } from "@/lib/db/schema";
 
@@ -20,6 +21,15 @@ export function HomepageSectionForm({ section }: { section: HomepageSection }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
+  const initialConfig = section.config as Record<string, unknown>;
+  const initialPhotoKeys = Array.isArray(initialConfig.photoKeys)
+    ? (initialConfig.photoKeys as string[])
+    : [];
+  const [photoKeys, setPhotoKeys] = useState<(string | undefined)[]>([
+    initialPhotoKeys[0],
+    initialPhotoKeys[1],
+    initialPhotoKeys[2],
+  ]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -35,7 +45,7 @@ export function HomepageSectionForm({ section }: { section: HomepageSection }) {
     });
   }
 
-  const config = section.config as Record<string, unknown>;
+  const config = initialConfig;
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3" encType="multipart/form-data">
@@ -126,39 +136,51 @@ export function HomepageSectionForm({ section }: { section: HomepageSection }) {
       {section.sectionType === "hero" ? (
         <div className="flex flex-col gap-3 border-t pt-3">
           <p className="text-xs text-muted-foreground">
-            Pick up to 3 photos for a collage in place of the logo. Leave a slot untouched to keep
-            its current photo, or check Remove to clear it. With none set, the logo is shown
+            Pick up to 3 photos for a collage in place of the logo. With none set, the logo is shown
             instead.
           </p>
           {([1, 2, 3] as const).map((n) => {
-            const photoKeys = Array.isArray(config.photoKeys) ? (config.photoKeys as string[]) : [];
-            const existingKey = photoKeys[n - 1];
+            const key = photoKeys[n - 1];
             return (
               <div key={n} className="flex flex-col gap-1.5 rounded-md border p-2.5">
-                <Label htmlFor={`photo${n}-${section.id}`} className="text-xs">
-                  Photo {n}
-                </Label>
-                {existingKey ? (
+                <Label className="text-xs">Photo {n}</Label>
+                {key ? (
                   // eslint-disable-next-line @next/next/no-img-element -- admin preview thumbnail, same pattern as invoice-settings-form.tsx
                   <img
-                    src={publicAssetUrl(existingKey)}
+                    src={publicAssetUrl(key)}
                     alt=""
                     className="h-20 w-28 rounded-md border object-cover"
                   />
                 ) : null}
-                <input type="hidden" name={`existingPhoto${n}Key`} value={existingKey ?? ""} />
-                <Input
-                  id={`photo${n}-${section.id}`}
-                  name={`photo${n}`}
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                />
-                {existingKey ? (
-                  <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <input type="checkbox" name={`removePhoto${n}`} />
-                    Remove this photo
-                  </label>
-                ) : null}
+                <input type="hidden" name={`existingPhoto${n}Key`} value={key ?? ""} />
+                <div className="flex items-center gap-2">
+                  <MediaPicker
+                    triggerLabel={key ? "Replace" : "Choose photo"}
+                    onSelect={(newKey) =>
+                      setPhotoKeys((prev) => {
+                        const next = [...prev];
+                        next[n - 1] = newKey;
+                        return next;
+                      })
+                    }
+                  />
+                  {key ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        setPhotoKeys((prev) => {
+                          const next = [...prev];
+                          next[n - 1] = undefined;
+                          return next;
+                        })
+                      }
+                    >
+                      Remove
+                    </Button>
+                  ) : null}
+                </div>
               </div>
             );
           })}

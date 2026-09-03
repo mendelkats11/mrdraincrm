@@ -1,18 +1,19 @@
 "use client";
 
-import { type ChangeEvent, type FormEvent, useState, useTransition } from "react";
+import { type FormEvent, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Plus, Star, X } from "lucide-react";
 import {
+  addServiceAreaImageAction,
   removeServiceAreaImageAction,
   setServiceAreaActiveAction,
   setServiceAreaCoverImageAction,
   updateServiceAreaAction,
-  uploadServiceAreaImageAction,
 } from "@/lib/website/service-area-website-actions";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import { ToggleActionButton } from "@/components/website/toggle-action-button";
+import { MediaPicker } from "@/components/website/media-picker";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -63,14 +64,9 @@ export function ServiceAreaRowActions({ area }: { area: ServiceArea }) {
     setFaqs((prev) => prev.filter((_, i) => i !== index));
   }
 
-  function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const formData = new FormData();
-    formData.set("areaId", area.id);
-    formData.set("image", file);
+  function handleImageSelect(key: string) {
     startImageTransition(async () => {
-      await uploadServiceAreaImageAction(undefined, formData);
+      await addServiceAreaImageAction(area.id, key);
       router.refresh();
     });
   }
@@ -150,13 +146,8 @@ export function ServiceAreaRowActions({ area }: { area: ServiceArea }) {
                   </div>
                 ))}
               </div>
-              <Input
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                disabled={imagePending}
-                onChange={handleImageChange}
-              />
-              {imagePending ? <p className="text-xs text-muted-foreground">Uploading…</p> : null}
+              <MediaPicker triggerLabel="Add image" onSelect={handleImageSelect} />
+              {imagePending ? <p className="text-xs text-muted-foreground">Saving…</p> : null}
             </div>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
