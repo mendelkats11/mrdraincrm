@@ -1,16 +1,17 @@
 "use client";
 
-import { type ChangeEvent, type FormEvent, useState, useTransition } from "react";
+import { type FormEvent, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Plus, X } from "lucide-react";
 import {
   setServiceActiveAction,
+  setServiceImageAction,
   updateServiceAction,
-  uploadServiceImageAction,
 } from "@/lib/website/service-actions";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import { ToggleActionButton } from "@/components/website/toggle-action-button";
+import { MediaPicker } from "@/components/website/media-picker";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -61,14 +62,9 @@ export function ServiceRowActions({ service }: { service: Service }) {
     setFaqs((prev) => prev.filter((_, i) => i !== index));
   }
 
-  function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const formData = new FormData();
-    formData.set("serviceId", service.id);
-    formData.set("image", file);
+  function handleImageSelect(key: string) {
     startImageTransition(async () => {
-      await uploadServiceImageAction(undefined, formData);
+      await setServiceImageAction(service.id, key);
       router.refresh();
     });
   }
@@ -112,18 +108,11 @@ export function ServiceRowActions({ service }: { service: Service }) {
                   No image
                 </div>
               )}
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="service-image" className="text-xs">
-                  {imagePending ? "Uploading…" : "Replace image"}
-                </Label>
-                <Input
-                  id="service-image"
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  disabled={imagePending}
-                  onChange={handleImageChange}
-                />
-              </div>
+              <MediaPicker
+                triggerLabel={service.imageKey ? "Replace image" : "Choose image"}
+                onSelect={handleImageSelect}
+              />
+              {imagePending ? <span className="text-xs text-muted-foreground">Saving…</span> : null}
             </div>
 
             <form

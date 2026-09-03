@@ -14,6 +14,28 @@ import { sql } from "drizzle-orm";
 // Website content is data-driven (docs/ARCHITECTURE.md §19) — the public
 // site reads published/active rows, never hard-coded content.
 
+/**
+ * Website editor overhaul, phase 1 (Sep 2026) — a real media library.
+ * Every image upload across the CMS (service images, service-area images,
+ * gallery photos, hero collage photos, background images) previously went
+ * straight to storage with no row tracking it, so nothing could be listed,
+ * searched, or reused — every image field was its own fresh upload with no
+ * memory of what had already been uploaded elsewhere. This table is the
+ * single source of truth for "what images exist," independent of where a
+ * given image happens to be used; uploadPublicAsset's storage key format is
+ * unchanged, so existing image references (already-stored keys on services/
+ * serviceAreas/galleryItems/homepageSections) keep resolving exactly as
+ * before — this is additive, not a migration of existing data.
+ */
+export const mediaAssets = pgTable("media_assets", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  key: text("key").notNull().unique(),
+  filename: text("filename").notNull(),
+  contentType: text("content_type").notNull(),
+  sizeBytes: integer("size_bytes").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const services = pgTable("services", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),

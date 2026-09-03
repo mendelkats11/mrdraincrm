@@ -18,7 +18,7 @@ export async function uploadPublicAsset(
   input: {
     buffer: Buffer;
     contentType: string;
-    category: "services" | "service-areas" | "gallery" | "hero" | "backgrounds";
+    category: "services" | "service-areas" | "gallery" | "hero" | "backgrounds" | "media";
   },
 ): Promise<UploadPublicAssetResult> {
   if (!ALLOWED_CONTENT_TYPES.includes(input.contentType)) {

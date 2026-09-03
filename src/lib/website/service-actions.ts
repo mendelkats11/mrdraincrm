@@ -136,6 +136,28 @@ export async function setServiceActiveAction(serviceId: string, active: boolean)
   revalidatePath("/services");
 }
 
+const setImageSchema = z.object({ serviceId: z.string().uuid(), key: z.string().min(1) });
+
+/** Website editor overhaul, phase 1 — sets the image from a key the
+ *  MediaPicker already resolved (either an existing library asset or a
+ *  freshly uploaded one, which the picker uploads itself), rather than
+ *  handling the file upload here the way uploadServiceImageAction below
+ *  still does for the moment. */
+export async function setServiceImageAction(
+  serviceId: string,
+  key: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const session = await requireUser();
+  const parsed = setImageSchema.safeParse({ serviceId, key });
+  if (!parsed.success) return { ok: false, error: "Invalid image." };
+
+  const db = getDb();
+  await updateService(db, parsed.data.serviceId, { imageKey: parsed.data.key }, session.user.id);
+  revalidatePath("/website/services");
+  revalidatePath("/services");
+  return { ok: true };
+}
+
 export async function uploadServiceImageAction(
   _prevState: ServiceFormState,
   formData: FormData,
