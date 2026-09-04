@@ -38,8 +38,8 @@ export function SiteHeader({
     : BASE_NAV_LINKS.filter((link) => link.href !== "/reviews");
 
   return (
-    <header className="sticky top-0 z-30 border-b border-black/5 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
+    <header className="sticky top-0 z-50 border-b border-black/5 bg-white/95 backdrop-blur">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-2.5">
         <Link href="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
           <Image
             src="/logo.png"
@@ -47,7 +47,7 @@ export function SiteHeader({
             width={140}
             height={103}
             priority
-            className="h-12 w-auto"
+            className="h-14 w-auto"
           />
         </Link>
 
