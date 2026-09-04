@@ -58,7 +58,7 @@ export function HeroSection({
             </Link>
           </div>
         </div>
-        <div className="relative mx-auto w-full max-w-sm">
+        <div className="relative mx-auto w-full max-w-sm lg:max-w-none">
           {photos.length === 0 ? (
             <Image
               src="/logo.png"
@@ -66,7 +66,7 @@ export function HeroSection({
               width={1024}
               height={754}
               priority
-              className="w-full drop-shadow-xl"
+              className="mx-auto w-full max-w-sm drop-shadow-xl"
             />
           ) : photos.length === 1 ? (
             <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl shadow-xl">
@@ -84,15 +84,27 @@ export function HeroSection({
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 grid-rows-2 gap-3">
-              <div className="relative row-span-2 overflow-hidden rounded-2xl shadow-xl">
-                <Image src={photos[0]} alt="" fill priority className="object-cover" />
+            // A tilted, overlapping stack — big photo behind, medium
+            // overlapping its bottom-right, small overlapping the medium —
+            // rather than a plain even grid, so real finished-job photos
+            // read as a deliberate "craftsman portfolio" moment instead of
+            // a spec-sheet layout. Fixed aspect-ratio container (not
+            // content-sized) since the photos are absolutely positioned.
+            <div className="relative aspect-[5/6] w-full max-w-md sm:max-w-lg lg:mx-0 lg:ml-auto lg:max-w-xl">
+              <div className="absolute left-0 top-0 z-10 w-[72%] -rotate-3 overflow-hidden rounded-2xl border-4 border-white shadow-2xl">
+                <div className="relative aspect-[4/3]">
+                  <Image src={photos[0]} alt="" fill priority className="object-cover" />
+                </div>
               </div>
-              <div className="relative aspect-square overflow-hidden rounded-2xl shadow-xl">
-                <Image src={photos[1]} alt="" fill className="object-cover" />
+              <div className="absolute right-0 top-[26%] z-20 w-[56%] rotate-3 overflow-hidden rounded-2xl border-4 border-white shadow-2xl">
+                <div className="relative aspect-[4/3]">
+                  <Image src={photos[1]} alt="" fill className="object-cover" />
+                </div>
               </div>
-              <div className="relative aspect-square overflow-hidden rounded-2xl shadow-xl">
-                <Image src={photos[2]} alt="" fill className="object-cover" />
+              <div className="absolute bottom-0 left-[10%] z-30 w-[40%] -rotate-6 overflow-hidden rounded-2xl border-4 border-white shadow-2xl">
+                <div className="relative aspect-square">
+                  <Image src={photos[2]} alt="" fill className="object-cover" />
+                </div>
               </div>
             </div>
           )}
