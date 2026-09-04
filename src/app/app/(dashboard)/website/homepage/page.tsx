@@ -1,43 +1,10 @@
-import { getDb } from "@/lib/db/client";
-import { listHomepageSections } from "@/lib/website/homepage";
-import { getPublicSiteOrigin } from "@/lib/site-url";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SitePreviewPane } from "@/components/site-preview-pane";
-import { HOMEPAGE_SECTION_LABELS } from "@/components/site/homepage-section-renderer";
-import { HomepageSectionForm } from "./homepage-section-form";
+import { redirect } from "next/navigation";
 
-export default async function WebsiteHomepagePage() {
-  const db = getDb();
-  const sections = await listHomepageSections(db);
-
-  return (
-    <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
-      <div className="flex flex-col gap-6">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">Homepage</h1>
-          <p className="text-sm text-muted-foreground">
-            Sections appear on the homepage in this order. Toggle a section off to hide it without
-            losing its content.
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-4">
-          {sections.map((section) => (
-            <Card key={section.id}>
-              <CardHeader>
-                <CardTitle className="text-base">
-                  {HOMEPAGE_SECTION_LABELS[section.sectionType] ?? section.sectionType}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <HomepageSectionForm section={section} />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      <SitePreviewPane origin={getPublicSiteOrigin()} path="/" />
-    </div>
-  );
+// Superseded by Home in the visual editor (website editor overhaul, phase
+// 3) — redirects rather than 404s so an old bookmark or sidebar shortcut
+// still lands somewhere useful. homepage-section-form.tsx in this folder
+// is still very much alive — the new editor's side panel imports it
+// directly — only this classic per-section list page is retired.
+export default function WebsiteHomepageRedirectPage() {
+  redirect("/website/editor");
 }

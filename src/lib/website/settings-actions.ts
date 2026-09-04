@@ -8,73 +8,6 @@ import { getStorageProvider } from "@/lib/storage";
 import { uploadPublicAsset } from "@/lib/storage/public-asset-upload";
 import { updateWebsiteSettings } from "./settings";
 
-const settingsSchema = z.object({
-  businessName: z.string().trim().max(200).optional(),
-  businessAddress: z.string().trim().max(500).optional(),
-  tagline: z.string().trim().max(200).optional(),
-  footerTagline: z.string().trim().max(200).optional(),
-  aboutHeading: z.string().trim().max(200).optional(),
-  aboutBody: z.string().trim().max(3000).optional(),
-  publicContactEmail: z.union([z.literal(""), z.string().trim().email()]).optional(),
-  defaultCallrailTrackingNumber: z.string().trim().max(32).optional(),
-  reviewsPageEnabled: z.boolean(),
-  termsOfServiceContent: z.string().trim().max(20000).optional(),
-  privacyPolicyContent: z.string().trim().max(20000).optional(),
-});
-
-export type WebsiteSettingsFormState = { ok: true } | { ok: false; error: string } | undefined;
-
-export async function updateWebsiteSettingsAction(
-  _prevState: WebsiteSettingsFormState,
-  formData: FormData,
-): Promise<WebsiteSettingsFormState> {
-  const session = await requireUser();
-  const parsed = settingsSchema.safeParse({
-    businessName: formData.get("businessName") || undefined,
-    businessAddress: formData.get("businessAddress") || undefined,
-    tagline: formData.get("tagline") || undefined,
-    footerTagline: formData.get("footerTagline") || undefined,
-    aboutHeading: formData.get("aboutHeading") || undefined,
-    aboutBody: formData.get("aboutBody") || undefined,
-    publicContactEmail: formData.get("publicContactEmail") || undefined,
-    defaultCallrailTrackingNumber: formData.get("defaultCallrailTrackingNumber") || undefined,
-    reviewsPageEnabled: formData.get("reviewsPageEnabled") === "on",
-    termsOfServiceContent: formData.get("termsOfServiceContent") || undefined,
-    privacyPolicyContent: formData.get("privacyPolicyContent") || undefined,
-  });
-  if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input." };
-  }
-
-  const db = getDb();
-  await updateWebsiteSettings(
-    db,
-    {
-      businessName: parsed.data.businessName || null,
-      businessAddress: parsed.data.businessAddress || null,
-      tagline: parsed.data.tagline || null,
-      footerTagline: parsed.data.footerTagline || null,
-      aboutHeading: parsed.data.aboutHeading || null,
-      aboutBody: parsed.data.aboutBody || null,
-      publicContactEmail: parsed.data.publicContactEmail || null,
-      defaultCallrailTrackingNumber: parsed.data.defaultCallrailTrackingNumber || null,
-      reviewsPageEnabled: parsed.data.reviewsPageEnabled,
-      termsOfServiceContent: parsed.data.termsOfServiceContent || null,
-      privacyPolicyContent: parsed.data.privacyPolicyContent || null,
-    },
-    session.user.id,
-  );
-
-  revalidatePath("/website/settings");
-  revalidatePath("/");
-  revalidatePath("/about");
-  revalidatePath("/contact");
-  revalidatePath("/reviews");
-  revalidatePath("/terms");
-  revalidatePath("/privacy");
-  return { ok: true };
-}
-
 export type BackgroundImageFormState = { ok: true } | { ok: false; error: string } | undefined;
 
 /**
@@ -146,12 +79,25 @@ export async function setBackgroundImageAction(
 }
 
 // Fields the visual editor's click-on-the-text inline editing is allowed to
-// write — a fixed allowlist, not "any settings column the caller names",
-// since `field` arrives as a plain string from a client component. Extend
-// this as more of the site (About page heading/body, footer tagline, etc.)
-// gets the same in-context treatment.
-const INLINE_SETTINGS_FIELDS = new Set(["tagline"] as const);
-type InlineSettingsField = "tagline";
+// write, each with its own max length — a fixed allowlist, not "any
+// settings column the caller names," since `field` arrives as a plain
+// string from a client component. The map's keys are what
+// patchWebsiteSettingsFieldAction actually accepts; the length limits match
+// updateWebsiteSettingsAction's zod schema above so the two save paths
+// can't disagree on what's valid.
+const INLINE_SETTINGS_FIELD_LIMITS = {
+  businessName: 200,
+  businessAddress: 500,
+  tagline: 200,
+  footerTagline: 200,
+  publicContactEmail: 320,
+  defaultCallrailTrackingNumber: 32,
+  aboutHeading: 200,
+  aboutBody: 3000,
+  termsOfServiceContent: 20000,
+  privacyPolicyContent: 20000,
+} as const;
+type InlineSettingsField = keyof typeof INLINE_SETTINGS_FIELD_LIMITS;
 
 export type PatchSettingsFieldResult = { ok: true } | { ok: false; error: string };
 
@@ -159,14 +105,31 @@ export async function patchWebsiteSettingsFieldAction(
   field: string,
   value: string,
 ): Promise<PatchSettingsFieldResult> {
-  if (!INLINE_SETTINGS_FIELDS.has(field as InlineSettingsField)) {
+  const limit = INLINE_SETTINGS_FIELD_LIMITS[field as InlineSettingsField];
+  if (limit === undefined) {
     return { ok: false, error: "That field can't be edited here." };
   }
-  const trimmed = value.trim().slice(0, 200);
+  const trimmed = value.trim().slice(0, limit);
+  if (field === "publicContactEmail" && trimmed && !z.string().email().safeParse(trimmed).success) {
+    return { ok: false, error: "Enter a valid email address." };
+  }
+
   const session = await requireUser();
   const db = getDb();
   await updateWebsiteSettings(db, { [field]: trimmed || null }, session.user.id);
-  revalidatePath("/website/editor");
+  revalidatePath("/website/editor/settings");
   revalidatePath("/");
+  revalidatePath("/about");
+  revalidatePath("/contact");
+  revalidatePath("/terms");
+  revalidatePath("/privacy");
   return { ok: true };
+}
+
+export async function setReviewsPageEnabledAction(enabled: boolean): Promise<void> {
+  const session = await requireUser();
+  const db = getDb();
+  await updateWebsiteSettings(db, { reviewsPageEnabled: enabled }, session.user.id);
+  revalidatePath("/website/editor/settings");
+  revalidatePath("/");
 }

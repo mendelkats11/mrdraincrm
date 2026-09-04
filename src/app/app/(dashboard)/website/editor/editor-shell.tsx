@@ -15,14 +15,14 @@ const PAGES: { key: PageKey; label: string; href: string; visual: boolean }[] = 
     visual: true,
   },
   { key: "reviews", label: "Reviews", href: "/website/editor/reviews", visual: true },
-  { key: "settings", label: "Branding & Contact", href: "/website/settings", visual: false },
+  { key: "settings", label: "Branding & Contact", href: "/website/editor/settings", visual: true },
 ];
 
 /**
  * The page switcher — one bar you navigate the whole site from, instead of
- * the "Website" hub's 6 separate destinations. Everything but Branding &
- * Contact (a settings form, not a content list) now has the full
- * click-to-edit treatment; Settings still routes to its classic screen.
+ * the "Website" hub's 6 separate destinations. Every page listed here has
+ * the same click/blur-to-save treatment; none of them route out to a
+ * classic form-and-submit-button screen anymore.
  */
 export function EditorShell({ active }: { active: PageKey }) {
   return (
