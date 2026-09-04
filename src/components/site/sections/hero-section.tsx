@@ -25,7 +25,7 @@ export function HeroSection({
   const photos = photoUrls?.slice(0, 3) ?? [];
   return (
     <section className="relative overflow-hidden bg-brand-cream">
-      <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 sm:py-24 lg:grid-cols-2">
+      <div className="mx-auto grid max-w-6xl items-start gap-10 px-4 py-16 sm:py-24 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
         <div className="flex flex-col items-start gap-5">
           <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
             Serving Saskatoon &amp; area
@@ -36,7 +36,7 @@ export function HeroSection({
             value={tagline || `${businessName ?? "Mr. Drain Plumbing"} — here when you need us`}
             onCommit={editor ? (v) => editor.patchSettingsField("tagline", v) : undefined}
           />
-          <p className="max-w-lg text-lg text-foreground/70">
+          <p className="max-w-lg text-lg leading-relaxed text-foreground/70">
             Fast response, upfront pricing, and plumbers who actually explain what&apos;s wrong.
             Call now or request a free quote and we&apos;ll get back to you quickly.
           </p>
@@ -88,20 +88,24 @@ export function HeroSection({
             // overlapping its bottom-right, small overlapping the medium —
             // rather than a plain even grid, so real finished-job photos
             // read as a deliberate "craftsman portfolio" moment instead of
-            // a spec-sheet layout. Fixed aspect-ratio container (not
-            // content-sized) since the photos are absolutely positioned.
-            <div className="relative aspect-[5/6] w-full max-w-md sm:max-w-lg lg:mx-0 lg:ml-auto lg:max-w-xl">
-              <div className="absolute left-0 top-0 z-10 w-[72%] -rotate-3 overflow-hidden rounded-2xl border-4 border-white shadow-2xl">
+            // a spec-sheet layout. A plain `w-full aspect-square` (not a
+            // fixed max-width, and not taller-than-wide) — it fills the
+            // grid column like the 1/2-photo cases already do, and every
+            // tile's percentage position/size was chosen to stay within
+            // that square, so nothing gets clipped or pushes the section
+            // taller than the text column next to it.
+            <div className="relative aspect-square w-full">
+              <div className="absolute left-0 top-0 z-10 w-[70%] -rotate-3 overflow-hidden rounded-2xl border-4 border-white shadow-2xl">
                 <div className="relative aspect-[4/3]">
                   <Image src={photos[0]} alt="" fill priority className="object-cover" />
                 </div>
               </div>
-              <div className="absolute right-0 top-[26%] z-20 w-[56%] rotate-3 overflow-hidden rounded-2xl border-4 border-white shadow-2xl">
+              <div className="absolute right-0 top-[32%] z-20 w-[55%] rotate-3 overflow-hidden rounded-2xl border-4 border-white shadow-2xl">
                 <div className="relative aspect-[4/3]">
                   <Image src={photos[1]} alt="" fill className="object-cover" />
                 </div>
               </div>
-              <div className="absolute bottom-0 left-[10%] z-30 w-[40%] -rotate-6 overflow-hidden rounded-2xl border-4 border-white shadow-2xl">
+              <div className="absolute bottom-0 left-[8%] z-30 w-[38%] -rotate-6 overflow-hidden rounded-2xl border-4 border-white shadow-2xl">
                 <div className="relative aspect-square">
                   <Image src={photos[2]} alt="" fill className="object-cover" />
                 </div>
