@@ -127,5 +127,25 @@ export async function reorderHomepageSectionAction(
   const db = getDb();
   await updateHomepageSection(db, sectionId, { sortOrder }, session.user.id);
   revalidatePath("/website/homepage");
+  revalidatePath("/website/editor");
+  revalidatePath("/");
+}
+
+/** Show/hide a section from the visual editor's hover toolbar — deliberately
+ *  separate from updateHomepageSectionAction, which always rebuilds `config`
+ *  from a full field set. Calling that here with only `active` set would
+ *  read as "no content fields submitted" and wipe the section's existing
+ *  config. Passing `config: undefined` through to updateHomepageSection
+ *  leaves the column untouched (same trick reorderHomepageSectionAction
+ *  above already relies on for sortOrder-only updates). */
+export async function toggleHomepageSectionActiveAction(
+  sectionId: string,
+  active: boolean,
+): Promise<void> {
+  const session = await requireUser();
+  const db = getDb();
+  await updateHomepageSection(db, sectionId, { active }, session.user.id);
+  revalidatePath("/website/homepage");
+  revalidatePath("/website/editor");
   revalidatePath("/");
 }

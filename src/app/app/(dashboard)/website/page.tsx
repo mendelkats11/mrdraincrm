@@ -1,6 +1,11 @@
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+// "Homepage" no longer has its own tile here — editing the homepage now
+// happens in the visual editor above, which renders and edits the real
+// sections directly instead of a form-next-to-an-iframe layout. The rest
+// stay here until each gets the same in-context treatment.
 const SECTIONS = [
   {
     href: "/website/services",
@@ -23,11 +28,6 @@ const SECTIONS = [
     description: "Manually entered customer testimonials.",
   },
   {
-    href: "/website/homepage",
-    label: "Homepage",
-    description: "Which sections show on the homepage, in what order.",
-  },
-  {
     href: "/website/settings",
     label: "Branding & Contact",
     description: "Tagline, About page content, public contact info, default Call Now number.",
@@ -43,19 +43,36 @@ export default function WebsiteAdminPage() {
           Manage the content shown on the public site (mrdrainsk.com).
         </p>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        {SECTIONS.map((section) => (
-          <Link key={section.href} href={section.href}>
-            <Card className="h-full transition-colors hover:bg-muted/50">
-              <CardHeader>
-                <CardTitle className="text-base">{section.label}</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">
-                {section.description}
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
+
+      <Link href="/website/editor">
+        <Card className="h-full border-primary/30 bg-primary/5 transition-colors hover:bg-primary/10">
+          <CardHeader className="flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-base">Website Editor</CardTitle>
+            <ArrowRight className="size-4 text-primary" aria-hidden="true" />
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">
+            Open the homepage as it actually looks, and edit text, images, and sections directly on
+            the page.
+          </CardContent>
+        </Card>
+      </Link>
+
+      <div>
+        <p className="mb-3 text-xs font-medium text-muted-foreground">Not yet in the editor</p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {SECTIONS.map((section) => (
+            <Link key={section.href} href={section.href}>
+              <Card className="h-full transition-colors hover:bg-muted/50">
+                <CardHeader>
+                  <CardTitle className="text-base">{section.label}</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm text-muted-foreground">
+                  {section.description}
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   );

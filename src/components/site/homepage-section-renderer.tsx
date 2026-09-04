@@ -11,6 +11,19 @@ import { ReviewsSection } from "./sections/reviews-section";
 import { CtaSection } from "./sections/cta-section";
 
 export type HomepageSectionRow = typeof homepageSections.$inferSelect;
+
+/** Shared with both the classic per-section list (website/homepage) and the
+ *  visual editor (website/editor) so a section's display name never drifts
+ *  between the two. */
+export const HOMEPAGE_SECTION_LABELS: Record<string, string> = {
+  hero: "Hero (top banner)",
+  services: "Services",
+  why_mr_drain: "Why Mr. Drain",
+  service_areas: "Service Areas",
+  gallery: "Gallery",
+  reviews: "Reviews",
+  cta: "Call to Action (bottom banner)",
+};
 type Settings = WebsiteSettings;
 type Service = typeof services.$inferSelect;
 type ServiceArea = typeof serviceAreas.$inferSelect;
