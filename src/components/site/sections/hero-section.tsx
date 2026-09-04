@@ -95,17 +95,17 @@ export function HeroSection({
             // that square, so nothing gets clipped or pushes the section
             // taller than the text column next to it.
             <div className="relative aspect-square w-full">
-              <div className="absolute left-0 top-0 z-10 w-[70%] -rotate-3 overflow-hidden rounded-2xl border-4 border-white shadow-2xl">
+              <div className="absolute left-0 top-0 z-10 w-[78%] -rotate-3 overflow-hidden rounded-2xl border-4 border-white shadow-2xl">
                 <div className="relative aspect-[4/3]">
                   <Image src={photos[0]} alt="" fill priority className="object-cover" />
                 </div>
               </div>
-              <div className="absolute right-0 top-[32%] z-20 w-[55%] rotate-3 overflow-hidden rounded-2xl border-4 border-white shadow-2xl">
+              <div className="absolute right-0 top-[32%] z-20 w-[62%] rotate-3 overflow-hidden rounded-2xl border-4 border-white shadow-2xl">
                 <div className="relative aspect-[4/3]">
                   <Image src={photos[1]} alt="" fill className="object-cover" />
                 </div>
               </div>
-              <div className="absolute bottom-0 left-[8%] z-30 w-[38%] -rotate-6 overflow-hidden rounded-2xl border-4 border-white shadow-2xl">
+              <div className="absolute bottom-[12%] left-[32%] z-30 w-[48%] -rotate-6 overflow-hidden rounded-2xl border-4 border-white shadow-2xl">
                 <div className="relative aspect-square">
                   <Image src={photos[2]} alt="" fill className="object-cover" />
                 </div>
