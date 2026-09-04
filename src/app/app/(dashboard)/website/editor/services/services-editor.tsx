@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Eye, EyeOff, Plus, Wrench, X } from "lucide-react";
@@ -16,7 +16,6 @@ import {
   patchServiceFieldAction,
   setServiceActiveAction,
   setServiceImageAction,
-  updateServiceAction,
 } from "@/lib/website/service-actions";
 import type { services } from "@/lib/db/schema";
 import type { ServiceFaq } from "@/lib/website/services";
@@ -153,7 +152,7 @@ function ServiceCard({
             Hidden
           </span>
         ) : null}
-        <div className="pointer-events-none absolute inset-0 flex items-start justify-end p-1.5 opacity-0 transition group-hover:opacity-100">
+        <div className="pointer-events-none absolute inset-0 flex items-start justify-end p-1.5 opacity-70 transition group-hover:opacity-100">
           <div className="pointer-events-auto flex items-center gap-0.5 rounded-md border bg-card/95 p-0.5 shadow-sm">
             <MediaPicker
               triggerLabel="Photo"
@@ -228,67 +227,50 @@ function ServiceCard({
   );
 }
 
-/** Content / FAQs / SEO fields — reuses updateServiceAction (the same
- *  action the old edit-service dialog used) wholesale rather than adding a
- *  second write path for the same columns. Name/description are inline-
- *  edited elsewhere, so their current values are carried as hidden fields
- *  purely so this submission doesn't overwrite them with something stale. */
+/** Content / FAQs / SEO fields — each one saves on blur/change via
+ *  patchServiceFieldAction, same as the inline name/description fields on
+ *  the card above. No separate "Save" button: a field that saved instantly
+ *  everywhere else but needed an explicit click here was the likely cause
+ *  of "some text won't save" — an edit made and then not immediately
+ *  followed by that click looked identical to a bug. */
 function ServiceDetailsForm({ service }: { service: Service }) {
   const [faqs, setFaqs] = useState<ServiceFaq[]>(service.faqs);
-  const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
-  const router = useRouter();
+
+  function persistFaqs(next: ServiceFaq[]) {
+    const cleaned = next.filter((f) => f.question.trim() && f.answer.trim());
+    void patchServiceFieldAction(service.id, { faqs: cleaned });
+  }
 
   function updateFaq(index: number, field: keyof ServiceFaq, value: string) {
     setFaqs((prev) => prev.map((f, i) => (i === index ? { ...f, [field]: value } : f)));
   }
 
   function removeFaq(index: number) {
-    setFaqs((prev) => prev.filter((_, i) => i !== index));
-  }
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    // name/description/active are edited elsewhere (inline on the card) —
-    // carried through as their current values so this submission can't
-    // silently overwrite them with "blank" just because this form has no
-    // field for them.
-    formData.set("name", service.name);
-    formData.set("description", service.description ?? "");
-    formData.set("active", service.active ? "on" : "");
-    formData.set("faqs", JSON.stringify(faqs.filter((f) => f.question.trim() && f.answer.trim())));
-    setSaved(false);
-    startTransition(async () => {
-      const result = await updateServiceAction(undefined, formData);
-      if (result?.ok) {
-        setError(null);
-        setSaved(true);
-        router.refresh();
-      } else {
-        setError(result?.error ?? "Something went wrong.");
-      }
+    setFaqs((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      persistFaqs(next);
+      return next;
     });
   }
 
+  function commitField(field: "content" | "seoTitle" | "metaDescription", value: string) {
+    const current = (service[field] ?? "") as string;
+    if (value === current) return;
+    void patchServiceFieldAction(service.id, { [field]: value });
+  }
+
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-col gap-3 border-t border-border p-3"
-      // description isn't part of this form — it's inline-edited on the
-      // card above and shouldn't be silently overwritten on submit.
-    >
+    <div className="flex flex-col gap-3 border-t border-border p-3">
       <div className="flex flex-col gap-1.5">
         <Label htmlFor={`content-${service.id}`} className="text-xs">
           Page content
         </Label>
         <Textarea
           id={`content-${service.id}`}
-          name="content"
           rows={5}
           defaultValue={service.content ?? ""}
           placeholder="What it is, when to call, what's involved. Separate paragraphs with a blank line."
+          onBlur={(e) => commitField("content", e.currentTarget.value)}
         />
       </div>
 
@@ -301,6 +283,7 @@ function ServiceDetailsForm({ service }: { service: Service }) {
                 placeholder="Question"
                 value={faq.question}
                 onChange={(e) => updateFaq(index, "question", e.target.value)}
+                onBlur={() => persistFaqs(faqs)}
                 className="flex-1"
               />
               <Button
@@ -318,6 +301,7 @@ function ServiceDetailsForm({ service }: { service: Service }) {
               rows={2}
               value={faq.answer}
               onChange={(e) => updateFaq(index, "answer", e.target.value)}
+              onBlur={() => persistFaqs(faqs)}
             />
           </div>
         ))}
@@ -338,8 +322,8 @@ function ServiceDetailsForm({ service }: { service: Service }) {
         </Label>
         <Input
           id={`seoTitle-${service.id}`}
-          name="seoTitle"
           defaultValue={service.seoTitle ?? ""}
+          onBlur={(e) => commitField("seoTitle", e.currentTarget.value)}
         />
       </div>
       <div className="flex flex-col gap-1.5">
@@ -348,23 +332,11 @@ function ServiceDetailsForm({ service }: { service: Service }) {
         </Label>
         <Textarea
           id={`metaDescription-${service.id}`}
-          name="metaDescription"
           rows={2}
           defaultValue={service.metaDescription ?? ""}
+          onBlur={(e) => commitField("metaDescription", e.currentTarget.value)}
         />
       </div>
-
-      {error ? (
-        <p role="alert" className="text-sm text-destructive">
-          {error}
-        </p>
-      ) : null}
-      <div className="flex items-center gap-2">
-        <Button type="submit" size="sm" disabled={pending}>
-          {pending ? "Saving…" : "Save details"}
-        </Button>
-        {saved && !pending ? <span className="text-xs text-muted-foreground">Saved</span> : null}
-      </div>
-    </form>
+    </div>
   );
 }

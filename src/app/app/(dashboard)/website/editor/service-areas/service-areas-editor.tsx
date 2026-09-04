@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Eye, EyeOff, MapPin, Plus, Star, X } from "lucide-react";
@@ -18,7 +18,6 @@ import {
   removeServiceAreaImageAction,
   setServiceAreaActiveAction,
   setServiceAreaCoverImageAction,
-  updateServiceAreaAction,
 } from "@/lib/website/service-area-website-actions";
 import type { serviceAreas } from "@/lib/db/schema";
 import type { ServiceAreaFaq } from "@/lib/website/service-areas";
@@ -146,7 +145,7 @@ function AreaCard({
             Hidden
           </span>
         ) : null}
-        <div className="pointer-events-none absolute inset-0 flex items-start justify-end p-1.5 opacity-0 transition group-hover:opacity-100">
+        <div className="pointer-events-none absolute inset-0 flex items-start justify-end p-1.5 opacity-70 transition group-hover:opacity-100">
           <div className="pointer-events-auto flex items-center gap-0.5 rounded-md border bg-card/95 p-0.5 shadow-sm">
             <MediaPicker
               triggerLabel="Cover"
@@ -221,6 +220,10 @@ function AreaCard({
   );
 }
 
+/** FAQs / Call Now / region / SEO fields — each saves on blur/change via
+ *  patchServiceAreaFieldAction, same as the inline name/description fields
+ *  on the card above. No separate "Save" button — see the identical note
+ *  on services-editor.tsx's ServiceDetailsForm for why. */
 function AreaDetailsForm({
   area,
   onPatch,
@@ -229,42 +232,33 @@ function AreaDetailsForm({
   onPatch: (patch: Partial<ServiceArea>) => void;
 }) {
   const [faqs, setFaqs] = useState<ServiceAreaFaq[]>(area.faqs);
-  const [pending, startTransition] = useTransition();
   const [imagePending, startImageTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
   const router = useRouter();
+
+  function persistFaqs(next: ServiceAreaFaq[]) {
+    const cleaned = next.filter((f) => f.question.trim() && f.answer.trim());
+    void patchServiceAreaFieldAction(area.id, { faqs: cleaned });
+  }
 
   function updateFaq(index: number, field: keyof ServiceAreaFaq, value: string) {
     setFaqs((prev) => prev.map((f, i) => (i === index ? { ...f, [field]: value } : f)));
   }
 
   function removeFaq(index: number) {
-    setFaqs((prev) => prev.filter((_, i) => i !== index));
+    setFaqs((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      persistFaqs(next);
+      return next;
+    });
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    // name/copy/active are edited elsewhere (inline on the card) — carried
-    // through as their current values so this submission can't silently
-    // overwrite them with "blank" just because this form has no field for
-    // them.
-    formData.set("name", area.name);
-    formData.set("copy", area.copy ?? "");
-    formData.set("active", area.active ? "on" : "");
-    formData.set("faqs", JSON.stringify(faqs.filter((f) => f.question.trim() && f.answer.trim())));
-    setSaved(false);
-    startTransition(async () => {
-      const result = await updateServiceAreaAction(undefined, formData);
-      if (result?.ok) {
-        setError(null);
-        setSaved(true);
-        router.refresh();
-      } else {
-        setError(result?.error ?? "Something went wrong.");
-      }
-    });
+  function commitField(
+    field: "callrailTrackingNumber" | "region" | "seoTitle" | "metaDescription",
+    value: string,
+  ) {
+    const current = (area[field] ?? "") as string;
+    if (value === current) return;
+    void patchServiceAreaFieldAction(area.id, { [field]: value });
   }
 
   return (
@@ -332,7 +326,7 @@ function AreaDetailsForm({
         {imagePending ? <p className="text-xs text-muted-foreground">Saving…</p> : null}
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-2">
           <Label className="text-xs">Frequently asked questions</Label>
           {faqs.map((faq, index) => (
@@ -342,6 +336,7 @@ function AreaDetailsForm({
                   placeholder="Question"
                   value={faq.question}
                   onChange={(e) => updateFaq(index, "question", e.target.value)}
+                  onBlur={() => persistFaqs(faqs)}
                   className="flex-1"
                 />
                 <Button
@@ -359,6 +354,7 @@ function AreaDetailsForm({
                 rows={2}
                 value={faq.answer}
                 onChange={(e) => updateFaq(index, "answer", e.target.value)}
+                onBlur={() => persistFaqs(faqs)}
               />
             </div>
           ))}
@@ -379,9 +375,9 @@ function AreaDetailsForm({
           </Label>
           <Input
             id={`callrail-${area.id}`}
-            name="callrailTrackingNumber"
             defaultValue={area.callrailTrackingNumber ?? ""}
             placeholder="Uses the site default if left blank"
+            onBlur={(e) => commitField("callrailTrackingNumber", e.currentTarget.value)}
           />
         </div>
         <div className="flex flex-col gap-1.5">
@@ -390,17 +386,21 @@ function AreaDetailsForm({
           </Label>
           <Input
             id={`region-${area.id}`}
-            name="region"
             defaultValue={area.region ?? ""}
             placeholder="e.g. SK, BC"
             className="w-32"
+            onBlur={(e) => commitField("region", e.currentTarget.value)}
           />
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={`seoTitle-${area.id}`} className="text-xs">
             SEO title (optional)
           </Label>
-          <Input id={`seoTitle-${area.id}`} name="seoTitle" defaultValue={area.seoTitle ?? ""} />
+          <Input
+            id={`seoTitle-${area.id}`}
+            defaultValue={area.seoTitle ?? ""}
+            onBlur={(e) => commitField("seoTitle", e.currentTarget.value)}
+          />
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={`metaDescription-${area.id}`} className="text-xs">
@@ -408,24 +408,12 @@ function AreaDetailsForm({
           </Label>
           <Textarea
             id={`metaDescription-${area.id}`}
-            name="metaDescription"
             rows={2}
             defaultValue={area.metaDescription ?? ""}
+            onBlur={(e) => commitField("metaDescription", e.currentTarget.value)}
           />
         </div>
-
-        {error ? (
-          <p role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
-        ) : null}
-        <div className="flex items-center gap-2">
-          <Button type="submit" size="sm" disabled={pending}>
-            {pending ? "Saving…" : "Save details"}
-          </Button>
-          {saved && !pending ? <span className="text-xs text-muted-foreground">Saved</span> : null}
-        </div>
-      </form>
+      </div>
     </div>
   );
 }

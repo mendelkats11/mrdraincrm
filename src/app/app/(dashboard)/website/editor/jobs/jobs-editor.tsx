@@ -47,14 +47,14 @@ export function JobsEditor({
     setJobs((prev) => prev.map((j) => (j.id === id ? { ...j, ...patch } : j)));
   }
 
-  async function handleCreate(title: string, coverImageKey: string) {
-    const result = await createPortfolioJobAction(title, coverImageKey);
-    if (!result.ok || !result.id || !result.slug) return;
+  async function handleCreate(coverImageKey: string) {
+    const result = await createPortfolioJobAction(coverImageKey);
+    if (!result.ok || !result.id || !result.slug || !result.title) return;
     setJobs((prev) => [
       {
         id: result.id!,
         slug: result.slug!,
-        title,
+        title: result.title!,
         description: null,
         coverImageKey,
         serviceId: null,
@@ -118,28 +118,21 @@ function NewJobForm({
   onCreate,
   onCancel,
 }: {
-  onCreate: (title: string, coverImageKey: string) => void;
+  onCreate: (coverImageKey: string) => void;
   onCancel: () => void;
 }) {
-  const [title, setTitle] = useState("");
   const [coverImageKey, setCoverImageKey] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   async function handleSubmit() {
-    if (!title.trim() || !coverImageKey) return;
+    if (!coverImageKey) return;
     setSaving(true);
-    await onCreate(title.trim(), coverImageKey);
+    await onCreate(coverImageKey);
     setSaving(false);
   }
 
   return (
     <div className="mb-4 flex flex-col gap-3 rounded-lg border border-dashed border-border p-4 sm:flex-row sm:items-center">
-      <input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Job title, e.g. Bathroom drain repair in Stonebridge"
-        className="h-9 flex-1 rounded-md border border-input bg-background px-3 text-sm"
-      />
       {coverImageKey ? (
         <div className="relative size-9 shrink-0 overflow-hidden rounded-md border">
           <Image src={publicAssetUrl(coverImageKey)} alt="" fill className="object-cover" />
@@ -149,13 +142,13 @@ function NewJobForm({
         triggerLabel={coverImageKey ? "Change photo" : "Choose cover photo"}
         onSelect={setCoverImageKey}
       />
+      {/* No title field — one's generated automatically (a Service +
+          Location + Intent combination) the moment the photo's picked, so
+          adding a job is just "pick a photo." Renameable after, same as
+          always. */}
+      <p className="text-xs text-muted-foreground">A title is generated automatically.</p>
       <div className="flex items-center gap-2">
-        <Button
-          type="button"
-          size="sm"
-          disabled={!title.trim() || !coverImageKey || saving}
-          onClick={handleSubmit}
-        >
+        <Button type="button" size="sm" disabled={!coverImageKey || saving} onClick={handleSubmit}>
           {saving ? "Creating…" : "Create"}
         </Button>
         <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
@@ -199,7 +192,7 @@ function JobCard({
             ) : null}
           </div>
         ) : null}
-        <div className="pointer-events-none absolute inset-0 flex items-start justify-end p-1.5 opacity-0 transition group-hover:opacity-100">
+        <div className="pointer-events-none absolute inset-0 flex items-start justify-end p-1.5 opacity-70 transition group-hover:opacity-100">
           <div className="pointer-events-auto flex items-center gap-0.5 rounded-md border bg-card/95 p-0.5 shadow-sm">
             <MediaPicker
               triggerLabel="Cover"

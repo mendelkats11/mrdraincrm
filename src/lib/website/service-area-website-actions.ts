@@ -144,12 +144,19 @@ const patchFieldSchema = z
   .object({
     name: z.string().trim().min(1).max(200).optional(),
     copy: z.string().trim().max(3000).optional(),
+    faqs: z.array(areaFaqSchema).max(12).optional(),
+    seoTitle: z.string().trim().max(200).optional(),
+    metaDescription: z.string().trim().max(300).optional(),
+    callrailTrackingNumber: z.string().trim().max(32).optional(),
+    region: z.string().trim().max(50).optional(),
   })
   .strict();
 
-/** The visual editor's click-on-the-text save path for a service area's
- *  name/description — same shape and guardrail reasoning as
- *  service-actions.ts's patchServiceFieldAction. */
+/** The visual editor's click-on-the-text save path for a service area —
+ *  originally just name/description, now every field the "Details" panel
+ *  edits too, so that panel can save each field on blur/change instead of
+ *  needing a separate "Save details" button — see the identical note on
+ *  service-actions.ts's patchServiceFieldAction for why. */
 export async function patchServiceAreaFieldAction(
   areaId: string,
   patch: Record<string, unknown>,

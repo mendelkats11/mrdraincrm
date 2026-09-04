@@ -5,9 +5,10 @@ import { z } from "zod";
 import { getDb } from "@/lib/db/client";
 import { requireUser } from "@/lib/auth/require-user";
 import { createPortfolioJob, deletePortfolioJob, updatePortfolioJob } from "./portfolio-jobs";
+import { generateJobTitle } from "./generate-job-title";
 
 export type JobActionResult =
-  { ok: true; id?: string; slug?: string } | { ok: false; error: string };
+  { ok: true; id?: string; slug?: string; title?: string } | { ok: false; error: string };
 
 const uuidOrEmpty = z
   .string()
@@ -21,28 +22,26 @@ function revalidateJobPaths() {
   revalidatePath("/");
 }
 
-/** Creates a job with just a title and a cover photo (already-uploaded
- *  media-library key from MediaPicker) — matches the rest of this CMS's
- *  "simple form, detail later" shape (docs/CLAUDE.md §7). Tags/description
- *  are added afterwards via the inline editor, not at creation time. */
-export async function createPortfolioJobAction(
-  title: string,
-  coverImageKey: string,
-): Promise<JobActionResult> {
+/** Creates a job from just a cover photo (already-uploaded media-library
+ *  key from MediaPicker) — matches the rest of this CMS's "simple form,
+ *  detail later" shape (docs/CLAUDE.md §7). The title is auto-generated
+ *  (see generateJobTitle) rather than typed, so adding a job is genuinely
+ *  just "pick a photo" — still fully renameable afterward via the visual
+ *  editor's click-to-edit title, and tags/description are added afterward
+ *  the same way they always were. */
+export async function createPortfolioJobAction(coverImageKey: string): Promise<JobActionResult> {
   const session = await requireUser();
-  const parsedTitle = z.string().trim().min(1).max(200).safeParse(title);
   const parsedKey = z.string().trim().min(1).safeParse(coverImageKey);
-  if (!parsedTitle.success) return { ok: false, error: "Title is required." };
   if (!parsedKey.success) return { ok: false, error: "Choose a cover photo." };
 
   const db = getDb();
   const job = await createPortfolioJob(
     db,
-    { title: parsedTitle.data, coverImageKey: parsedKey.data },
+    { title: generateJobTitle(), coverImageKey: parsedKey.data },
     session.user.id,
   );
   revalidateJobPaths();
-  return { ok: true, id: job.id, slug: job.slug };
+  return { ok: true, id: job.id, slug: job.slug, title: job.title };
 }
 
 const patchSchema = z

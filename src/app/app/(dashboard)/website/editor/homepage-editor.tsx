@@ -168,7 +168,7 @@ export function HomepageEditor({
                 it can never push the real content down and break pixel
                 parity with the live site. */}
             <div className="pointer-events-none absolute inset-0 z-20 flex items-start justify-end">
-              <div className="pointer-events-auto sticky top-14 mr-3 mt-3 flex items-center gap-1 rounded-md border bg-card p-1 opacity-0 shadow-sm transition group-hover:opacity-100">
+              <div className="pointer-events-auto sticky top-14 mr-3 mt-3 flex items-center gap-1 rounded-md border bg-card p-1 opacity-70 shadow-sm transition group-hover:opacity-100">
                 {/* draggable lives on this handle alone, not the section
                     wrapper — putting it on the whole section would let the
                     browser's native drag gesture hijack ordinary click-drag

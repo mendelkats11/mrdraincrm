@@ -170,7 +170,7 @@ function ReviewCard({
             void setReviewRatingAction(review.id, rating);
           }}
         />
-        <div className="flex items-center gap-1 opacity-0 transition group-hover:opacity-100">
+        <div className="flex items-center gap-1 opacity-70 transition group-hover:opacity-100">
           <Button
             type="button"
             variant="ghost"

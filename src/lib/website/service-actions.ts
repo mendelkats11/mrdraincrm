@@ -132,14 +132,24 @@ const patchFieldSchema = z
   .object({
     name: z.string().trim().min(1).max(200).optional(),
     description: z.string().trim().max(2000).optional(),
+    content: z.string().trim().max(8000).optional(),
+    seoTitle: z.string().trim().max(200).optional(),
+    metaDescription: z.string().trim().max(300).optional(),
+    faqs: z.array(faqSchema).max(12).optional(),
   })
   .strict();
 
-/** The visual editor's click-on-the-text save path for a service's name/
- *  description — same shape and guardrail reasoning as the homepage
- *  editor's patchHomepageSectionConfigAction: a fixed, `.strict()` schema,
- *  so an inline edit can only ever write to a field already given a
- *  defined shape here, never an arbitrary new one. */
+/** The visual editor's click-on-the-text save path for a service —
+ *  originally just name/description, now every field the "Details" panel
+ *  edits too, so that panel can save each field on blur instead of needing
+ *  a separate "Save details" button. Having one field type (inline text)
+ *  save instantly while another (Details) needed an explicit click was the
+ *  likely cause of "some text won't save" reports — a Details edit that
+ *  isn't immediately followed by that click reads as silently lost. Same
+ *  shape and guardrail reasoning as the homepage editor's
+ *  patchHomepageSectionConfigAction throughout: a fixed, `.strict()`
+ *  schema, so an inline edit can only ever write to a field already given
+ *  a defined shape here, never an arbitrary new one. */
 export async function patchServiceFieldAction(
   serviceId: string,
   patch: Record<string, unknown>,
