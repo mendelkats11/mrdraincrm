@@ -90,6 +90,65 @@ export async function updateReviewAction(
   return { ok: true };
 }
 
+const patchFieldSchema = z
+  .object({
+    customerName: z.string().trim().min(1).max(200).optional(),
+    reviewText: z.string().trim().max(3000).optional(),
+  })
+  .strict();
+
+/** The visual editor's click-on-the-text save path for a review's customer
+ *  name/quote — same shape and guardrail reasoning as
+ *  service-actions.ts's patchServiceFieldAction. */
+export async function patchReviewFieldAction(
+  reviewId: string,
+  patch: Record<string, unknown>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const session = await requireUser();
+  const parsed = patchFieldSchema.safeParse(patch);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input." };
+  }
+  if (Object.keys(parsed.data).length === 0) {
+    return { ok: false, error: "Nothing to save." };
+  }
+
+  const db = getDb();
+  await updateReview(db, reviewId, parsed.data, session.user.id);
+  revalidatePath("/website/reviews");
+  revalidatePath("/website/editor/reviews");
+  revalidatePath("/reviews");
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function setReviewFeaturedAction(reviewId: string, featured: boolean): Promise<void> {
+  const session = await requireUser();
+  const db = getDb();
+  await updateReview(db, reviewId, { featured }, session.user.id);
+  revalidatePath("/website/reviews");
+  revalidatePath("/website/editor/reviews");
+  revalidatePath("/reviews");
+  revalidatePath("/");
+}
+
+export async function setReviewRatingAction(
+  reviewId: string,
+  rating: number,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const session = await requireUser();
+  const parsed = z.number().int().min(1).max(5).safeParse(rating);
+  if (!parsed.success) return { ok: false, error: "Rating must be 1-5." };
+
+  const db = getDb();
+  await updateReview(db, reviewId, { rating: parsed.data }, session.user.id);
+  revalidatePath("/website/reviews");
+  revalidatePath("/website/editor/reviews");
+  revalidatePath("/reviews");
+  revalidatePath("/");
+  return { ok: true };
+}
+
 export async function deleteReviewAction(reviewId: string): Promise<void> {
   const session = await requireUser();
   const db = getDb();

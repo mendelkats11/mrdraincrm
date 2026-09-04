@@ -1,4 +1,4 @@
-import type { galleryItems, reviews, serviceAreas, services } from "@/lib/db/schema";
+import type { portfolioJobs, reviews, serviceAreas, services } from "@/lib/db/schema";
 import type { homepageSections } from "@/lib/db/schema";
 import type { WebsiteSettings } from "@/lib/website/settings";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
@@ -27,7 +27,7 @@ export const HOMEPAGE_SECTION_LABELS: Record<string, string> = {
 type Settings = WebsiteSettings;
 type Service = typeof services.$inferSelect;
 type ServiceArea = typeof serviceAreas.$inferSelect;
-type GalleryItem = typeof galleryItems.$inferSelect;
+type PortfolioJob = typeof portfolioJobs.$inferSelect;
 type Review = typeof reviews.$inferSelect;
 
 export function configLimit(config: Record<string, unknown>): number | undefined {
@@ -77,7 +77,7 @@ export function renderHomepageSection(
     settings: Settings;
     services: Service[];
     serviceAreas: ServiceArea[];
-    galleryItems: GalleryItem[];
+    portfolioJobs: PortfolioJob[];
     reviews: Review[];
   },
 ) {
@@ -108,7 +108,7 @@ export function renderHomepageSection(
         <ServiceAreasSection serviceAreas={data.serviceAreas} limit={configLimit(config) ?? 6} />
       );
     case "gallery":
-      return <GallerySection items={data.galleryItems} limit={configLimit(config) ?? 8} />;
+      return <GallerySection jobs={data.portfolioJobs} limit={configLimit(config) ?? 8} />;
     case "reviews":
       return <ReviewsSection reviews={data.reviews} limit={configLimit(config) ?? 6} />;
     case "cta":

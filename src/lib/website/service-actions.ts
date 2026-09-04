@@ -128,6 +128,39 @@ export async function updateServiceAction(
   return { ok: true };
 }
 
+const patchFieldSchema = z
+  .object({
+    name: z.string().trim().min(1).max(200).optional(),
+    description: z.string().trim().max(2000).optional(),
+  })
+  .strict();
+
+/** The visual editor's click-on-the-text save path for a service's name/
+ *  description — same shape and guardrail reasoning as the homepage
+ *  editor's patchHomepageSectionConfigAction: a fixed, `.strict()` schema,
+ *  so an inline edit can only ever write to a field already given a
+ *  defined shape here, never an arbitrary new one. */
+export async function patchServiceFieldAction(
+  serviceId: string,
+  patch: Record<string, unknown>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const session = await requireUser();
+  const parsed = patchFieldSchema.safeParse(patch);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input." };
+  }
+  if (Object.keys(parsed.data).length === 0) {
+    return { ok: false, error: "Nothing to save." };
+  }
+
+  const db = getDb();
+  await updateService(db, serviceId, parsed.data, session.user.id);
+  revalidatePath("/website/services");
+  revalidatePath("/website/editor/services");
+  revalidatePath("/services");
+  return { ok: true };
+}
+
 export async function setServiceActiveAction(serviceId: string, active: boolean): Promise<void> {
   const session = await requireUser();
   const db = getDb();

@@ -2,23 +2,27 @@ import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 
-type PageKey = "home" | "services" | "service-areas" | "gallery" | "reviews" | "settings";
+type PageKey = "home" | "jobs" | "services" | "service-areas" | "reviews" | "settings";
 
 const PAGES: { key: PageKey; label: string; href: string; visual: boolean }[] = [
   { key: "home", label: "Home", href: "/website/editor", visual: true },
-  { key: "services", label: "Services", href: "/website/services", visual: false },
-  { key: "service-areas", label: "Service Areas", href: "/website/service-areas", visual: false },
-  { key: "gallery", label: "Gallery", href: "/website/gallery", visual: false },
-  { key: "reviews", label: "Reviews", href: "/website/reviews", visual: false },
+  { key: "jobs", label: "Jobs", href: "/website/editor/jobs", visual: true },
+  { key: "services", label: "Services", href: "/website/editor/services", visual: true },
+  {
+    key: "service-areas",
+    label: "Service Areas",
+    href: "/website/editor/service-areas",
+    visual: true,
+  },
+  { key: "reviews", label: "Reviews", href: "/website/editor/reviews", visual: true },
   { key: "settings", label: "Branding & Contact", href: "/website/settings", visual: false },
 ];
 
 /**
  * The page switcher — one bar you navigate the whole site from, instead of
- * the "Website" hub's 6 separate destinations. Only Home has the full
- * click-to-edit treatment so far (visual: true); the rest still route to
- * their existing classic screens until they get the same treatment, but
- * they're reachable from the same bar rather than a different menu.
+ * the "Website" hub's 6 separate destinations. Everything but Branding &
+ * Contact (a settings form, not a content list) now has the full
+ * click-to-edit treatment; Settings still routes to its classic screen.
  */
 export function EditorShell({ active }: { active: PageKey }) {
   return (

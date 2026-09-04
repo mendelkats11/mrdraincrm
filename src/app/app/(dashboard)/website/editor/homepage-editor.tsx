@@ -16,14 +16,14 @@ import {
 import { patchWebsiteSettingsFieldAction } from "@/lib/website/settings-actions";
 import { HomepageSectionForm } from "../homepage/homepage-section-form";
 import { Button } from "@/components/ui/button";
-import type { galleryItems, reviews, serviceAreas, services } from "@/lib/db/schema";
+import type { portfolioJobs, reviews, serviceAreas, services } from "@/lib/db/schema";
 import type { WebsiteSettings } from "@/lib/website/settings";
 
 type EditorData = {
   settings: WebsiteSettings;
   services: (typeof services.$inferSelect)[];
   serviceAreas: (typeof serviceAreas.$inferSelect)[];
-  galleryItems: (typeof galleryItems.$inferSelect)[];
+  portfolioJobs: (typeof portfolioJobs.$inferSelect)[];
   reviews: (typeof reviews.$inferSelect)[];
 };
 

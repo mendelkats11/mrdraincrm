@@ -88,8 +88,46 @@ export const serviceAreas = pgTable("service_areas", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/**
+ * Website editor overhaul, phase 4 — one completed job shown on the public
+ * site (the "Recent Work" homepage section and /gallery), promoted from a
+ * flat photo (galleryItems, below) into a real content entity: a title, an
+ * optional description, and its own dedicated /gallery/[slug] page, so each
+ * one is an indexable page rather than an inert grid tile. Named
+ * "portfolioJobs" (not "jobs") to stay unambiguous from the internal CRM
+ * jobs table (src/lib/db/schema/jobs.ts) — a work order, not marketing
+ * content; the two are unrelated.
+ *
+ * Deliberately single-cover-photo, not a multi-photo gallery-per-job model —
+ * that's what was actually asked for, and galleryItems already covers "many
+ * photos, loosely tagged" for whoever still wants that. See the migration
+ * comment in drizzle/0020_*.sql for how pre-existing galleryItems rows
+ * became their own jobs (non-destructively — nothing was deleted).
+ */
+export const portfolioJobs = pgTable("portfolio_jobs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  slug: text("slug").notNull().unique(),
+  title: text("title").notNull(),
+  description: text("description"),
+  coverImageKey: text("cover_image_key").notNull(),
+  serviceId: uuid("service_id").references(() => services.id, { onDelete: "set null" }),
+  serviceAreaId: uuid("service_area_id").references(() => serviceAreas.id, {
+    onDelete: "set null",
+  }),
+  featured: boolean("featured").notNull().default(false),
+  hidden: boolean("hidden").notNull().default(false),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const galleryBeforeAfterEnum = pgEnum("gallery_before_after", ["before", "after", "na"]);
 
+/** Superseded by portfolioJobs above for anything the public site actually
+ *  renders — kept as-is (not dropped, not written to by any current admin
+ *  screen) purely so the one-time backfill migration has something to point
+ *  back to and existing rows aren't destroyed. New photos belong on a job's
+ *  coverImageKey now, not here. */
 export const galleryItems = pgTable("gallery_items", {
   id: uuid("id").primaryKey().defaultRandom(),
   storageKey: text("storage_key").notNull(),

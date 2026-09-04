@@ -4,7 +4,7 @@ import { getWebsiteSettings } from "@/lib/website/settings";
 import { listActiveHomepageSections } from "@/lib/website/homepage";
 import { listPublishedServices } from "@/lib/website/services";
 import { listPublishedServiceAreas } from "@/lib/website/service-areas";
-import { listPublishedGalleryItems } from "@/lib/website/gallery";
+import { listPublishedPortfolioJobs } from "@/lib/website/portfolio-jobs";
 import { listPublishedReviews } from "@/lib/website/reviews";
 import { renderHomepageSection } from "@/components/site/homepage-section-renderer";
 import { MobileFloatingCta } from "@/components/site/mobile-floating-cta";
@@ -34,15 +34,15 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   const db = getDb();
-  const [settings, sections, services, serviceAreas, galleryItems, reviews] = await Promise.all([
+  const [settings, sections, services, serviceAreas, portfolioJobs, reviews] = await Promise.all([
     getWebsiteSettings(db),
     listActiveHomepageSections(db),
     listPublishedServices(db),
     listPublishedServiceAreas(db),
-    listPublishedGalleryItems(db),
+    listPublishedPortfolioJobs(db),
     listPublishedReviews(db),
   ]);
-  const data = { settings, services, serviceAreas, galleryItems, reviews };
+  const data = { settings, services, serviceAreas, portfolioJobs, reviews };
 
   return (
     <>

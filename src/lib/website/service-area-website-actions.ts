@@ -140,6 +140,37 @@ export async function updateServiceAreaAction(
   return { ok: true };
 }
 
+const patchFieldSchema = z
+  .object({
+    name: z.string().trim().min(1).max(200).optional(),
+    copy: z.string().trim().max(3000).optional(),
+  })
+  .strict();
+
+/** The visual editor's click-on-the-text save path for a service area's
+ *  name/description — same shape and guardrail reasoning as
+ *  service-actions.ts's patchServiceFieldAction. */
+export async function patchServiceAreaFieldAction(
+  areaId: string,
+  patch: Record<string, unknown>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const session = await requireUser();
+  const parsed = patchFieldSchema.safeParse(patch);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input." };
+  }
+  if (Object.keys(parsed.data).length === 0) {
+    return { ok: false, error: "Nothing to save." };
+  }
+
+  const db = getDb();
+  await updateServiceArea(db, areaId, parsed.data, session.user.id);
+  revalidatePath("/website/service-areas");
+  revalidatePath("/website/editor/service-areas");
+  revalidatePath("/service-areas");
+  return { ok: true };
+}
+
 export async function setServiceAreaActiveAction(areaId: string, active: boolean): Promise<void> {
   const session = await requireUser();
   const db = getDb();

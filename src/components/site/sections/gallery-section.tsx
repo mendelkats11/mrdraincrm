@@ -1,15 +1,19 @@
 import Image from "next/image";
 import Link from "next/link";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
-import type { galleryItems as galleryItemsTable } from "@/lib/db/schema";
+import type { portfolioJobs } from "@/lib/db/schema";
 
-type GalleryItem = typeof galleryItemsTable.$inferSelect;
+type PortfolioJob = typeof portfolioJobs.$inferSelect;
 
 // Skips entirely when empty rather than showing placeholder "job" photos —
 // docs/DESIGN_SYSTEM.md §3: "do not invent fake job imagery."
-export function GallerySection({ items, limit }: { items: GalleryItem[]; limit?: number }) {
-  if (items.length === 0) return null;
-  const shown = limit ? items.slice(0, limit) : items;
+//
+// Each tile links to its own /gallery/[slug] page (website editor overhaul,
+// phase 4) — these used to be plain unlinked photos with no page of their
+// own to be indexed or shared.
+export function GallerySection({ jobs, limit }: { jobs: PortfolioJob[]; limit?: number }) {
+  if (jobs.length === 0) return null;
+  const shown = limit ? jobs.slice(0, limit) : jobs;
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-16">
@@ -18,21 +22,25 @@ export function GallerySection({ items, limit }: { items: GalleryItem[]; limit?:
         <p className="max-w-xl text-foreground/70">A look at real jobs we&apos;ve completed.</p>
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-        {shown.map((item) => (
-          <div
-            key={item.id}
-            className="relative aspect-square overflow-hidden rounded-xl border border-border"
+        {shown.map((job) => (
+          <Link
+            key={job.id}
+            href={`/gallery/${job.slug}`}
+            className="group relative aspect-square overflow-hidden rounded-xl border border-border"
           >
             <Image
-              src={publicAssetUrl(item.storageKey)}
-              alt={item.caption ?? ""}
+              src={publicAssetUrl(job.coverImageKey)}
+              alt={job.title}
               fill
-              className="object-cover"
+              className="object-cover transition-transform group-hover:scale-105"
             />
-          </div>
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2 pb-1.5 pt-4 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
+              {job.title}
+            </div>
+          </Link>
         ))}
       </div>
-      {limit && items.length > limit ? (
+      {limit && jobs.length > limit ? (
         <div className="mt-8 flex justify-center">
           <Link
             href="/gallery"

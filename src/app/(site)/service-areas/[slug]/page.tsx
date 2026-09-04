@@ -8,7 +8,7 @@ import { getServiceAreaBySlug } from "@/lib/website/service-areas";
 import { listPublishedServices } from "@/lib/website/services";
 import { getWebsiteSettings } from "@/lib/website/settings";
 import { formatPhoneForDisplay } from "@/lib/phone";
-import { listPublishedGalleryItemsForServiceArea } from "@/lib/website/gallery";
+import { listPublishedPortfolioJobsForServiceArea } from "@/lib/website/portfolio-jobs";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import { MobileFloatingCta } from "@/components/site/mobile-floating-cta";
 import { GallerySection } from "@/components/site/sections/gallery-section";
@@ -47,7 +47,7 @@ export default async function ServiceAreaDetailPage({
   ]);
   if (!area) notFound();
 
-  const areaGalleryItems = await listPublishedGalleryItemsForServiceArea(db, area.id);
+  const areaJobs = await listPublishedPortfolioJobsForServiceArea(db, area.id);
 
   // Falls back to the site default when this area has no CallRail number
   // of its own — docs/PROJECT_SPEC.md §2.4.
@@ -154,7 +154,7 @@ export default async function ServiceAreaDetailPage({
         ) : null}
       </div>
 
-      <GallerySection items={areaGalleryItems} />
+      <GallerySection jobs={areaJobs} />
 
       <CtaSection heading={`Need a plumber in ${area.name}?`} trackingNumber={trackingNumber} />
 

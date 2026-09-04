@@ -3,7 +3,7 @@ import { getWebsiteSettings } from "@/lib/website/settings";
 import { listHomepageSections } from "@/lib/website/homepage";
 import { listPublishedServices } from "@/lib/website/services";
 import { listPublishedServiceAreas } from "@/lib/website/service-areas";
-import { listPublishedGalleryItems } from "@/lib/website/gallery";
+import { listPublishedPortfolioJobs } from "@/lib/website/portfolio-jobs";
 import { listPublishedReviews } from "@/lib/website/reviews";
 import { EditorShell } from "./editor-shell";
 import { HomepageEditor } from "./homepage-editor";
@@ -17,22 +17,21 @@ export const dynamic = "force-dynamic";
  * site) directly in the admin, with hover-to-edit affordances, instead of a
  * side-by-side "form here, iframe preview over there" layout.
  *
- * Today this covers the homepage only. The page switcher in EditorShell
- * already has entries for Services/Service Areas/Gallery/Reviews/Settings —
- * they route to their existing classic list pages until each gets the same
- * in-context treatment.
+ * Home, Jobs (website/editor/jobs), Services, Service Areas, and Reviews
+ * all get this in-context treatment now — only Branding & Contact (a
+ * settings form, not a content list) still routes to its classic page.
  */
 export default async function WebsiteEditorPage() {
   const db = getDb();
-  const [settings, sections, services, serviceAreas, galleryItems, reviews] = await Promise.all([
+  const [settings, sections, services, serviceAreas, portfolioJobs, reviews] = await Promise.all([
     getWebsiteSettings(db),
     listHomepageSections(db),
     listPublishedServices(db),
     listPublishedServiceAreas(db),
-    listPublishedGalleryItems(db),
+    listPublishedPortfolioJobs(db),
     listPublishedReviews(db),
   ]);
-  const data = { settings, services, serviceAreas, galleryItems, reviews };
+  const data = { settings, services, serviceAreas, portfolioJobs, reviews };
 
   return (
     <div className="-m-6">

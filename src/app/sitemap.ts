@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { getDb } from "@/lib/db/client";
 import { listPublishedServices } from "@/lib/website/services";
 import { listPublishedServiceAreas } from "@/lib/website/service-areas";
+import { listPublishedPortfolioJobs } from "@/lib/website/portfolio-jobs";
 import { getWebsiteSettings } from "@/lib/website/settings";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 
@@ -25,9 +26,10 @@ export const revalidate = 3600;
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const db = getDb();
   const origin = getPublicSiteOrigin();
-  const [services, areas, settings] = await Promise.all([
+  const [services, areas, jobs, settings] = await Promise.all([
     listPublishedServices(db),
     listPublishedServiceAreas(db),
+    listPublishedPortfolioJobs(db),
     getWebsiteSettings(db),
   ]);
 
@@ -60,5 +62,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticPages, ...servicePages, ...areaPages];
+  const jobPages: MetadataRoute.Sitemap = jobs.map((job) => ({
+    url: `${origin}/gallery/${job.slug}`,
+    changeFrequency: "yearly",
+    priority: 0.3,
+  }));
+
+  return [...staticPages, ...servicePages, ...areaPages, ...jobPages];
 }
