@@ -97,6 +97,7 @@ export function renderHomepageSection(
     case "why_mr_drain":
       return (
         <WhyMrDrainSection
+          sectionId={section.id}
           heading={configString(config, "heading")}
           body={configString(config, "body")}
           points={configPoints(config)}
@@ -113,6 +114,7 @@ export function renderHomepageSection(
     case "cta":
       return (
         <CtaSection
+          sectionId={section.id}
           heading={configString(config, "heading")}
           body={configString(config, "body")}
           trackingNumber={data.settings.defaultCallrailTrackingNumber}

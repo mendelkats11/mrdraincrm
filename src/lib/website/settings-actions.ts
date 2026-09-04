@@ -144,3 +144,29 @@ export async function setBackgroundImageAction(
   revalidatePath(field === "contactBackgroundImageKey" ? "/contact" : "/services");
   return { ok: true };
 }
+
+// Fields the visual editor's click-on-the-text inline editing is allowed to
+// write — a fixed allowlist, not "any settings column the caller names",
+// since `field` arrives as a plain string from a client component. Extend
+// this as more of the site (About page heading/body, footer tagline, etc.)
+// gets the same in-context treatment.
+const INLINE_SETTINGS_FIELDS = new Set(["tagline"] as const);
+type InlineSettingsField = "tagline";
+
+export type PatchSettingsFieldResult = { ok: true } | { ok: false; error: string };
+
+export async function patchWebsiteSettingsFieldAction(
+  field: string,
+  value: string,
+): Promise<PatchSettingsFieldResult> {
+  if (!INLINE_SETTINGS_FIELDS.has(field as InlineSettingsField)) {
+    return { ok: false, error: "That field can't be edited here." };
+  }
+  const trimmed = value.trim().slice(0, 200);
+  const session = await requireUser();
+  const db = getDb();
+  await updateWebsiteSettings(db, { [field]: trimmed || null }, session.user.id);
+  revalidatePath("/website/editor");
+  revalidatePath("/");
+  return { ok: true };
+}

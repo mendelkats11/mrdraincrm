@@ -66,3 +66,43 @@ export async function updateHomepageSection<TQueryResult extends PgQueryResultHK
     return after;
   });
 }
+
+/**
+ * Merges `patch` into a section's existing config rather than replacing it
+ * wholesale — the visual editor's inline click-to-edit text fields (a
+ * section's heading, body, or one point's title) each know only their own
+ * key, not the section's full config, so a plain overwrite would wipe
+ * every other field the section already had set.
+ */
+export async function patchHomepageSectionConfig<TQueryResult extends PgQueryResultHKT>(
+  db: Db<TQueryResult>,
+  sectionId: string,
+  patch: Record<string, unknown>,
+  actorUserId: string | null,
+) {
+  return db.transaction(async (tx) => {
+    const [before] = await tx
+      .select()
+      .from(homepageSections)
+      .where(eq(homepageSections.id, sectionId));
+    if (!before) throw new Error(`Homepage section ${sectionId} not found`);
+
+    const mergedConfig = { ...(before.config as Record<string, unknown>), ...patch };
+    const [after] = await tx
+      .update(homepageSections)
+      .set({ config: mergedConfig })
+      .where(eq(homepageSections.id, sectionId))
+      .returning();
+
+    await recordActivity(tx, {
+      actorUserId,
+      entityType: "homepage_section",
+      entityId: sectionId,
+      action: "homepage_section_updated",
+      oldValue: { config: before.config },
+      newValue: { config: after.config },
+    });
+
+    return after;
+  });
+}

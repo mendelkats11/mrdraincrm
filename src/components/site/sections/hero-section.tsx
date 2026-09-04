@@ -1,7 +1,11 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Phone } from "lucide-react";
 import { formatPhoneForDisplay } from "@/lib/phone";
+import { useEditorMode } from "../editor-mode-context";
+import { EditableText } from "../editable-text";
 
 export function HeroSection({
   businessName,
@@ -17,6 +21,7 @@ export function HeroSection({
    *  are actually chosen. */
   photoUrls?: string[];
 }) {
+  const editor = useEditorMode();
   const photos = photoUrls?.slice(0, 3) ?? [];
   return (
     <section className="relative overflow-hidden bg-brand-cream">
@@ -25,9 +30,12 @@ export function HeroSection({
           <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
             Serving Saskatoon &amp; area
           </span>
-          <h1 className="text-4xl font-bold tracking-tight text-brand-navy sm:text-5xl">
-            {tagline || `${businessName ?? "Mr. Drain Plumbing"} — here when you need us`}
-          </h1>
+          <EditableText
+            as="h1"
+            className="text-4xl font-bold tracking-tight text-brand-navy sm:text-5xl"
+            value={tagline || `${businessName ?? "Mr. Drain Plumbing"} — here when you need us`}
+            onCommit={editor ? (v) => editor.patchSettingsField("tagline", v) : undefined}
+          />
           <p className="max-w-lg text-lg text-foreground/70">
             Fast response, upfront pricing, and plumbers who actually explain what&apos;s wrong.
             Call now or request a free quote and we&apos;ll get back to you quickly.

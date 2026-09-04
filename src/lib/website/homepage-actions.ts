@@ -6,7 +6,7 @@ import { getDb } from "@/lib/db/client";
 import { requireUser } from "@/lib/auth/require-user";
 import { getStorageProvider } from "@/lib/storage";
 import { uploadPublicAsset } from "@/lib/storage/public-asset-upload";
-import { updateHomepageSection } from "./homepage";
+import { patchHomepageSectionConfig, updateHomepageSection } from "./homepage";
 
 export type HomepageSectionFormState = { ok: true } | { ok: false; error: string } | undefined;
 
@@ -148,4 +148,53 @@ export async function toggleHomepageSectionActiveAction(
   revalidatePath("/website/homepage");
   revalidatePath("/website/editor");
   revalidatePath("/");
+}
+
+const sectionPatchSchema = z
+  .object({
+    heading: z.string().trim().max(200).optional(),
+    body: z.string().trim().max(2000).optional(),
+    points: z
+      .array(
+        z.object({
+          title: z.string().trim().max(200).optional(),
+          body: z.string().trim().max(500).optional(),
+        }),
+      )
+      .max(4)
+      .optional(),
+  })
+  .strict();
+
+export type PatchActionResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * The visual editor's click-on-the-text save path. Deliberately validated
+ * against a fixed schema (only heading/body/points, `.strict()` rejects any
+ * other key) rather than accepting an arbitrary JSON patch — a click-to-
+ * edit field can only ever write to one of the fields the section already
+ * has a defined shape for, never add new ones. sectionId isn't uuid-
+ * validated by zod here because updateHomepageSection/patchHomepageSection-
+ * Config already 404-equivalent (throw) on an unknown id, same as the
+ * existing actions above.
+ */
+export async function patchHomepageSectionConfigAction(
+  sectionId: string,
+  patch: Record<string, unknown>,
+): Promise<PatchActionResult> {
+  const session = await requireUser();
+  const parsed = sectionPatchSchema.safeParse(patch);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input." };
+  }
+  if (Object.keys(parsed.data).length === 0) {
+    return { ok: false, error: "Nothing to save." };
+  }
+
+  const db = getDb();
+  await patchHomepageSectionConfig(db, sectionId, parsed.data, session.user.id);
+  revalidatePath("/website/homepage");
+  revalidatePath("/website/editor");
+  revalidatePath("/");
+  return { ok: true };
 }
