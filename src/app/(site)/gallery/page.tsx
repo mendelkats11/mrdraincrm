@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { getDb } from "@/lib/db/client";
 import { listPublishedPortfolioJobs } from "@/lib/website/portfolio-jobs";
+import { listPublishedGalleryItems } from "@/lib/website/gallery";
 import { getWebsiteSettings } from "@/lib/website/settings";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import { MobileFloatingCta } from "@/components/site/mobile-floating-cta";
@@ -25,8 +26,9 @@ const CRUMBS = [
 
 export default async function GalleryPage() {
   const db = getDb();
-  const [jobs, settings] = await Promise.all([
+  const [jobs, photos, settings] = await Promise.all([
     listPublishedPortfolioJobs(db),
+    listPublishedGalleryItems(db),
     getWebsiteSettings(db),
   ]);
 
@@ -43,7 +45,7 @@ export default async function GalleryPage() {
           <p className="max-w-xl text-foreground/70">A look at real jobs we&apos;ve completed.</p>
         </div>
 
-        {jobs.length === 0 ? (
+        {jobs.length === 0 && photos.length === 0 ? (
           <p className="text-center text-foreground/60">
             Photos of our work are coming soon - check back shortly.
           </p>
@@ -70,6 +72,35 @@ export default async function GalleryPage() {
           </div>
         )}
       </div>
+
+      {/* Plain photos - not promoted to their own indexable job page like
+          the jobs above, just a visual look at completed work. Deliberately
+          not wrapped in a Link. */}
+      {photos.length > 0 ? (
+        <div className="mx-auto max-w-6xl px-4 pb-16">
+          {jobs.length > 0 ? (
+            <div className="mb-6 flex flex-col items-center gap-1 text-center">
+              <h2 className="text-2xl font-bold text-brand-navy">More Photos</h2>
+            </div>
+          ) : null}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {photos.map((photo) => (
+              <div
+                key={photo.id}
+                className="relative aspect-square overflow-hidden rounded-xl border border-border"
+              >
+                <Image
+                  src={publicAssetUrl(photo.storageKey)}
+                  alt={photo.caption || "Plumbing work by Mr. Drain Plumbing in Saskatoon"}
+                  fill
+                  sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+                  className="object-cover"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <CtaSection trackingNumber={settings.defaultCallrailTrackingNumber} />
       <MobileFloatingCta trackingNumber={settings.defaultCallrailTrackingNumber} />
