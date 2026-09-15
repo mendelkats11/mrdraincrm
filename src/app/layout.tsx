@@ -28,6 +28,12 @@ export const metadata: Metadata = {
     ],
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
+  // Google Search Console domain ownership verification (URL-prefix
+  // property for https://mrdrainsk.com, Sep 2026) - proves ownership so
+  // "Request Indexing" and crawl-stats access can be used.
+  verification: {
+    google: "vlgpNcwltgBvH0qavw97cgUErtu9Kktn52xtvaVsIjE",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
