@@ -16,7 +16,7 @@ export function GallerySection({ jobs, limit }: { jobs: PortfolioJob[]; limit?: 
   const shown = limit ? jobs.slice(0, limit) : jobs;
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-16">
+    <section className="mx-auto max-w-6xl px-4 py-20 lg:py-24">
       <div className="mb-10 flex flex-col items-center gap-2 text-center">
         <h2 className="text-3xl font-bold text-brand-navy">Recent Work</h2>
         <p className="max-w-xl text-foreground/70">A look at real jobs we&apos;ve completed.</p>
@@ -32,6 +32,7 @@ export function GallerySection({ jobs, limit }: { jobs: PortfolioJob[]; limit?: 
               src={publicAssetUrl(job.coverImageKey)}
               alt={job.title}
               fill
+              sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
               className="object-cover transition-transform group-hover:scale-105"
             />
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2 pb-1.5 pt-4 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">

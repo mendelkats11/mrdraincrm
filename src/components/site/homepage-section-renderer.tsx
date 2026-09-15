@@ -12,9 +12,7 @@ import { CtaSection } from "./sections/cta-section";
 
 export type HomepageSectionRow = typeof homepageSections.$inferSelect;
 
-/** Shared with both the classic per-section list (website/homepage) and the
- *  visual editor (website/editor) so a section's display name never drifts
- *  between the two. */
+/** Section display names, keyed by section type. */
 export const HOMEPAGE_SECTION_LABELS: Record<string, string> = {
   hero: "Hero (top banner)",
   services: "Services",
@@ -62,14 +60,11 @@ export function configPoints(
 }
 
 /**
- * The single place that turns one homepage_sections row into its rendered
- * section — shared by the live homepage (src/app/(site)/page.tsx) and the
- * visual editor (src/app/app/(dashboard)/website/editor). Extracted so the
- * two can never drift into "two different representations of the same
- * page," which is exactly the failure mode overhaul.md's editor brief (§13)
- * warns against. Every section component it renders (HeroSection,
- * ServicesSection, etc.) is a plain presentational component with no data
- * fetching of its own, so this works identically in either context.
+ * Turns one homepage_sections row into its rendered section for the live
+ * homepage (src/app/(site)/page.tsx). Each section component (HeroSection,
+ * ServicesSection, etc.) is plain presentational markup with no data
+ * fetching of its own; per-section overrides (headings, hero photos, the
+ * "why" points) come from the row's `config` JSON.
  */
 export function renderHomepageSection(
   section: HomepageSectionRow,
@@ -97,7 +92,6 @@ export function renderHomepageSection(
     case "why_mr_drain":
       return (
         <WhyMrDrainSection
-          sectionId={section.id}
           heading={configString(config, "heading")}
           body={configString(config, "body")}
           points={configPoints(config)}
@@ -114,7 +108,6 @@ export function renderHomepageSection(
     case "cta":
       return (
         <CtaSection
-          sectionId={section.id}
           heading={configString(config, "heading")}
           body={configString(config, "body")}
           trackingNumber={data.settings.defaultCallrailTrackingNumber}

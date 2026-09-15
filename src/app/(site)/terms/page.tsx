@@ -3,6 +3,8 @@ import { getDb } from "@/lib/db/client";
 import { getWebsiteSettings } from "@/lib/website/settings";
 import { MobileFloatingCta } from "@/components/site/mobile-floating-cta";
 import { CtaSection } from "@/components/site/sections/cta-section";
+import { breadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
+import { Breadcrumbs } from "@/components/site/breadcrumbs";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +14,12 @@ export const metadata: Metadata = {
   alternates: { canonical: "/terms" },
 };
 
-const PLACEHOLDER = `This is placeholder Terms of Service content. It has not been reviewed by a lawyer and should not be relied on as legal text — replace it with real terms before this page is used in production.`;
+const PLACEHOLDER = `This is placeholder Terms of Service content. It has not been reviewed by a lawyer and should not be relied on as legal text - replace it with real terms before this page is used in production.`;
+
+const CRUMBS = [
+  { name: "Home", path: "/" },
+  { name: "Terms of Service", path: "/terms" },
+];
 
 export default async function TermsPage() {
   const db = getDb();
@@ -20,6 +27,11 @@ export default async function TermsPage() {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema(CRUMBS)) }}
+      />
+      <Breadcrumbs crumbs={CRUMBS} />
       <div className="mx-auto max-w-3xl px-4 py-16">
         <h1 className="mb-6 text-4xl font-bold text-brand-navy">Terms of Service</h1>
         <p className="whitespace-pre-line text-foreground/80">

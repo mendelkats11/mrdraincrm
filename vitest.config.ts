@@ -15,6 +15,12 @@ export default defineConfig({
     // to 10s, which beforeEach(createTestDb) can exceed under that load.
     testTimeout: 30_000,
     hookTimeout: 30_000,
+    // Unbounded worker parallelism means one process per CPU core, each
+    // integration test file spinning up its own embedded PGlite Postgres —
+    // on an 8-16GB dev machine that's enough simultaneous Postgres
+    // instances to exhaust RAM. Capped low deliberately; this suite is not
+    // CPU-bound, it's memory-bound.
+    maxWorkers: 4,
   },
   resolve: {
     alias: {

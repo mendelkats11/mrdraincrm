@@ -17,7 +17,6 @@ export const NAV_HREFS = [
   "/messages",
   "/contacts",
   "/properties",
-  "/website",
   "/reports",
 ] as const;
 

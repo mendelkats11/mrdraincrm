@@ -13,6 +13,9 @@ import { MobileFloatingCta } from "@/components/site/mobile-floating-cta";
 import { CtaSection } from "@/components/site/sections/cta-section";
 import { breadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
 import { faqSchema } from "@/lib/seo/faq-schema";
+import { areaSeoName } from "@/lib/website/area-seo-name";
+import { Breadcrumbs } from "@/components/site/breadcrumbs";
+import { pageTitle } from "@/lib/seo/page-title";
 
 export const dynamic = "force-dynamic";
 
@@ -25,9 +28,10 @@ export async function generateMetadata({
   const service = await getServiceBySlug(getDb(), slug);
   if (!service) return {};
   return {
-    title: service.seoTitle || `${service.name} | Mr. Drain Plumbing`,
+    title: service.seoTitle || pageTitle(service.name),
     description: service.metaDescription || service.description || undefined,
     alternates: { canonical: `/services/${service.slug}` },
+    ...(service.imageKey ? { openGraph: { images: [publicAssetUrl(service.imageKey)] } } : {}),
   };
 }
 
@@ -41,11 +45,12 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
   ]);
   if (!service) notFound();
 
-  const breadcrumbs = breadcrumbSchema([
+  const crumbs = [
     { name: "Home", path: "/" },
     { name: "Services", path: "/services" },
     { name: service.name, path: `/services/${service.slug}` },
-  ]);
+  ];
+  const breadcrumbs = breadcrumbSchema(crumbs);
   // Blank-line-separated paragraphs, admin-entered — see the "Page content"
   // field in the service edit dialog.
   const paragraphs = (service.content ?? "")
@@ -70,9 +75,10 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
         <div className="relative h-64 w-full sm:h-80">
           <Image
             src={publicAssetUrl(service.imageKey)}
-            alt=""
+            alt={service.name}
             fill
             priority
+            sizes="100vw"
             className="object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
@@ -90,6 +96,8 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
           </div>
         </div>
       )}
+
+      <Breadcrumbs crumbs={crumbs} />
 
       <div className="mx-auto max-w-3xl px-4 py-12">
         {service.description ? (
@@ -139,17 +147,17 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
         {serviceAreas.length > 0 ? (
           <div className="mt-10 border-t border-border pt-8">
             <h2 className="mb-3 text-lg font-semibold text-brand-navy">
-              {service.name} — serving Saskatoon and area
+              {service.name} - serving Saskatoon and area
             </h2>
             <div className="flex flex-wrap gap-2">
               {serviceAreas.map((area) => (
                 <Link
                   key={area.id}
-                  href={`/service-areas/${area.slug}`}
+                  href={`/service-areas/${area.slug}/${service.slug}`}
                   className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm text-foreground/80 hover:border-primary hover:text-primary"
                 >
                   <MapPin className="size-3.5" aria-hidden="true" />
-                  {area.name}
+                  {service.name} in {areaSeoName(area)}
                 </Link>
               ))}
             </div>

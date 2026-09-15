@@ -68,5 +68,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.3,
   }));
 
-  return [...staticPages, ...servicePages, ...areaPages, ...jobPages];
+  // Every service × area combination — each is a real, independently
+  // rankable "{service} in {area}" page (src/app/(site)/service-areas/
+  // [slug]/[service]/page.tsx), not a duplicate of /services/{slug}.
+  const areaServicePages: MetadataRoute.Sitemap = areas.flatMap((area) =>
+    services.map((service) => ({
+      url: `${origin}/service-areas/${area.slug}/${service.slug}`,
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    })),
+  );
+
+  return [...staticPages, ...servicePages, ...areaPages, ...areaServicePages, ...jobPages];
 }

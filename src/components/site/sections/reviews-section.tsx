@@ -25,7 +25,7 @@ export function ReviewsSection({ reviews, limit }: { reviews: Review[]; limit?: 
 
   return (
     <section className="bg-secondary">
-      <div className="mx-auto max-w-6xl px-4 py-16">
+      <div className="mx-auto max-w-6xl px-4 py-20 lg:py-24">
         <div className="mb-10 flex flex-col items-center gap-2 text-center">
           <h2 className="text-3xl font-bold text-brand-navy">What Customers Say</h2>
         </div>

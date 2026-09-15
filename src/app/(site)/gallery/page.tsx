@@ -7,6 +7,8 @@ import { getWebsiteSettings } from "@/lib/website/settings";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import { MobileFloatingCta } from "@/components/site/mobile-floating-cta";
 import { CtaSection } from "@/components/site/sections/cta-section";
+import { breadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
+import { Breadcrumbs } from "@/components/site/breadcrumbs";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +17,11 @@ export const metadata: Metadata = {
   description: "Real completed plumbing work from Mr. Drain Plumbing.",
   alternates: { canonical: "/gallery" },
 };
+
+const CRUMBS = [
+  { name: "Home", path: "/" },
+  { name: "Gallery", path: "/gallery" },
+];
 
 export default async function GalleryPage() {
   const db = getDb();
@@ -25,6 +32,11 @@ export default async function GalleryPage() {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema(CRUMBS)) }}
+      />
+      <Breadcrumbs crumbs={CRUMBS} />
       <div className="mx-auto max-w-6xl px-4 py-16">
         <div className="mb-10 flex flex-col items-center gap-2 text-center">
           <h1 className="text-4xl font-bold text-brand-navy">Our Work</h1>
@@ -33,7 +45,7 @@ export default async function GalleryPage() {
 
         {jobs.length === 0 ? (
           <p className="text-center text-foreground/60">
-            Photos of our work are coming soon — check back shortly.
+            Photos of our work are coming soon - check back shortly.
           </p>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
@@ -47,6 +59,7 @@ export default async function GalleryPage() {
                   src={publicAssetUrl(job.coverImageKey)}
                   alt={job.title}
                   fill
+                  sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
                   className="object-cover transition-transform group-hover:scale-105"
                 />
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2 pb-1.5 pt-4 text-xs font-medium text-white">

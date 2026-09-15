@@ -7,6 +7,8 @@ import { getWebsiteSettings } from "@/lib/website/settings";
 import { cn } from "@/lib/utils";
 import { MobileFloatingCta } from "@/components/site/mobile-floating-cta";
 import { CtaSection } from "@/components/site/sections/cta-section";
+import { breadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
+import { Breadcrumbs } from "@/components/site/breadcrumbs";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +17,11 @@ export const metadata: Metadata = {
   description: "See what customers are saying about Mr. Drain Plumbing.",
   alternates: { canonical: "/reviews" },
 };
+
+const CRUMBS = [
+  { name: "Home", path: "/" },
+  { name: "Reviews", path: "/reviews" },
+];
 
 const DATE_FMT = new Intl.DateTimeFormat("en-CA", { dateStyle: "medium" });
 
@@ -35,13 +42,18 @@ export default async function ReviewsPage() {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema(CRUMBS)) }}
+      />
+      <Breadcrumbs crumbs={CRUMBS} />
       <div className="mx-auto max-w-4xl px-4 py-16">
         <div className="mb-10 flex flex-col items-center gap-2 text-center">
           <h1 className="text-4xl font-bold text-brand-navy">Customer Reviews</h1>
         </div>
 
         {reviews.length === 0 ? (
-          <p className="text-center text-foreground/60">No reviews yet — check back soon.</p>
+          <p className="text-center text-foreground/60">No reviews yet - check back soon.</p>
         ) : (
           <div className="grid gap-5 sm:grid-cols-2">
             {reviews.map((review) => (

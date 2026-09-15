@@ -8,7 +8,6 @@ import {
   Calendar,
   FileSignature,
   FileText,
-  Globe,
   HardHat,
   Home,
   Inbox,
@@ -35,7 +34,6 @@ const ICONS_BY_HREF = {
   "/messages": MessageSquare,
   "/contacts": User,
   "/properties": Home,
-  "/website": Globe,
   "/reports": BarChart3,
 } as const;
 
@@ -52,7 +50,6 @@ const LABELS_BY_HREF: Record<(typeof NAV_HREFS)[number], string> = {
   "/messages": "Messages",
   "/contacts": "Contacts",
   "/properties": "Properties",
-  "/website": "Website",
   "/reports": "Reports",
 };
 

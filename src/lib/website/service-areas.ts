@@ -65,6 +65,7 @@ export interface CreateServiceAreaInput {
   seoTitle?: string | null;
   metaDescription?: string | null;
   callrailTrackingNumber?: string | null;
+  businessAddress?: string | null;
   region?: string | null;
 }
 
@@ -104,6 +105,7 @@ export async function createServiceArea<TQueryResult extends PgQueryResultHKT>(
         seoTitle: input.seoTitle || null,
         metaDescription: input.metaDescription || null,
         callrailTrackingNumber: input.callrailTrackingNumber || null,
+        businessAddress: input.businessAddress || null,
         region: input.region || null,
         sortOrder: maxSort + 1,
       })
@@ -129,6 +131,7 @@ export interface UpdateServiceAreaInput {
   seoTitle?: string | null;
   metaDescription?: string | null;
   callrailTrackingNumber?: string | null;
+  businessAddress?: string | null;
   region?: string | null;
   active?: boolean;
   sortOrder?: number;
@@ -158,6 +161,8 @@ export async function updateServiceArea<TQueryResult extends PgQueryResultHKT>(
           input.callrailTrackingNumber !== undefined
             ? input.callrailTrackingNumber || null
             : undefined,
+        businessAddress:
+          input.businessAddress !== undefined ? input.businessAddress || null : undefined,
         region: input.region !== undefined ? input.region || null : undefined,
         active: input.active,
         sortOrder: input.sortOrder,

@@ -12,6 +12,8 @@ import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import { MobileFloatingCta } from "@/components/site/mobile-floating-cta";
 import { CtaSection } from "@/components/site/sections/cta-section";
 import { breadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
+import { Breadcrumbs } from "@/components/site/breadcrumbs";
+import { pageTitle } from "@/lib/seo/page-title";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +26,7 @@ export async function generateMetadata({
   const job = await getPortfolioJobBySlug(getDb(), slug);
   if (!job) return {};
   return {
-    title: `${job.title} | Mr. Drain Plumbing`,
+    title: pageTitle(job.title),
     description: job.description || `Real completed plumbing work: ${job.title}.`,
     alternates: { canonical: `/gallery/${job.slug}` },
     openGraph: { images: [publicAssetUrl(job.coverImageKey)] },
@@ -49,11 +51,12 @@ export default async function PortfolioJobPage({ params }: { params: Promise<{ s
     job.serviceAreaId ? getServiceArea(db, job.serviceAreaId) : null,
   ]);
 
-  const breadcrumbs = breadcrumbSchema([
+  const crumbs = [
     { name: "Home", path: "/" },
     { name: "Gallery", path: "/gallery" },
     { name: job.title, path: `/gallery/${job.slug}` },
-  ]);
+  ];
+  const breadcrumbs = breadcrumbSchema(crumbs);
 
   return (
     <div>
@@ -67,15 +70,15 @@ export default async function PortfolioJobPage({ params }: { params: Promise<{ s
           alt={job.title}
           fill
           priority
+          sizes="100vw"
           className="object-cover"
         />
       </div>
 
+      <Breadcrumbs crumbs={crumbs} />
+
       <div className="mx-auto max-w-3xl px-4 py-12">
-        <Link href="/gallery" className="text-sm text-primary hover:underline">
-          ← Back to gallery
-        </Link>
-        <h1 className="mt-3 text-3xl font-bold text-brand-navy sm:text-4xl">{job.title}</h1>
+        <h1 className="text-3xl font-bold text-brand-navy sm:text-4xl">{job.title}</h1>
 
         {service || serviceArea ? (
           <div className="mt-3 flex flex-wrap gap-2">

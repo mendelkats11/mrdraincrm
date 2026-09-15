@@ -8,15 +8,22 @@ import { getWebsiteSettings } from "@/lib/website/settings";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import { MobileFloatingCta } from "@/components/site/mobile-floating-cta";
 import { CtaSection } from "@/components/site/sections/cta-section";
+import { breadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
+import { Breadcrumbs } from "@/components/site/breadcrumbs";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Plumbing Services in Saskatoon | Mr. Drain Plumbing",
   description:
-    "Full-service residential plumbing in Saskatoon, SK — drain cleaning, water heaters, repiping, and more.",
+    "Full-service residential plumbing in Saskatoon, SK - drain cleaning, water heaters, repiping, and more.",
   alternates: { canonical: "/services" },
 };
+
+const CRUMBS = [
+  { name: "Home", path: "/" },
+  { name: "Services", path: "/services" },
+];
 
 export default async function ServicesPage() {
   const db = getDb();
@@ -31,14 +38,19 @@ export default async function ServicesPage() {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema(CRUMBS)) }}
+      />
       <div className="relative">
         {backgroundUrl ? (
           <>
-            <Image src={backgroundUrl} alt="" fill className="object-cover" />
+            <Image src={backgroundUrl} alt="" fill sizes="100vw" className="object-cover" />
             <div className="absolute inset-0 bg-background/90" />
           </>
         ) : null}
 
+        <Breadcrumbs crumbs={CRUMBS} />
         <div className="relative mx-auto max-w-6xl px-4 py-16">
           <div className="mb-10 flex flex-col items-center gap-2 text-center">
             <h1 className="text-4xl font-bold text-brand-navy">Our Services</h1>
@@ -61,8 +73,9 @@ export default async function ServicesPage() {
                     {service.imageKey ? (
                       <Image
                         src={publicAssetUrl(service.imageKey)}
-                        alt=""
+                        alt={service.name}
                         fill
+                        sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                         className="object-cover transition-transform duration-300 group-hover:scale-105"
                       />
                     ) : (

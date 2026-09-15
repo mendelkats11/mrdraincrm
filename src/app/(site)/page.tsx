@@ -17,9 +17,12 @@ export const dynamic = "force-dynamic";
 // platform." — the exact text Google would show in a search snippet for
 // the single most important page on the domain.
 export const metadata: Metadata = {
-  title: "Saskatoon Plumber | 24/7 Emergency Service | Mr. Drain Plumbing",
+  // Was 65 characters with the old wording — Google truncates page titles
+  // past roughly 60, so the tail end ("...ain Plumbing") was getting cut
+  // off in search results (Sep 2026 SEO audit).
+  title: "24/7 Saskatoon Plumber | Mr. Drain Plumbing",
   description:
-    "Fast, reliable plumbing and drain services in Saskatoon, SK and area — Rosewood, Stonebridge, Martensville, Warman, and more. Call 24/7 or request a free quote.",
+    "Fast, reliable plumbing and drain services in Saskatoon, SK and area - Rosewood, Stonebridge, Martensville, Warman, and more. Call 24/7 or request a free quote.",
   alternates: { canonical: "/" },
   openGraph: {
     title: "Saskatoon Plumber | Mr. Drain Plumbing",
@@ -29,6 +32,7 @@ export const metadata: Metadata = {
     siteName: "Mr. Drain Plumbing",
     locale: "en_CA",
     type: "website",
+    images: [{ url: "/logo.png", width: 1024, height: 754 }],
   },
 };
 

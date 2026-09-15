@@ -31,7 +31,7 @@ export function SiteFooter({
             className="h-14 w-auto self-start"
           />
           <p className="text-sm text-white/70">
-            {businessName ?? "Mr. Drain Plumbing"} — {footerTagline || "local, reliable plumbing"}.
+            {footerTagline || "Mr. Drain - Local, reliable plumbing"}
           </p>
         </div>
 

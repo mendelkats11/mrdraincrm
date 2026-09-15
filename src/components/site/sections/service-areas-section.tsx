@@ -17,7 +17,7 @@ export function ServiceAreasSection({
   const shown = limit ? serviceAreas.slice(0, limit) : serviceAreas;
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-16">
+    <section className="mx-auto max-w-6xl px-4 py-20 lg:py-24">
       <div className="mb-10 flex flex-col items-center gap-2 text-center">
         <h2 className="text-3xl font-bold text-brand-navy">Where We Work</h2>
         <p className="max-w-xl text-foreground/70">
@@ -29,13 +29,14 @@ export function ServiceAreasSection({
           <Link
             key={area.id}
             href={`/service-areas/${area.slug}`}
-            className="group relative flex h-40 flex-col justify-end overflow-hidden rounded-2xl border border-border shadow-sm transition-shadow hover:shadow-md"
+            className="group relative flex h-40 flex-col justify-end overflow-hidden rounded-2xl border border-border shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
           >
             {area.images[0] ? (
               <Image
                 src={publicAssetUrl(area.images[0])}
-                alt=""
+                alt={`Mr. Drain Plumbing services in ${area.name}`}
                 fill
+                sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                 className="object-cover transition-transform duration-300 group-hover:scale-105"
               />
             ) : (

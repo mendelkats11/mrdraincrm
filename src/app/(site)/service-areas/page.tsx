@@ -8,6 +8,8 @@ import { getWebsiteSettings } from "@/lib/website/settings";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import { MobileFloatingCta } from "@/components/site/mobile-floating-cta";
 import { CtaSection } from "@/components/site/sections/cta-section";
+import { breadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
+import { Breadcrumbs } from "@/components/site/breadcrumbs";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +18,11 @@ export const metadata: Metadata = {
   description: "Mr. Drain Plumbing proudly serves Saskatoon and the surrounding communities.",
   alternates: { canonical: "/service-areas" },
 };
+
+const CRUMBS = [
+  { name: "Home", path: "/" },
+  { name: "Service Areas", path: "/service-areas" },
+];
 
 export default async function ServiceAreasPage() {
   const db = getDb();
@@ -26,6 +33,11 @@ export default async function ServiceAreasPage() {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema(CRUMBS)) }}
+      />
+      <Breadcrumbs crumbs={CRUMBS} />
       <div className="mx-auto max-w-6xl px-4 py-16">
         <div className="mb-10 flex flex-col items-center gap-2 text-center">
           <h1 className="text-4xl font-bold text-brand-navy">Where We Work</h1>
@@ -47,8 +59,9 @@ export default async function ServiceAreasPage() {
                 {area.images[0] ? (
                   <Image
                     src={publicAssetUrl(area.images[0])}
-                    alt=""
+                    alt={`Mr. Drain Plumbing services in ${area.name}`}
                     fill
+                    sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                     className="object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                 ) : (

@@ -120,7 +120,7 @@ export function SiteHeader({
           {trackingNumber ? (
             <a
               href={`tel:${trackingNumber}`}
-              className="flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-transform hover:scale-[1.02]"
+              className="flex items-center gap-2 rounded-full border border-primary/30 bg-white px-4 py-2 text-sm font-semibold text-primary shadow-sm transition-colors hover:bg-primary/5"
             >
               <Phone className="size-4" aria-hidden="true" />
               {formatPhoneForDisplay(trackingNumber)}
@@ -128,7 +128,7 @@ export function SiteHeader({
           ) : null}
           <Link
             href="/contact"
-            className="flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground shadow-sm transition-transform hover:scale-[1.02]"
+            className="flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-transform hover:scale-[1.02]"
           >
             Get a Free Quote
           </Link>

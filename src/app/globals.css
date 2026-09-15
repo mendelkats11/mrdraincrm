@@ -197,13 +197,21 @@
  * bg-primary/text-primary/etc utility "just works" within this subtree
  * without new utility names. */
 .site-theme {
-  --background: oklch(1 0 0);
+  /* A hair off pure white (not oklch(1 0 0)) — flat #fff behind large
+     sparsely-filled sections reads as an empty page; this barely-there
+     cool tint gives it some depth while --card stays true white so cards/
+     buttons/the header still pop against it. */
+  --background: oklch(0.98 0.006 235);
   --foreground: oklch(0.22 0.04 250);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.22 0.04 250);
   --primary: oklch(0.47 0.12 235); /* ribbon blue, #0a6ca8-ish */
   --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.97 0.01 235);
+  /* A visible soft blue wash, not near-gray — this is the band background
+     behind "Why Mr. Drain," "Recent Work," reviews, and the hero's trust
+     strip, so bumping its chroma here is what gives the whole page some
+     color instead of alternating white-on-white. */
+  --secondary: oklch(0.95 0.035 235);
   --secondary-foreground: oklch(0.3 0.08 235);
   --muted: oklch(0.97 0.015 90);
   --muted-foreground: oklch(0.48 0.02 250);

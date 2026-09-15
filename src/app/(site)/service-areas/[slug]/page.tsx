@@ -15,6 +15,9 @@ import { GallerySection } from "@/components/site/sections/gallery-section";
 import { CtaSection } from "@/components/site/sections/cta-section";
 import { breadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
 import { faqSchema } from "@/lib/seo/faq-schema";
+import { areaSeoName } from "@/lib/website/area-seo-name";
+import { Breadcrumbs } from "@/components/site/breadcrumbs";
+import { pageTitle } from "@/lib/seo/page-title";
 
 export const dynamic = "force-dynamic";
 
@@ -27,9 +30,10 @@ export async function generateMetadata({
   const area = await getServiceAreaBySlug(getDb(), slug);
   if (!area) return {};
   return {
-    title: area.seoTitle || `Plumber in ${area.name} | Mr. Drain Plumbing`,
+    title: area.seoTitle || pageTitle(`Plumber in ${areaSeoName(area)}`),
     description: area.metaDescription || area.copy || undefined,
     alternates: { canonical: `/service-areas/${area.slug}` },
+    ...(area.images[0] ? { openGraph: { images: [publicAssetUrl(area.images[0])] } } : {}),
   };
 }
 
@@ -53,12 +57,14 @@ export default async function ServiceAreaDetailPage({
   // of its own — docs/PROJECT_SPEC.md §2.4.
   const trackingNumber = area.callrailTrackingNumber || settings.defaultCallrailTrackingNumber;
 
-  const breadcrumbs = breadcrumbSchema([
+  const crumbs = [
     { name: "Home", path: "/" },
     { name: "Service Areas", path: "/service-areas" },
     { name: area.name, path: `/service-areas/${area.slug}` },
-  ]);
+  ];
+  const breadcrumbs = breadcrumbSchema(crumbs);
   const faqs = area.faqs;
+  const areaName = areaSeoName(area);
 
   return (
     <div>
@@ -76,16 +82,17 @@ export default async function ServiceAreaDetailPage({
         <div className="relative h-64 w-full sm:h-80">
           <Image
             src={publicAssetUrl(area.images[0])}
-            alt=""
+            alt={`Mr. Drain Plumbing services in ${areaName}`}
             fill
             priority
+            sizes="100vw"
             className="object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
           <div className="absolute inset-0 flex items-end">
             <div className="mx-auto flex w-full max-w-3xl items-center gap-2 px-4 pb-8 text-white">
               <MapPin className="size-6" aria-hidden="true" />
-              <h1 className="text-3xl font-bold sm:text-4xl">Plumber in {area.name}</h1>
+              <h1 className="text-3xl font-bold sm:text-4xl">Plumber in {areaName}</h1>
             </div>
           </div>
         </div>
@@ -93,10 +100,12 @@ export default async function ServiceAreaDetailPage({
         <div className="bg-brand-navy py-16">
           <div className="mx-auto flex max-w-3xl items-center gap-2 px-4 text-white">
             <MapPin className="size-6" aria-hidden="true" />
-            <h1 className="text-3xl font-bold sm:text-4xl">Plumber in {area.name}</h1>
+            <h1 className="text-3xl font-bold sm:text-4xl">Plumber in {areaName}</h1>
           </div>
         </div>
       )}
+
+      <Breadcrumbs crumbs={crumbs} />
 
       <div className="mx-auto max-w-3xl px-4 py-12">
         {area.copy ? <p className="text-lg text-foreground/80">{area.copy}</p> : null}
@@ -136,13 +145,13 @@ export default async function ServiceAreaDetailPage({
         {services.length > 0 ? (
           <div className="mt-10 border-t border-border pt-8">
             <h2 className="mb-3 text-lg font-semibold text-brand-navy">
-              Plumbing services in {area.name}
+              Plumbing services we offer in {areaName}:
             </h2>
             <div className="flex flex-wrap gap-2">
               {services.map((service) => (
                 <Link
                   key={service.id}
-                  href={`/services/${service.slug}`}
+                  href={`/service-areas/${area.slug}/${service.slug}`}
                   className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm text-foreground/80 hover:border-primary hover:text-primary"
                 >
                   <Wrench className="size-3.5" aria-hidden="true" />
@@ -156,7 +165,7 @@ export default async function ServiceAreaDetailPage({
 
       <GallerySection jobs={areaJobs} />
 
-      <CtaSection heading={`Need a plumber in ${area.name}?`} trackingNumber={trackingNumber} />
+      <CtaSection heading={`Need a plumber in ${areaName}?`} trackingNumber={trackingNumber} />
 
       <MobileFloatingCta trackingNumber={trackingNumber} />
     </div>

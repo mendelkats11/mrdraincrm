@@ -61,7 +61,7 @@ export function ContactForm({ serviceAreas }: { serviceAreas: { id: string; name
   if (status === "sent") {
     return (
       <div className="rounded-lg border p-6 text-center">
-        <p className="font-medium text-foreground">Thanks — we got your request.</p>
+        <p className="font-medium text-foreground">Thanks - we got your request.</p>
         <p className="mt-1 text-sm text-muted-foreground">
           We&apos;ll be in touch shortly. For urgent issues, please call us directly.
         </p>

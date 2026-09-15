@@ -77,6 +77,14 @@ export const serviceAreas = pgTable("service_areas", {
   // CallRail tracking number for this area's "Call Now" CTA — see
   // docs/PROJECT_SPEC.md §16. Not a secret; safe as a plain column.
   callrailTrackingNumber: text("callrail_tracking_number"),
+  // This area's own NAP address (e.g. a local office/mailing address used
+  // for this neighbourhood's local-SEO presence) — shown in the footer
+  // instead of the site-wide default (settings.businessAddress) whenever a
+  // visitor is on this area's page or one of its per-service pages
+  // (src/proxy.ts sets the request header the site layout reads to know
+  // which area, if any, is currently being viewed). Null falls back to the
+  // site-wide address, same convention as callrailTrackingNumber above.
+  businessAddress: text("business_address"),
   // Free text (e.g. "SK", "BC"), not an enum — grouping/filtering only
   // (admin list page), never validated against a fixed province list.
   // A service area can exist purely for CallRail/CRM attribution without

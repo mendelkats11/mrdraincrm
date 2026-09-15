@@ -148,6 +148,13 @@
       "when": 1788494471693,
       "tag": "0020_panoramic_agent_zero",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1789434863321,
+      "tag": "0021_sturdy_vanisher",
+      "breakpoints": true
     }
   ]
 }
