@@ -36,9 +36,9 @@ Target:
 - PostgreSQL-compatible relational database
 - Tailwind CSS
 - Accessible component system
-- Netlify deployment
+- Hostinger deployment (Node.js Web App - a persistent process, not
+  serverless; auto-pulls and rebuilds from GitHub on push to main)
 - GitHub source control
-- Netlify-compatible server-side functionality
 - Blob/object storage for uploaded files
 - Resend for application email
 - CallRail API/webhooks for calls and incoming texts

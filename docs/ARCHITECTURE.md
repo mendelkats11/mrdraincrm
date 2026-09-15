@@ -460,16 +460,14 @@ Do not cache private app data publicly.
 
 ---
 
-# 21. Netlify
+# 21. Hostinger
 
 Target deployment:
-Netlify.
+Hostinger (Node.js Web App).
 
-Netlify's current Next.js integration supports the App Router, route handlers/API routes, server actions, SSR/ISR, middleware, and image optimization through its OpenNext-based runtime.
+The project originally targeted Netlify; it has since moved to Hostinger. Hostinger runs the app as a persistent Node.js process (`next start`), not a serverless/edge runtime - there is no Netlify-style Scheduled Functions equivalent, which is why recurring work (CallRail polling, reminder processing) runs as a plain in-process `setInterval` in `src/instrumentation.ts` instead. Deployment auto-pulls and rebuilds from GitHub on push to `main`.
 
 Avoid unnecessary platform-specific code.
-
-Do not pin the Netlify Next.js adapter unless there is a documented reason.
 
 ---
 

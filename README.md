@@ -64,12 +64,13 @@ Copy it to `.env.local` for local development — never commit real secrets.
 
 ## Deployment
 
-Deployed on Netlify, which auto-detects Next.js and provisions its
-OpenNext-based runtime with zero extra configuration — see `netlify.toml`
-for the (intentionally minimal) build settings and the reasoning for why the
-adapter isn't pinned. DNS, production environment variables, and the
-`app.mrdrainsk.com` / `mrdrainsk.com` domain attachment happen in Phase 19
-(`docs/ROADMAP.md`) — none of that is configured yet.
+Deployed on Hostinger as a Node.js Web App (a persistent `next start`
+process, not serverless) — the project originally targeted Netlify, hence
+references to it elsewhere in these docs; it has since moved. Hostinger
+auto-pulls and rebuilds from GitHub on every push to `main`. Because there's
+no serverless scheduled-function equivalent on Hostinger, recurring work
+(CallRail polling, reminder processing) runs as a plain in-process
+`setInterval` in `src/instrumentation.ts` instead.
 
 ## Project structure
 
