@@ -52,22 +52,35 @@ export function localBusinessSchema({
   businessAddress,
   telephone,
   areaServed,
+  url,
+  sameAs,
 }: {
   businessName: string | null;
   businessAddress: string | null;
   telephone: string | null;
   areaServed: string[];
+  /** Defaults to the site origin — overridden with a specific page URL for
+   *  an area-scoped block (see service-areas/[slug]/page.tsx) so each
+   *  office's schema identifies its own page, not the homepage. */
+  url?: string;
+  /** Real profile URLs for this exact entity (its own Google Business
+   *  Profile listing, Yelp, Facebook, etc) - never invented. Lets Google
+   *  match this page's LocalBusiness to the real-world listing it
+   *  represents, which matters once a business has more than one physical
+   *  location/listing (Sep 2026). */
+  sameAs?: string[];
 }) {
   const origin = getPublicSiteOrigin();
   return {
     "@context": "https://schema.org",
     "@type": "Plumber",
     name: businessName || "Mr. Drain Plumbing",
-    url: origin,
+    url: url || origin,
     image: `${origin}/logo.png`,
     ...(telephone ? { telephone } : {}),
     ...(businessAddress ? { address: parseAddress(businessAddress) } : {}),
     ...(areaServed.length > 0 ? { areaServed } : {}),
+    ...(sameAs && sameAs.length > 0 ? { sameAs } : {}),
     // The business context this site was built from states 24/7
     // availability as an established fact, not a claim invented for this
     // schema block.

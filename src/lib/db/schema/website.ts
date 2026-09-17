@@ -81,10 +81,18 @@ export const serviceAreas = pgTable("service_areas", {
   // for this neighbourhood's local-SEO presence) — shown in the footer
   // instead of the site-wide default (settings.businessAddress) whenever a
   // visitor is on this area's page or one of its per-service pages
-  // (src/proxy.ts sets the request header the site layout reads to know
-  // which area, if any, is currently being viewed). Null falls back to the
-  // site-wide address, same convention as callrailTrackingNumber above.
+  // (SiteFooter, a client component, resolves the current area from
+  // usePathname() against this list — a shared server layout can't do this
+  // reactively across client-side navigation between areas). Null falls
+  // back to the site-wide address, same convention as
+  // callrailTrackingNumber above.
   businessAddress: text("business_address"),
+  // This area's own real Google Business Profile listing (Sep 2026) — each
+  // office has its own separate GBP listing at its own address, distinct
+  // from the site-wide business. Rendered as `sameAs` in that area page's
+  // own LocalBusiness schema so Google can match the two as the same real
+  // entity. Null-safe: omitted from schema entirely when not set.
+  googleMapsUrl: text("google_maps_url"),
   // Free text (e.g. "SK", "BC"), not an enum — grouping/filtering only
   // (admin list page), never validated against a fixed province list.
   // A service area can exist purely for CallRail/CRM attribution without

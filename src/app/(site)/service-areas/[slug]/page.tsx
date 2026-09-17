@@ -15,9 +15,11 @@ import { GallerySection } from "@/components/site/sections/gallery-section";
 import { CtaSection } from "@/components/site/sections/cta-section";
 import { breadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
 import { faqSchema } from "@/lib/seo/faq-schema";
+import { localBusinessSchema } from "@/lib/seo/local-business-schema";
 import { areaSeoName } from "@/lib/website/area-seo-name";
 import { Breadcrumbs } from "@/components/site/breadcrumbs";
 import { pageTitle } from "@/lib/seo/page-title";
+import { getPublicSiteOrigin } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
@@ -65,12 +67,29 @@ export default async function ServiceAreaDetailPage({
   const breadcrumbs = breadcrumbSchema(crumbs);
   const faqs = area.faqs;
   const areaName = areaSeoName(area);
+  // This area's own LocalBusiness block, distinct from the sitewide one in
+  // the root layout — this office has its own real address and its own
+  // real Google Business Profile listing (Sep 2026), so it gets its own
+  // entity matching that specific listing via sameAs, not just a mention
+  // in the sitewide areaServed list.
+  const areaSchema = localBusinessSchema({
+    businessName: settings.businessName,
+    businessAddress: area.businessAddress || settings.businessAddress,
+    telephone: trackingNumber,
+    areaServed: [areaName],
+    url: `${getPublicSiteOrigin()}/service-areas/${area.slug}`,
+    sameAs: area.googleMapsUrl ? [area.googleMapsUrl] : undefined,
+  });
 
   return (
     <div>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(areaSchema) }}
       />
       {faqs.length > 0 ? (
         <script
