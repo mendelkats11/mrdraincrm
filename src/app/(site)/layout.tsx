@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { getDb } from "@/lib/db/client";
 import { getWebsiteSettings } from "@/lib/website/settings";
-import { listPublishedServiceAreas, getServiceAreaBySlug } from "@/lib/website/service-areas";
+import { listPublishedServiceAreas } from "@/lib/website/service-areas";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { localBusinessSchema } from "@/lib/seo/local-business-schema";
@@ -37,19 +36,6 @@ export default async function SiteLayout({ children }: LayoutProps<"/">) {
     listPublishedServiceAreas(db),
   ]);
 
-  // A layout only gets params for its own route segment, and this one
-  // wraps every page in the site — it has no direct way to know it's
-  // rendering /service-areas/brighton or one of brighton's per-service
-  // pages. src/proxy.ts sets this header from the request path so the
-  // footer below can show that area's own address/phone instead of the
-  // site-wide default, per docs — a visitor on a Brighton page should see
-  // Brighton's number, not just get routed to it after calling.
-  const areaSlug = (await headers()).get("x-service-area-slug");
-  const currentArea = areaSlug ? await getServiceAreaBySlug(db, areaSlug) : null;
-  const footerBusinessAddress = currentArea?.businessAddress || settings.businessAddress;
-  const footerTrackingNumber =
-    currentArea?.callrailTrackingNumber || settings.defaultCallrailTrackingNumber;
-
   const schema = localBusinessSchema({
     businessName: settings.businessName,
     businessAddress: settings.businessAddress,
@@ -76,12 +62,17 @@ export default async function SiteLayout({ children }: LayoutProps<"/">) {
       <main className="flex-1 pb-20 sm:pb-0">{children}</main>
       <SiteFooter
         businessName={settings.businessName}
-        businessAddress={footerBusinessAddress}
+        businessAddress={settings.businessAddress}
         contactEmail={settings.publicContactEmail}
-        trackingNumber={footerTrackingNumber}
+        trackingNumber={settings.defaultCallrailTrackingNumber}
         footerTagline={settings.footerTagline}
         reviewsEnabled={settings.reviewsPageEnabled}
         appUrl={getAppUrl()}
+        serviceAreas={serviceAreas.map((area) => ({
+          slug: area.slug,
+          businessAddress: area.businessAddress,
+          callrailTrackingNumber: area.callrailTrackingNumber,
+        }))}
       />
     </div>
   );

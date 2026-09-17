@@ -49,19 +49,6 @@ function isPublicOnAppHost(pathname: string): boolean {
   return PUBLIC_ON_APP_HOST_PREFIXES.some((p) => pathname === p || pathname.startsWith(p));
 }
 
-// Matches /service-areas/{slug} and /service-areas/{slug}/{service} (never
-// the bare /service-areas listing, which has no slug segment to capture).
-// The site layout can't otherwise know which area a request is for — a
-// layout only receives params for its own route segment, and the footer
-// is rendered by the top-level layout shared by every page — so this
-// header is how src/app/(site)/layout.tsx knows to show that area's own
-// address/phone in the footer instead of the site-wide default.
-const SERVICE_AREA_PATH_PATTERN = /^\/service-areas\/([^/]+)(?:\/[^/]+)?\/?$/;
-
-function serviceAreaSlugFromPath(pathname: string): string | null {
-  return SERVICE_AREA_PATH_PATTERN.exec(pathname)?.[1] ?? null;
-}
-
 export function proxy(request: NextRequest) {
   const host = request.headers.get("host") || "";
   const { pathname, search } = request.nextUrl;
@@ -76,11 +63,7 @@ export function proxy(request: NextRequest) {
   }
 
   if (!isAppHost(host)) {
-    const areaSlug = serviceAreaSlugFromPath(pathname);
-    if (!areaSlug) return NextResponse.next();
-    const headers = new Headers(request.headers);
-    headers.set("x-service-area-slug", areaSlug);
-    return NextResponse.next({ request: { headers } });
+    return NextResponse.next();
   }
 
   if (!isPublicOnAppHost(pathname)) {

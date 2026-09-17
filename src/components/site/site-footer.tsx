@@ -1,6 +1,16 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Mail, MapPin, Phone } from "lucide-react";
+import { serviceAreaSlugFromPath } from "@/lib/website/service-area-path";
+
+interface FooterServiceArea {
+  slug: string;
+  businessAddress: string | null;
+  callrailTrackingNumber: string | null;
+}
 
 export function SiteFooter({
   businessName,
@@ -10,6 +20,7 @@ export function SiteFooter({
   footerTagline,
   reviewsEnabled,
   appUrl,
+  serviceAreas,
 }: {
   businessName: string | null;
   businessAddress: string | null;
@@ -18,7 +29,20 @@ export function SiteFooter({
   footerTagline: string | null;
   reviewsEnabled: boolean;
   appUrl: string;
+  /** Every published area's own NAP override, so this client component can
+   *  resolve which one applies from the current URL on every navigation —
+   *  a shared server layout can't do this reactively, since Next.js reuses
+   *  its already-rendered output on navigations between sibling routes
+   *  (e.g. /service-areas/brighton -> /service-areas/rosewood) instead of
+   *  re-running it (see the prefetching docs' "Client cache" section). */
+  serviceAreas: FooterServiceArea[];
 }) {
+  const pathname = usePathname();
+  const areaSlug = serviceAreaSlugFromPath(pathname);
+  const currentArea = areaSlug ? serviceAreas.find((area) => area.slug === areaSlug) : undefined;
+  const resolvedBusinessAddress = currentArea?.businessAddress || businessAddress;
+  const resolvedTrackingNumber = currentArea?.callrailTrackingNumber || trackingNumber;
+
   return (
     <footer className="mt-auto bg-brand-navy text-white">
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:grid-cols-3">
@@ -37,13 +61,13 @@ export function SiteFooter({
 
         <div className="flex flex-col gap-2 text-sm">
           <h2 className="mb-1 font-semibold text-white">Get in touch</h2>
-          {trackingNumber ? (
+          {resolvedTrackingNumber ? (
             <a
-              href={`tel:${trackingNumber}`}
+              href={`tel:${resolvedTrackingNumber}`}
               className="flex items-center gap-2 text-white/80 hover:text-white"
             >
               <Phone className="size-4" aria-hidden="true" />
-              {trackingNumber}
+              {resolvedTrackingNumber}
             </a>
           ) : null}
           {contactEmail ? (
@@ -55,10 +79,10 @@ export function SiteFooter({
               {contactEmail}
             </a>
           ) : null}
-          {businessAddress ? (
+          {resolvedBusinessAddress ? (
             <p className="flex items-start gap-2 text-white/80">
               <MapPin className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-              <span className="whitespace-pre-line">{businessAddress}</span>
+              <span className="whitespace-pre-line">{resolvedBusinessAddress}</span>
             </p>
           ) : null}
         </div>
