@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, useState, useTransition } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,7 @@ export function ContactForm({ serviceAreas }: { serviceAreas: { id: string; name
   const [status, setStatus] = useState<"idle" | "sent">("idle");
   const [error, setError] = useState<string | null>(null);
   const [serviceAreaId, setServiceAreaId] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [pending, startTransition] = useTransition();
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -28,6 +30,10 @@ export function ContactForm({ serviceAreas }: { serviceAreas: { id: string; name
 
     if (serviceAreas.length > 0 && !serviceAreaId) {
       setError("Please select your service area.");
+      return;
+    }
+    if (!agreedToTerms) {
+      setError("Please agree to the Terms of Service to continue.");
       return;
     }
 
@@ -108,6 +114,19 @@ export function ContactForm({ serviceAreas }: { serviceAreas: { id: string; name
         <Checkbox id="emergency" name="emergency" />
         <Label htmlFor="emergency" className="font-normal">
           This is an emergency
+        </Label>
+      </div>
+      <div className="flex items-start gap-2">
+        <Checkbox
+          id="agreedToTerms"
+          checked={agreedToTerms}
+          onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
+        />
+        <Label htmlFor="agreedToTerms" className="font-normal">
+          I have read and agree to the{" "}
+          <Link href="/terms" target="_blank" className="text-primary hover:underline">
+            Terms of Service
+          </Link>
         </Label>
       </div>
       {error ? (
