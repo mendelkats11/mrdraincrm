@@ -12,7 +12,6 @@ import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import { MobileFloatingCta } from "@/components/site/mobile-floating-cta";
 import { CtaSection } from "@/components/site/sections/cta-section";
 import { breadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
-import { faqSchema } from "@/lib/seo/faq-schema";
 import { areaSeoName } from "@/lib/website/area-seo-name";
 import { Breadcrumbs } from "@/components/site/breadcrumbs";
 import { pageTitle } from "@/lib/seo/page-title";
@@ -34,11 +33,16 @@ export async function generateMetadata({
   const areaName = areaSeoName(area);
   return {
     title: pageTitle(`${service.name} in ${areaName}`),
-    description:
-      service.metaDescription ||
-      `Professional ${service.name.toLowerCase()} in ${areaName} - ${
-        service.description?.toLowerCase() ?? "fast, upfront service"
-      } Call now for a free quote.`,
+    // Deliberately NOT service.metaDescription — that field is shared
+    // verbatim by every area this service has a combo page for (SEO audit,
+    // Sep 2026 P1 finding: confirmed live, the exact same description was
+    // rendering on /services/drain-cleaning and all 6 of its area combo
+    // pages). Always build the area-templated version instead, from
+    // service.description (the short blurb, not the SEO-tuned one), so
+    // each area's page gets a genuinely distinct description.
+    description: `Professional ${service.name.toLowerCase()} in ${areaName} - ${
+      service.description?.toLowerCase() ?? "fast, upfront service"
+    } Call now for a free quote.`,
     keywords: [
       service.name,
       `${service.name} ${area.name}`,
@@ -99,12 +103,13 @@ export default async function ServiceAreaServicePage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
       />
-      {faqs.length > 0 ? (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema(faqs)) }}
-        />
-      ) : null}
+      {/* No FAQPage schema here (unlike the generic /services/[slug] page) —
+          service.faqs is the exact same content on every one of this
+          service's area pages, so emitting identical FAQPage structured
+          data on all of them is duplicate structured data at scale (SEO
+          audit, Sep 2026 P1 finding). The FAQs still render visibly below
+          for users; only the schema is scoped to the one canonical page
+          per service. */}
 
       {heroImageKey ? (
         <div className="relative h-64 w-full sm:h-80">
