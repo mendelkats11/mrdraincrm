@@ -1,16 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Star } from "lucide-react";
-import { getDb } from "@/lib/db/client";
-import { listPublishedReviews } from "@/lib/website/reviews";
-import { getWebsiteSettings } from "@/lib/website/settings";
+import { siteSettings } from "@/lib/website/site-data";
 import { cn } from "@/lib/utils";
 import { MobileFloatingCta } from "@/components/site/mobile-floating-cta";
 import { CtaSection } from "@/components/site/sections/cta-section";
 import { breadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
 import { Breadcrumbs } from "@/components/site/breadcrumbs";
-
-export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Reviews | Mr. Drain Plumbing",
@@ -35,9 +31,18 @@ function Stars({ rating }: { rating: number }) {
   );
 }
 
-export default async function ReviewsPage() {
-  const db = getDb();
-  const [reviews, settings] = await Promise.all([listPublishedReviews(db), getWebsiteSettings(db)]);
+// No reviews exist yet (Sep 2026) - this page stays 404'd via
+// reviewsPageEnabled until real reviews are added; never fabricated ones.
+const reviews: {
+  id: string;
+  rating: number;
+  reviewText: string | null;
+  customerName: string;
+  reviewDate: Date;
+}[] = [];
+
+export default function ReviewsPage() {
+  const settings = siteSettings;
   if (!settings.reviewsPageEnabled) notFound();
 
   return (

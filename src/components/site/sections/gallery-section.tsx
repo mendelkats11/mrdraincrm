@@ -1,9 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
-import type { portfolioJobs } from "@/lib/db/schema";
-
-type PortfolioJob = typeof portfolioJobs.$inferSelect;
+import type { PortfolioJob } from "@/lib/website/site-data";
 
 // Skips entirely when empty rather than showing placeholder "job" photos —
 // docs/DESIGN_SYSTEM.md §3: "do not invent fake job imagery."

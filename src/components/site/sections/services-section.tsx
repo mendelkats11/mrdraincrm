@@ -2,9 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Wrench } from "lucide-react";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
-import type { services as servicesTable } from "@/lib/db/schema";
-
-type Service = typeof servicesTable.$inferSelect;
+import type { Service } from "@/lib/website/site-data";
 
 export function ServicesSection({ services, limit }: { services: Service[]; limit?: number }) {
   if (services.length === 0) return null;

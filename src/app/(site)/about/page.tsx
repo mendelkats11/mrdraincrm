@@ -1,11 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { Clock, Mail, MapPin, Phone, PhoneCall, Search, Wrench, CheckCircle2 } from "lucide-react";
-import { getDb } from "@/lib/db/client";
-import { getWebsiteSettings } from "@/lib/website/settings";
-import { listPublishedServiceAreas } from "@/lib/website/service-areas";
-import { listPublishedServices } from "@/lib/website/services";
-import { listPublishedPortfolioJobs } from "@/lib/website/portfolio-jobs";
+import { siteSettings, serviceAreas, services, portfolioJobs } from "@/lib/website/site-data";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import { formatPhoneForDisplay } from "@/lib/phone";
 import { MobileFloatingCta } from "@/components/site/mobile-floating-cta";
@@ -13,8 +9,6 @@ import { CtaSection } from "@/components/site/sections/cta-section";
 import { WhyMrDrainSection } from "@/components/site/sections/why-mr-drain-section";
 import { breadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
 import { Breadcrumbs } from "@/components/site/breadcrumbs";
-
-export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "About Us | Mr. Drain Plumbing",
@@ -50,22 +44,13 @@ const PROCESS_STEPS = [
   },
 ] as const;
 
-export default async function AboutPage() {
-  const db = getDb();
-  const [settings, serviceAreas, services, portfolioJobs] = await Promise.all([
-    getWebsiteSettings(db),
-    listPublishedServiceAreas(db),
-    listPublishedServices(db),
-    listPublishedPortfolioJobs(db),
-  ]);
-
-  const businessName = settings.businessName ?? "Mr. Drain Plumbing";
-  const paragraphs = (settings.aboutBody ?? "").split(/\r?\n/).filter(Boolean);
+export default function AboutPage() {
+  const settings = siteSettings;
+  const businessName = settings.businessName;
+  const paragraphs = settings.aboutBody.split(/\r?\n/).filter(Boolean);
   const [leadParagraph, ...restParagraphs] = paragraphs;
   const storyPhotos = portfolioJobs.slice(0, 3);
-  const mapsHref = settings.businessAddress
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings.businessAddress)}`
-    : null;
+  const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings.businessAddress)}`;
   const crumbs = [
     { name: "Home", path: "/" },
     { name: "About", path: "/about" },
@@ -100,11 +85,20 @@ export default async function AboutPage() {
           {storyPhotos.length > 0 ? (
             <div className="relative aspect-[5/4] w-full">
               {storyPhotos.length === 1 ? (
-                <StoryTile src={publicAssetUrl(storyPhotos[0].coverImageKey)} className="size-full" />
+                <StoryTile
+                  src={publicAssetUrl(storyPhotos[0].coverImageKey)}
+                  className="size-full"
+                />
               ) : storyPhotos.length === 2 ? (
                 <div className="grid size-full grid-cols-2 gap-3">
-                  <StoryTile src={publicAssetUrl(storyPhotos[0].coverImageKey)} className="size-full" />
-                  <StoryTile src={publicAssetUrl(storyPhotos[1].coverImageKey)} className="size-full" />
+                  <StoryTile
+                    src={publicAssetUrl(storyPhotos[0].coverImageKey)}
+                    className="size-full"
+                  />
+                  <StoryTile
+                    src={publicAssetUrl(storyPhotos[1].coverImageKey)}
+                    className="size-full"
+                  />
                 </div>
               ) : (
                 <div className="grid size-full grid-cols-2 grid-rows-2 gap-3">
@@ -112,8 +106,14 @@ export default async function AboutPage() {
                     src={publicAssetUrl(storyPhotos[0].coverImageKey)}
                     className="row-span-2 size-full"
                   />
-                  <StoryTile src={publicAssetUrl(storyPhotos[1].coverImageKey)} className="size-full" />
-                  <StoryTile src={publicAssetUrl(storyPhotos[2].coverImageKey)} className="size-full" />
+                  <StoryTile
+                    src={publicAssetUrl(storyPhotos[1].coverImageKey)}
+                    className="size-full"
+                  />
+                  <StoryTile
+                    src={publicAssetUrl(storyPhotos[2].coverImageKey)}
+                    className="size-full"
+                  />
                 </div>
               )}
             </div>

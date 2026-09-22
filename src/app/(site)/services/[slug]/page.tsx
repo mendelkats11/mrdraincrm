@@ -3,10 +3,12 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { MapPin, Phone, Wrench } from "lucide-react";
-import { getDb } from "@/lib/db/client";
-import { getServiceBySlug } from "@/lib/website/services";
-import { listPublishedServiceAreas } from "@/lib/website/service-areas";
-import { getWebsiteSettings } from "@/lib/website/settings";
+import {
+  getServiceBySlug,
+  listPublishedServiceAreas,
+  services,
+  siteSettings,
+} from "@/lib/website/site-data";
 import { formatPhoneForDisplay } from "@/lib/phone";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import { MobileFloatingCta } from "@/components/site/mobile-floating-cta";
@@ -17,7 +19,12 @@ import { areaSeoName } from "@/lib/website/area-seo-name";
 import { Breadcrumbs } from "@/components/site/breadcrumbs";
 import { pageTitle } from "@/lib/seo/page-title";
 
-export const dynamic = "force-dynamic";
+// Content is fixed/static now (no live database), so every one of these 20
+// pages can be fully prerendered at build time instead of rendered on each
+// request — faster, and one less thing that could ever error at runtime.
+export function generateStaticParams() {
+  return services.map((service) => ({ slug: service.slug }));
+}
 
 export async function generateMetadata({
   params,
@@ -25,11 +32,11 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const service = await getServiceBySlug(getDb(), slug);
+  const service = await getServiceBySlug(slug);
   if (!service) return {};
   return {
-    title: service.seoTitle || pageTitle(service.name),
-    description: service.metaDescription || service.description || undefined,
+    title: pageTitle(service.name),
+    description: service.description,
     alternates: { canonical: `/services/${service.slug}` },
     ...(service.imageKey ? { openGraph: { images: [publicAssetUrl(service.imageKey)] } } : {}),
   };
@@ -37,13 +44,12 @@ export async function generateMetadata({
 
 export default async function ServiceDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const db = getDb();
-  const [service, settings, serviceAreas] = await Promise.all([
-    getServiceBySlug(db, slug),
-    getWebsiteSettings(db),
-    listPublishedServiceAreas(db),
+  const [service, serviceAreas] = await Promise.all([
+    getServiceBySlug(slug),
+    listPublishedServiceAreas(),
   ]);
   if (!service) notFound();
+  const settings = siteSettings;
 
   const crumbs = [
     { name: "Home", path: "/" },
@@ -51,9 +57,8 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
     { name: service.name, path: `/services/${service.slug}` },
   ];
   const breadcrumbs = breadcrumbSchema(crumbs);
-  // Blank-line-separated paragraphs, admin-entered — see the "Page content"
-  // field in the service edit dialog.
-  const paragraphs = (service.content ?? "")
+  // Blank-line-separated paragraphs.
+  const paragraphs = service.content
     .split(/\n\s*\n/)
     .map((p) => p.trim())
     .filter(Boolean);
@@ -100,20 +105,16 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
       <Breadcrumbs crumbs={crumbs} />
 
       <div className="mx-auto max-w-3xl px-4 py-12">
-        {service.description ? (
-          <p className="text-lg text-foreground/80">{service.description}</p>
-        ) : null}
+        <p className="text-lg text-foreground/80">{service.description}</p>
 
         <div className="mt-6 flex flex-wrap gap-3">
-          {settings.defaultCallrailTrackingNumber ? (
-            <a
-              href={`tel:${settings.defaultCallrailTrackingNumber}`}
-              className="flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-md"
-            >
-              <Phone className="size-5" aria-hidden="true" />
-              Call {formatPhoneForDisplay(settings.defaultCallrailTrackingNumber)}
-            </a>
-          ) : null}
+          <a
+            href={`tel:${settings.defaultCallrailTrackingNumber}`}
+            className="flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-md"
+          >
+            <Phone className="size-5" aria-hidden="true" />
+            Call {formatPhoneForDisplay(settings.defaultCallrailTrackingNumber)}
+          </a>
           <Link
             href="/contact"
             className="flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-base font-semibold text-accent-foreground shadow-md"

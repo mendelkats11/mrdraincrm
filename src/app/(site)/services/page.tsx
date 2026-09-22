@@ -2,16 +2,12 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { Wrench } from "lucide-react";
-import { getDb } from "@/lib/db/client";
-import { listPublishedServices } from "@/lib/website/services";
-import { getWebsiteSettings } from "@/lib/website/settings";
+import { services, siteSettings } from "@/lib/website/site-data";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import { MobileFloatingCta } from "@/components/site/mobile-floating-cta";
 import { CtaSection } from "@/components/site/sections/cta-section";
 import { breadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
 import { Breadcrumbs } from "@/components/site/breadcrumbs";
-
-export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Plumbing Services in Saskatoon | Mr. Drain Plumbing",
@@ -25,16 +21,8 @@ const CRUMBS = [
   { name: "Services", path: "/services" },
 ];
 
-export default async function ServicesPage() {
-  const db = getDb();
-  const [services, settings] = await Promise.all([
-    listPublishedServices(db),
-    getWebsiteSettings(db),
-  ]);
-
-  const backgroundUrl = settings.servicesBackgroundImageKey
-    ? publicAssetUrl(settings.servicesBackgroundImageKey)
-    : null;
+export default function ServicesPage() {
+  const settings = siteSettings;
 
   return (
     <>
@@ -43,13 +31,6 @@ export default async function ServicesPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema(CRUMBS)) }}
       />
       <div className="relative">
-        {backgroundUrl ? (
-          <>
-            <Image src={backgroundUrl} alt="" fill sizes="100vw" className="object-cover" />
-            <div className="absolute inset-0 bg-background/90" />
-          </>
-        ) : null}
-
         <Breadcrumbs crumbs={CRUMBS} />
         <div className="relative mx-auto max-w-6xl px-4 py-16">
           <div className="mb-10 flex flex-col items-center gap-2 text-center">

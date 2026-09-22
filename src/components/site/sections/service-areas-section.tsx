@@ -2,9 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { MapPin } from "lucide-react";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
-import type { serviceAreas as serviceAreasTable } from "@/lib/db/schema";
-
-type ServiceArea = typeof serviceAreasTable.$inferSelect;
+import type { ServiceArea } from "@/lib/website/site-data";
 
 export function ServiceAreasSection({
   serviceAreas,

@@ -3,10 +3,13 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { MapPin, Phone, Wrench } from "lucide-react";
-import { getDb } from "@/lib/db/client";
-import { getServiceAreaBySlug } from "@/lib/website/service-areas";
-import { getServiceBySlug } from "@/lib/website/services";
-import { getWebsiteSettings } from "@/lib/website/settings";
+import {
+  getServiceAreaBySlug,
+  getServiceBySlug,
+  serviceAreas,
+  services,
+  siteSettings,
+} from "@/lib/website/site-data";
 import { formatPhoneForDisplay } from "@/lib/phone";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import { MobileFloatingCta } from "@/components/site/mobile-floating-cta";
@@ -16,7 +19,14 @@ import { areaSeoName } from "@/lib/website/area-seo-name";
 import { Breadcrumbs } from "@/components/site/breadcrumbs";
 import { pageTitle } from "@/lib/seo/page-title";
 
-export const dynamic = "force-dynamic";
+// All 120 area×service combinations are prerendered at build time - fixed,
+// finite content with no live database means there's no reason for these
+// to be server-rendered on demand.
+export function generateStaticParams() {
+  return serviceAreas.flatMap((area) =>
+    services.map((service) => ({ slug: area.slug, service: service.slug })),
+  );
+}
 
 export async function generateMetadata({
   params,
@@ -24,10 +34,9 @@ export async function generateMetadata({
   params: Promise<{ slug: string; service: string }>;
 }): Promise<Metadata> {
   const { slug, service: serviceSlug } = await params;
-  const db = getDb();
   const [area, service] = await Promise.all([
-    getServiceAreaBySlug(db, slug),
-    getServiceBySlug(db, serviceSlug),
+    getServiceAreaBySlug(slug),
+    getServiceBySlug(serviceSlug),
   ]);
   if (!area || !service) return {};
   const areaName = areaSeoName(area);
@@ -66,13 +75,12 @@ export default async function ServiceAreaServicePage({
   params: Promise<{ slug: string; service: string }>;
 }) {
   const { slug, service: serviceSlug } = await params;
-  const db = getDb();
-  const [area, service, settings] = await Promise.all([
-    getServiceAreaBySlug(db, slug),
-    getServiceBySlug(db, serviceSlug),
-    getWebsiteSettings(db),
+  const [area, service] = await Promise.all([
+    getServiceAreaBySlug(slug),
+    getServiceBySlug(serviceSlug),
   ]);
   if (!area || !service) notFound();
+  const settings = siteSettings;
 
   const areaName = areaSeoName(area);
   // Falls back to the site default when this area has no CallRail number

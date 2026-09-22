@@ -2,16 +2,12 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { MapPin } from "lucide-react";
-import { getDb } from "@/lib/db/client";
-import { listPublishedServiceAreas } from "@/lib/website/service-areas";
-import { getWebsiteSettings } from "@/lib/website/settings";
+import { serviceAreas, siteSettings } from "@/lib/website/site-data";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import { MobileFloatingCta } from "@/components/site/mobile-floating-cta";
 import { CtaSection } from "@/components/site/sections/cta-section";
 import { breadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
 import { Breadcrumbs } from "@/components/site/breadcrumbs";
-
-export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Service Areas | Mr. Drain Plumbing",
@@ -24,12 +20,9 @@ const CRUMBS = [
   { name: "Service Areas", path: "/service-areas" },
 ];
 
-export default async function ServiceAreasPage() {
-  const db = getDb();
-  const [areas, settings] = await Promise.all([
-    listPublishedServiceAreas(db),
-    getWebsiteSettings(db),
-  ]);
+export default function ServiceAreasPage() {
+  const areas = serviceAreas;
+  const settings = siteSettings;
 
   return (
     <>

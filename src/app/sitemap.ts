@@ -1,15 +1,6 @@
 import type { MetadataRoute } from "next";
-import { getDb } from "@/lib/db/client";
-import { listPublishedServices } from "@/lib/website/services";
-import { listPublishedServiceAreas } from "@/lib/website/service-areas";
-import { listPublishedPortfolioJobs } from "@/lib/website/portfolio-jobs";
-import { getWebsiteSettings } from "@/lib/website/settings";
+import { services, serviceAreas, portfolioJobs, siteSettings } from "@/lib/website/site-data";
 import { getPublicSiteOrigin } from "@/lib/site-url";
-
-// Regenerate at most hourly — services/service-areas/reviews toggle on and
-// off via the admin CMS, and this keeps the sitemap from silently drifting
-// stale for long after a change without hitting the DB on every crawl.
-export const revalidate = 3600;
 
 /**
  * The public site's sitemap — SEO audit (Sep 2026) P0 finding: mrdrainsk.com
@@ -18,52 +9,59 @@ export const revalidate = 3600;
  * src/app/(site)/) because Next's sitemap.ts file convention binds to the
  * literal /sitemap.xml path regardless of route groups; src/proxy.ts passes
  * this straight through unmodified for the public host, and app.<host>
- * requests never reach it (proxy rewrites them to /app/sitemap.xml first,
- * which doesn't exist — fine, since the app host getting an X-Robots-Tag
- * noindex header, see proxy.ts, is what actually needs to keep it out of
- * search results).
+ * requests never reach it.
+ *
+ * lastModified is a fixed build-time constant, not per-request "now" — a
+ * second SEO audit (Sep 2026) P2 finding was that this sitemap had no
+ * lastmod at all; content is now static in code, so "last modified" is
+ * genuinely "the last time this file was edited," which this constant
+ * should be bumped to whenever real content changes.
  */
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const db = getDb();
+const CONTENT_LAST_UPDATED = new Date("2026-09-22");
+
+export default function sitemap(): MetadataRoute.Sitemap {
   const origin = getPublicSiteOrigin();
-  const [services, areas, jobs, settings] = await Promise.all([
-    listPublishedServices(db),
-    listPublishedServiceAreas(db),
-    listPublishedPortfolioJobs(db),
-    getWebsiteSettings(db),
-  ]);
+  const lastModified = CONTENT_LAST_UPDATED;
 
   const staticPages: MetadataRoute.Sitemap = [
-    { url: `${origin}/`, changeFrequency: "weekly", priority: 1 },
-    { url: `${origin}/services`, changeFrequency: "monthly", priority: 0.9 },
-    { url: `${origin}/service-areas`, changeFrequency: "monthly", priority: 0.9 },
-    { url: `${origin}/contact`, changeFrequency: "yearly", priority: 0.7 },
-    { url: `${origin}/about`, changeFrequency: "yearly", priority: 0.5 },
-    { url: `${origin}/gallery`, changeFrequency: "monthly", priority: 0.4 },
-    { url: `${origin}/terms`, changeFrequency: "yearly", priority: 0.1 },
-    { url: `${origin}/privacy`, changeFrequency: "yearly", priority: 0.1 },
+    { url: `${origin}/`, lastModified, changeFrequency: "monthly", priority: 1 },
+    { url: `${origin}/services`, lastModified, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${origin}/service-areas`, lastModified, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${origin}/contact`, lastModified, changeFrequency: "yearly", priority: 0.7 },
+    { url: `${origin}/about`, lastModified, changeFrequency: "yearly", priority: 0.5 },
+    { url: `${origin}/gallery`, lastModified, changeFrequency: "yearly", priority: 0.4 },
+    { url: `${origin}/terms`, lastModified, changeFrequency: "yearly", priority: 0.1 },
+    { url: `${origin}/privacy`, lastModified, changeFrequency: "yearly", priority: 0.1 },
   ];
 
-  // Only listed when the admin has actually turned the page on — a
-  // sitemap entry for a page that 404s is its own small crawl problem.
-  if (settings.reviewsPageEnabled) {
-    staticPages.push({ url: `${origin}/reviews`, changeFrequency: "weekly", priority: 0.6 });
+  // Only listed when the page is actually turned on — a sitemap entry for
+  // a page that 404s is its own small crawl problem.
+  if (siteSettings.reviewsPageEnabled) {
+    staticPages.push({
+      url: `${origin}/reviews`,
+      lastModified,
+      changeFrequency: "yearly",
+      priority: 0.6,
+    });
   }
 
   const servicePages: MetadataRoute.Sitemap = services.map((service) => ({
     url: `${origin}/services/${service.slug}`,
-    changeFrequency: "monthly",
+    lastModified,
+    changeFrequency: "yearly",
     priority: 0.8,
   }));
 
-  const areaPages: MetadataRoute.Sitemap = areas.map((area) => ({
+  const areaPages: MetadataRoute.Sitemap = serviceAreas.map((area) => ({
     url: `${origin}/service-areas/${area.slug}`,
-    changeFrequency: "monthly",
+    lastModified,
+    changeFrequency: "yearly",
     priority: 0.7,
   }));
 
-  const jobPages: MetadataRoute.Sitemap = jobs.map((job) => ({
+  const jobPages: MetadataRoute.Sitemap = portfolioJobs.map((job) => ({
     url: `${origin}/gallery/${job.slug}`,
+    lastModified,
     changeFrequency: "yearly",
     priority: 0.3,
   }));
@@ -71,10 +69,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Every service × area combination — each is a real, independently
   // rankable "{service} in {area}" page (src/app/(site)/service-areas/
   // [slug]/[service]/page.tsx), not a duplicate of /services/{slug}.
-  const areaServicePages: MetadataRoute.Sitemap = areas.flatMap((area) =>
+  const areaServicePages: MetadataRoute.Sitemap = serviceAreas.flatMap((area) =>
     services.map((service) => ({
       url: `${origin}/service-areas/${area.slug}/${service.slug}`,
-      changeFrequency: "monthly" as const,
+      lastModified,
+      changeFrequency: "yearly" as const,
       priority: 0.6,
     })),
   );

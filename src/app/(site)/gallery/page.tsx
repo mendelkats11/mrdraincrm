@@ -1,17 +1,12 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { getDb } from "@/lib/db/client";
-import { listPublishedPortfolioJobs } from "@/lib/website/portfolio-jobs";
-import { listPublishedGalleryItems } from "@/lib/website/gallery";
-import { getWebsiteSettings } from "@/lib/website/settings";
+import { portfolioJobs, galleryPhotos, siteSettings } from "@/lib/website/site-data";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import { MobileFloatingCta } from "@/components/site/mobile-floating-cta";
 import { CtaSection } from "@/components/site/sections/cta-section";
 import { breadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
 import { Breadcrumbs } from "@/components/site/breadcrumbs";
-
-export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Gallery | Mr. Drain Plumbing",
@@ -24,13 +19,10 @@ const CRUMBS = [
   { name: "Gallery", path: "/gallery" },
 ];
 
-export default async function GalleryPage() {
-  const db = getDb();
-  const [jobs, photos, settings] = await Promise.all([
-    listPublishedPortfolioJobs(db),
-    listPublishedGalleryItems(db),
-    getWebsiteSettings(db),
-  ]);
+export default function GalleryPage() {
+  const jobs = portfolioJobs;
+  const photos = galleryPhotos;
+  const settings = siteSettings;
 
   return (
     <>

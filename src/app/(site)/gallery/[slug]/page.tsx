@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin, Wrench } from "lucide-react";
-import { getDb } from "@/lib/db/client";
-import { getPortfolioJobBySlug } from "@/lib/website/portfolio-jobs";
-import { getService } from "@/lib/website/services";
-import { getServiceArea } from "@/lib/website/service-areas";
-import { getWebsiteSettings } from "@/lib/website/settings";
+import { MapPin } from "lucide-react";
+import {
+  getPortfolioJobBySlug,
+  getServiceAreaBySlug,
+  portfolioJobs,
+  siteSettings,
+} from "@/lib/website/site-data";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import { MobileFloatingCta } from "@/components/site/mobile-floating-cta";
 import { CtaSection } from "@/components/site/sections/cta-section";
@@ -15,7 +16,9 @@ import { breadcrumbSchema } from "@/lib/seo/breadcrumb-schema";
 import { Breadcrumbs } from "@/components/site/breadcrumbs";
 import { pageTitle } from "@/lib/seo/page-title";
 
-export const dynamic = "force-dynamic";
+export function generateStaticParams() {
+  return portfolioJobs.map((job) => ({ slug: job.slug }));
+}
 
 export async function generateMetadata({
   params,
@@ -23,7 +26,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const job = await getPortfolioJobBySlug(getDb(), slug);
+  const job = await getPortfolioJobBySlug(slug);
   if (!job) return {};
   return {
     title: pageTitle(job.title),
@@ -39,17 +42,11 @@ export async function generateMetadata({
 // in an unlinked grid tile.
 export default async function PortfolioJobPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const db = getDb();
-  const [job, settings] = await Promise.all([
-    getPortfolioJobBySlug(db, slug),
-    getWebsiteSettings(db),
-  ]);
+  const job = await getPortfolioJobBySlug(slug);
   if (!job) notFound();
+  const settings = siteSettings;
 
-  const [service, serviceArea] = await Promise.all([
-    job.serviceId ? getService(db, job.serviceId) : null,
-    job.serviceAreaId ? getServiceArea(db, job.serviceAreaId) : null,
-  ]);
+  const serviceArea = job.serviceAreaSlug ? await getServiceAreaBySlug(job.serviceAreaSlug) : null;
 
   const crumbs = [
     { name: "Home", path: "/" },
@@ -80,32 +77,19 @@ export default async function PortfolioJobPage({ params }: { params: Promise<{ s
       <div className="mx-auto max-w-3xl px-4 py-12">
         <h1 className="text-3xl font-bold text-brand-navy sm:text-4xl">{job.title}</h1>
 
-        {service || serviceArea ? (
+        {serviceArea ? (
           <div className="mt-3 flex flex-wrap gap-2">
-            {service ? (
-              <Link
-                href={`/services/${service.slug}`}
-                className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm text-foreground/80 hover:border-primary hover:text-primary"
-              >
-                <Wrench className="size-3.5" aria-hidden="true" />
-                {service.name}
-              </Link>
-            ) : null}
-            {serviceArea ? (
-              <Link
-                href={`/service-areas/${serviceArea.slug}`}
-                className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm text-foreground/80 hover:border-primary hover:text-primary"
-              >
-                <MapPin className="size-3.5" aria-hidden="true" />
-                {serviceArea.name}
-              </Link>
-            ) : null}
+            <Link
+              href={`/service-areas/${serviceArea.slug}`}
+              className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm text-foreground/80 hover:border-primary hover:text-primary"
+            >
+              <MapPin className="size-3.5" aria-hidden="true" />
+              {serviceArea.name}
+            </Link>
           </div>
         ) : null}
 
-        {job.description ? (
-          <p className="mt-6 whitespace-pre-line text-lg text-foreground/80">{job.description}</p>
-        ) : null}
+        <p className="mt-6 whitespace-pre-line text-lg text-foreground/80">{job.description}</p>
       </div>
 
       <CtaSection

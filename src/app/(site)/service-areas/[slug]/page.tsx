@@ -3,12 +3,14 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { MapPin, Phone, Wrench } from "lucide-react";
-import { getDb } from "@/lib/db/client";
-import { getServiceAreaBySlug } from "@/lib/website/service-areas";
-import { listPublishedServices } from "@/lib/website/services";
-import { getWebsiteSettings } from "@/lib/website/settings";
+import {
+  getServiceAreaBySlug,
+  listPublishedServices,
+  serviceAreas,
+  siteSettings,
+  listPublishedPortfolioJobsForServiceArea,
+} from "@/lib/website/site-data";
 import { formatPhoneForDisplay } from "@/lib/phone";
-import { listPublishedPortfolioJobsForServiceArea } from "@/lib/website/portfolio-jobs";
 import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 import { MobileFloatingCta } from "@/components/site/mobile-floating-cta";
 import { GallerySection } from "@/components/site/sections/gallery-section";
@@ -21,7 +23,9 @@ import { Breadcrumbs } from "@/components/site/breadcrumbs";
 import { pageTitle } from "@/lib/seo/page-title";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 
-export const dynamic = "force-dynamic";
+export function generateStaticParams() {
+  return serviceAreas.map((area) => ({ slug: area.slug }));
+}
 
 export async function generateMetadata({
   params,
@@ -29,11 +33,11 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const area = await getServiceAreaBySlug(getDb(), slug);
+  const area = await getServiceAreaBySlug(slug);
   if (!area) return {};
   return {
-    title: area.seoTitle || pageTitle(`Plumber in ${areaSeoName(area)}`),
-    description: area.metaDescription || area.copy || undefined,
+    title: pageTitle(`Plumber in ${areaSeoName(area)}`),
+    description: area.copy,
     alternates: { canonical: `/service-areas/${area.slug}` },
     ...(area.images[0] ? { openGraph: { images: [publicAssetUrl(area.images[0])] } } : {}),
   };
@@ -45,15 +49,11 @@ export default async function ServiceAreaDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const db = getDb();
-  const [area, settings, services] = await Promise.all([
-    getServiceAreaBySlug(db, slug),
-    getWebsiteSettings(db),
-    listPublishedServices(db),
-  ]);
+  const [area, services] = await Promise.all([getServiceAreaBySlug(slug), listPublishedServices()]);
   if (!area) notFound();
+  const settings = siteSettings;
 
-  const areaJobs = await listPublishedPortfolioJobsForServiceArea(db, area.id);
+  const areaJobs = await listPublishedPortfolioJobsForServiceArea(area.slug);
 
   // Falls back to the site default when this area has no CallRail number
   // of its own — docs/PROJECT_SPEC.md §2.4.

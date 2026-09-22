@@ -1,15 +1,13 @@
 import type { Metadata } from "next";
-import { getDb } from "@/lib/db/client";
-import { getWebsiteSettings } from "@/lib/website/settings";
-import { listActiveHomepageSections } from "@/lib/website/homepage";
-import { listPublishedServices } from "@/lib/website/services";
-import { listPublishedServiceAreas } from "@/lib/website/service-areas";
-import { listPublishedPortfolioJobs } from "@/lib/website/portfolio-jobs";
-import { listPublishedReviews } from "@/lib/website/reviews";
-import { renderHomepageSection } from "@/components/site/homepage-section-renderer";
+import { siteSettings, services, serviceAreas, portfolioJobs } from "@/lib/website/site-data";
+import { HeroSection } from "@/components/site/sections/hero-section";
+import { ServicesSection } from "@/components/site/sections/services-section";
+import { WhyMrDrainSection } from "@/components/site/sections/why-mr-drain-section";
+import { ServiceAreasSection } from "@/components/site/sections/service-areas-section";
+import { GallerySection } from "@/components/site/sections/gallery-section";
+import { CtaSection } from "@/components/site/sections/cta-section";
 import { MobileFloatingCta } from "@/components/site/mobile-floating-cta";
-
-export const dynamic = "force-dynamic";
+import { publicAssetUrl } from "@/lib/storage/public-asset-upload";
 
 // SEO audit (Sep 2026) P0 finding: the homepage had no metadata of its own
 // and was falling back to the root layout's generic
@@ -36,24 +34,25 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function HomePage() {
-  const db = getDb();
-  const [settings, sections, services, serviceAreas, portfolioJobs, reviews] = await Promise.all([
-    getWebsiteSettings(db),
-    listActiveHomepageSections(db),
-    listPublishedServices(db),
-    listPublishedServiceAreas(db),
-    listPublishedPortfolioJobs(db),
-    listPublishedReviews(db),
-  ]);
-  const data = { settings, services, serviceAreas, portfolioJobs, reviews };
+export default function HomePage() {
+  // Real job photos for the hero collage - same three used on /gallery's
+  // "Our Work" section, picked for visual variety.
+  const heroPhotos = portfolioJobs.map((job) => publicAssetUrl(job.coverImageKey));
 
   return (
     <>
-      {sections.map((section) => (
-        <div key={section.id}>{renderHomepageSection(section, data)}</div>
-      ))}
-      <MobileFloatingCta trackingNumber={settings.defaultCallrailTrackingNumber} />
+      <HeroSection
+        businessName={siteSettings.businessName}
+        tagline={siteSettings.tagline}
+        trackingNumber={siteSettings.defaultCallrailTrackingNumber}
+        photoUrls={heroPhotos}
+      />
+      <ServicesSection services={services} limit={6} />
+      <WhyMrDrainSection />
+      <ServiceAreasSection serviceAreas={serviceAreas} limit={6} />
+      <GallerySection jobs={portfolioJobs} limit={8} />
+      <CtaSection trackingNumber={siteSettings.defaultCallrailTrackingNumber} />
+      <MobileFloatingCta trackingNumber={siteSettings.defaultCallrailTrackingNumber} />
     </>
   );
 }

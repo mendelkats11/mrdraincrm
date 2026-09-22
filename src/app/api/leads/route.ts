@@ -1,43 +1,23 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
-import { getDb } from "@/lib/db/client";
-import { recordActivity } from "@/lib/audit/activity";
-import {
-  LEAD_SUBMISSION_ATTEMPT_ACTION,
-  LEAD_SUBMISSION_IP_ENTITY_TYPE,
-  LEAD_SUBMISSION_MAX_ATTEMPTS,
-  countRecentLeadSubmissions,
-  deterministicIdFrom,
-} from "@/lib/auth/rate-limit";
 import { normalizePhone, formatPhoneForDisplay } from "@/lib/phone";
-import { createLeadFromPublicSubmission } from "@/lib/crm/leads";
-import { sendTrackedEmail } from "@/lib/email/send-tracked-email";
+import { getEmailProvider } from "@/lib/email";
 import { leadNotificationEmailTemplate } from "@/lib/email/templates";
-import { notifyActiveUsers } from "@/lib/notifications/notifications";
+import { serviceAreas } from "@/lib/website/site-data";
 
-// Comma-separated list of internal addresses that get an alert for every
-// new lead — set once, read server-side only. If unset, no notification is
-// sent (the lead is still created either way; this is a courtesy alert,
-// not part of the lead's own correctness).
-function leadNotificationRecipients(): string[] {
-  return (process.env.LEAD_NOTIFICATION_EMAILS || "")
-    .split(",")
-    .map((email) => email.trim())
-    .filter(Boolean);
-}
-
-// The one genuinely public, unauthenticated write path in the system today
-// (docs/IMPLEMENTATION_PLAN.md §18) — hardened at the level appropriate to
-// Phase 4 (strict validation, rate limiting, generic errors, no existence
-// disclosure), not to Phase 18's full security-hardening pass. A Route
-// Handler rather than a Server Action per the route already listed in
-// docs/IMPLEMENTATION_PLAN.md §10.
+// The site no longer has a database or CRM behind it (Sep 2026 - see
+// docs/CLAUDE.md's project overview) - a submitted lead's only destination
+// now is a direct email to the business, not a stored `leads` row. Nothing
+// here is tracked or persisted anywhere; a failed email send means the
+// submission is genuinely lost, which is why the recipient list is
+// validated at startup-adjacent time (first request) rather than silently
+// doing nothing.
 
 const publicLeadSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(200),
   phone: z.string().trim().min(1, "Phone is required").max(32),
   email: z.string().trim().min(1, "Email is required").max(320).email(),
-  serviceAreaId: z.union([z.literal(""), z.string().uuid()]).optional(),
+  serviceAreaId: z.string().optional(),
   issueDescription: z.string().trim().min(1, "Please describe the issue").max(2000),
   emergency: z.boolean().optional(),
 });
@@ -50,14 +30,6 @@ function errorResponse(message: string, status: number) {
 }
 
 function getClientIp(request: NextRequest): string {
-  // x-nf-client-connection-ip is set by Netlify's edge from the actual TCP
-  // connection and cannot be overridden by the client — checked first for
-  // that reason. x-forwarded-for is checked second only as a local-dev
-  // fallback (Netlify not in front of the request): a client can freely set
-  // x-forwarded-for on the initial request, and if the platform in front of
-  // this handler merely appends to rather than replaces that header, naively
-  // trusting its first entry lets an attacker rotate a fake value on every
-  // request and defeat the per-IP rate limit below entirely.
   const nfClientIp = request.headers.get("x-nf-client-connection-ip");
   if (nfClientIp) return nfClientIp;
   const forwardedFor = request.headers.get("x-forwarded-for");
@@ -65,31 +37,33 @@ function getClientIp(request: NextRequest): string {
   return "unknown";
 }
 
+// In-memory per-IP rate limit — sufficient on Hostinger's persistent Node
+// process (unlike a serverless function, this module-level state actually
+// survives between requests), and there's no database left to back a
+// durable version with. Resets if the process restarts; that's an
+// acceptable tradeoff for a low-traffic lead form, not a security boundary.
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+const RATE_LIMIT_MAX_ATTEMPTS = 5;
+const recentAttemptsByIp = new Map<string, number[]>();
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const attempts = (recentAttemptsByIp.get(ip) ?? []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+  attempts.push(now);
+  recentAttemptsByIp.set(ip, attempts);
+  return attempts.length > RATE_LIMIT_MAX_ATTEMPTS;
+}
+
+function leadNotificationRecipients(): string[] {
+  return (process.env.LEAD_NOTIFICATION_EMAILS || "")
+    .split(",")
+    .map((email) => email.trim())
+    .filter(Boolean);
+}
+
 export async function POST(request: NextRequest) {
-  const db = getDb();
-  const ipEntityId = deterministicIdFrom(getClientIp(request));
-
-  // Every incoming request counts against the limit before any validation
-  // or DB write beyond this tracking row — a flood of malformed payloads is
-  // rate-limited exactly like a flood of well-formed ones.
-  let priorAttempts: number;
-  try {
-    priorAttempts = await countRecentLeadSubmissions(db, ipEntityId);
-  } catch {
-    return errorResponse(GENERIC_ERROR, 500);
-  }
-  if (priorAttempts >= LEAD_SUBMISSION_MAX_ATTEMPTS) {
+  if (isRateLimited(getClientIp(request))) {
     return errorResponse(RATE_LIMITED_ERROR, 429);
-  }
-
-  try {
-    await recordActivity(db, {
-      entityType: LEAD_SUBMISSION_IP_ENTITY_TYPE,
-      entityId: ipEntityId,
-      action: LEAD_SUBMISSION_ATTEMPT_ACTION,
-    });
-  } catch {
-    return errorResponse(GENERIC_ERROR, 500);
   }
 
   let body: unknown;
@@ -109,63 +83,30 @@ export async function POST(request: NextRequest) {
     return errorResponse(GENERIC_ERROR, 400);
   }
 
-  const email = parsed.data.email ? parsed.data.email.toLowerCase() : null;
-  let lead: Awaited<ReturnType<typeof createLeadFromPublicSubmission>>;
-  try {
-    lead = await createLeadFromPublicSubmission(db, {
-      name: parsed.data.name,
-      phone,
-      email,
-      serviceAreaId: parsed.data.serviceAreaId || null,
-      issueDescription: parsed.data.issueDescription,
-      emergency: parsed.data.emergency ?? false,
-      landingPage: request.headers.get("referer") || "/contact",
-    });
-  } catch (error) {
-    // Never leak DB/internal error detail to the public response — logged
-    // server-side only.
-    console.error("Public lead submission failed:", error);
+  const recipients = leadNotificationRecipients();
+  if (recipients.length === 0) {
+    console.error("Public lead submission failed: LEAD_NOTIFICATION_EMAILS is not configured.");
     return errorResponse(GENERIC_ERROR, 500);
   }
 
-  // Dashboard bell notification — docs/PROJECT_SPEC.md §24 ("new quote
-  // request", "emergency request"). Independent of the email alert below
-  // (which depends on LEAD_NOTIFICATION_EMAILS being configured); this
-  // always fires so the in-app bell works even if email isn't set up.
-  await notifyActiveUsers(db, {
-    type: parsed.data.emergency ? "emergency_request" : "new_lead",
-    title: parsed.data.emergency
-      ? `Emergency request from ${parsed.data.name}`
-      : `New quote request from ${parsed.data.name}`,
-    body: parsed.data.issueDescription,
-    entityType: "lead",
-    entityId: lead.id,
+  const area = parsed.data.serviceAreaId
+    ? serviceAreas.find((a) => a.id === parsed.data.serviceAreaId)
+    : undefined;
+
+  const notification = leadNotificationEmailTemplate({
+    name: parsed.data.name,
+    phone: formatPhoneForDisplay(phone.e164),
+    email: parsed.data.email.toLowerCase(),
+    issueDescription: parsed.data.issueDescription,
+    emergency: parsed.data.emergency ?? false,
+    sourceDetails: area ? `Service area: ${area.name}` : null,
   });
 
-  // Best-effort internal alert — the lead is already safely created above
-  // regardless of whether this succeeds; a Resend hiccup must never turn
-  // into a failed public submission (sendTrackedEmail already catches and
-  // logs internally, its result is deliberately ignored here). Still
-  // awaited, not fire-and-forget: Netlify Functions can freeze/terminate
-  // the execution context right after the response is returned, so an
-  // un-awaited send could simply never happen.
-  const recipients = leadNotificationRecipients();
-  if (recipients.length > 0) {
-    const notification = leadNotificationEmailTemplate({
-      name: parsed.data.name,
-      phone: formatPhoneForDisplay(phone.e164),
-      email,
-      issueDescription: parsed.data.issueDescription,
-      emergency: parsed.data.emergency ?? false,
-      sourceDetails: lead.sourceDetails,
-    });
-    await sendTrackedEmail(db, {
-      to: recipients,
-      ...notification,
-      template: "lead_notification",
-      relatedEntityType: "lead",
-      relatedEntityId: lead.id,
-    });
+  try {
+    await getEmailProvider().send({ to: recipients, ...notification });
+  } catch (error) {
+    console.error("Public lead submission failed to send:", error);
+    return errorResponse(GENERIC_ERROR, 500);
   }
 
   return NextResponse.json({ ok: true });

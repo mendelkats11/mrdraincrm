@@ -1,16 +1,14 @@
 import type { Metadata } from "next";
-import { getDb } from "@/lib/db/client";
-import { getWebsiteSettings } from "@/lib/website/settings";
-import { listPublishedServiceAreas } from "@/lib/website/service-areas";
+import { siteSettings, serviceAreas } from "@/lib/website/site-data";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { localBusinessSchema } from "@/lib/seo/local-business-schema";
 
 // Public marketing site shell — header/footer/theme for every page under
-// src/app/(site)/*. Reads live settings (business name, tagline source,
-// default Call Now number), so this must stay dynamic — see the identical
-// reasoning already established on the pre-Phase-15 contact page.
-export const dynamic = "force-dynamic";
+// src/app/(site)/*. Content is static (see src/lib/website/site-data.ts),
+// so this no longer needs to stay dynamic for a live settings fetch — kept
+// as a plain server component regardless, since nothing here is
+// user-specific.
 
 // A layout-level Open Graph image default — SEO audit (Sep 2026) finding:
 // most pages had no og:image at all, so a link shared to Slack/iMessage/
@@ -29,17 +27,11 @@ function getAppUrl(): string {
   return process.env.APP_URL || "http://app.localhost:3000";
 }
 
-export default async function SiteLayout({ children }: LayoutProps<"/">) {
-  const db = getDb();
-  const [settings, serviceAreas] = await Promise.all([
-    getWebsiteSettings(db),
-    listPublishedServiceAreas(db),
-  ]);
-
+export default function SiteLayout({ children }: LayoutProps<"/">) {
   const schema = localBusinessSchema({
-    businessName: settings.businessName,
-    businessAddress: settings.businessAddress,
-    telephone: settings.defaultCallrailTrackingNumber,
+    businessName: siteSettings.businessName,
+    businessAddress: siteSettings.businessAddress,
+    telephone: siteSettings.defaultCallrailTrackingNumber,
     // "Saskatoon" first — every service area on the site is either a
     // Saskatoon neighbourhood or an immediately adjacent town, but none of
     // them is literally named "Saskatoon," and that's the term with by far
@@ -55,18 +47,18 @@ export default async function SiteLayout({ children }: LayoutProps<"/">) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
       />
       <SiteHeader
-        trackingNumber={settings.defaultCallrailTrackingNumber}
+        trackingNumber={siteSettings.defaultCallrailTrackingNumber}
         serviceAreas={serviceAreas.map((area) => ({ slug: area.slug, name: area.name }))}
-        reviewsEnabled={settings.reviewsPageEnabled}
+        reviewsEnabled={siteSettings.reviewsPageEnabled}
       />
       <main className="flex-1 pb-20 sm:pb-0">{children}</main>
       <SiteFooter
-        businessName={settings.businessName}
-        businessAddress={settings.businessAddress}
-        contactEmail={settings.publicContactEmail}
-        trackingNumber={settings.defaultCallrailTrackingNumber}
-        footerTagline={settings.footerTagline}
-        reviewsEnabled={settings.reviewsPageEnabled}
+        businessName={siteSettings.businessName}
+        businessAddress={siteSettings.businessAddress}
+        contactEmail={siteSettings.publicContactEmail}
+        trackingNumber={siteSettings.defaultCallrailTrackingNumber}
+        footerTagline={siteSettings.footerTagline}
+        reviewsEnabled={siteSettings.reviewsPageEnabled}
         appUrl={getAppUrl()}
         serviceAreas={serviceAreas.map((area) => ({
           slug: area.slug,
