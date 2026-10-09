@@ -1,12 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-// Regression test for a real production incident: register() used to bail
-// out unless NEXT_RUNTIME was *exactly* "nodejs", which silently disabled
-// the entire reminders + CallRail-poll scheduler for days with zero error
-// output, the moment Hostinger's process launcher left NEXT_RUNTIME unset
-// or gave it something other than the literal string "nodejs". The fix
-// only excludes the one runtime that genuinely can't run this code (Edge),
-// which is what these tests pin down.
+// register() is intentionally a no-op: the reminders + CallRail-poll
+// scheduler needs a live database, and the public site no longer has one.
+// These tests pin that down so a background job can't silently start (and
+// start failing against a missing database) in any runtime.
 describe("instrumentation.register", () => {
   const originalEnv = process.env.NEXT_RUNTIME;
 
@@ -17,39 +14,19 @@ describe("instrumentation.register", () => {
     vi.resetModules();
   });
 
-  it("arms the scheduler when NEXT_RUNTIME is 'nodejs'", async () => {
-    process.env.NEXT_RUNTIME = "nodejs";
-    const setIntervalSpy = vi.spyOn(globalThis, "setInterval").mockReturnValue(0 as never);
-    const setTimeoutSpy = vi.spyOn(globalThis, "setTimeout").mockReturnValue(0 as never);
+  it.each(["nodejs", "edge", undefined])(
+    "does not arm any background timers when NEXT_RUNTIME is %s",
+    async (runtime) => {
+      if (runtime === undefined) delete process.env.NEXT_RUNTIME;
+      else process.env.NEXT_RUNTIME = runtime;
+      const setIntervalSpy = vi.spyOn(globalThis, "setInterval").mockReturnValue(0 as never);
+      const setTimeoutSpy = vi.spyOn(globalThis, "setTimeout").mockReturnValue(0 as never);
 
-    const { register } = await import("@/instrumentation");
-    register();
+      const { register } = await import("@/instrumentation");
+      register();
 
-    expect(setTimeoutSpy).toHaveBeenCalled();
-    expect(setIntervalSpy).toHaveBeenCalled();
-  });
-
-  it("arms the scheduler when NEXT_RUNTIME is unset — the exact production failure mode", async () => {
-    delete process.env.NEXT_RUNTIME;
-    const setIntervalSpy = vi.spyOn(globalThis, "setInterval").mockReturnValue(0 as never);
-    const setTimeoutSpy = vi.spyOn(globalThis, "setTimeout").mockReturnValue(0 as never);
-
-    const { register } = await import("@/instrumentation");
-    register();
-
-    expect(setTimeoutSpy).toHaveBeenCalled();
-    expect(setIntervalSpy).toHaveBeenCalled();
-  });
-
-  it("does not arm the scheduler on the Edge runtime", async () => {
-    process.env.NEXT_RUNTIME = "edge";
-    const setIntervalSpy = vi.spyOn(globalThis, "setInterval").mockReturnValue(0 as never);
-    const setTimeoutSpy = vi.spyOn(globalThis, "setTimeout").mockReturnValue(0 as never);
-
-    const { register } = await import("@/instrumentation");
-    register();
-
-    expect(setTimeoutSpy).not.toHaveBeenCalled();
-    expect(setIntervalSpy).not.toHaveBeenCalled();
-  });
+      expect(setTimeoutSpy).not.toHaveBeenCalled();
+      expect(setIntervalSpy).not.toHaveBeenCalled();
+    },
+  );
 });
