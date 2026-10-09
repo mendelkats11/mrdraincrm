@@ -32,7 +32,10 @@ export const metadata: Metadata = {
   // property for https://mrdrainsk.com, Sep 2026) - proves ownership so
   // "Request Indexing" and crawl-stats access can be used.
   verification: {
-    google: "vlgpNcwltgBvH0qavw97cgUErtu9Kktn52xtvaVsIjE",
+    google: [
+      "vlgpNcwltgBvH0qavw97cgUErtu9Kktn52xtvaVsIjE",
+      "6XLuHVe8trA3edtZ31vdYCbNVxpVPWut6NiAsYE-PiU",
+    ],
   },
 };
 
