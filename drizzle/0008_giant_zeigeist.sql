@@ -1,1 +1,0 @@
-ALTER TABLE "app_settings" ADD COLUMN "include_tax_in_revenue" boolean DEFAULT true NOT NULL;

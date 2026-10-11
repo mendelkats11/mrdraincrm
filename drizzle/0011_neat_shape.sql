@@ -1,1 +1,0 @@
-ALTER TABLE "calls" ADD COLUMN "direction" text DEFAULT 'inbound' NOT NULL;

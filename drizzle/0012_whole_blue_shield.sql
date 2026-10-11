@@ -1,1 +1,0 @@
-ALTER TABLE "app_settings" ADD COLUMN "owner_callback_phone_number" text;

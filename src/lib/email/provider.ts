@@ -1,6 +1,5 @@
-// Provider-agnostic email interface — docs/ARCHITECTURE.md §13,
-// docs/IMPLEMENTATION_PLAN.md §9.1. Resend is the production implementation
-// (Phase 14, src/lib/email/resend-provider.ts); getEmailProvider() below
+// Provider-agnostic email interface. Resend is the production implementation
+// (src/lib/email/resend-provider.ts); getEmailProvider() below
 // falls back to a console-logging dev implementation when no Resend API
 // key is configured.
 

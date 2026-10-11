@@ -19,7 +19,6 @@ export function SiteFooter({
   trackingNumber,
   footerTagline,
   reviewsEnabled,
-  appUrl,
   serviceAreas,
 }: {
   businessName: string | null;
@@ -28,7 +27,6 @@ export function SiteFooter({
   trackingNumber: string | null;
   footerTagline: string | null;
   reviewsEnabled: boolean;
-  appUrl: string;
   /** Every published area's own NAP override, so this client component can
    *  resolve which one applies from the current URL on every navigation —
    *  a shared server layout can't do this reactively, since Next.js reuses
@@ -119,10 +117,6 @@ export function SiteFooter({
             <Link href="/privacy" className="text-white/40 hover:text-white/70">
               Privacy Policy
             </Link>
-            {/* Subtle, not part of primary navigation — docs/PROJECT_SPEC.md §2.3. */}
-            <a href={appUrl} className="text-white/40 hover:text-white/70">
-              Log In
-            </a>
           </div>
         </div>
       </div>

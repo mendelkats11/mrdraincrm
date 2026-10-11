@@ -5,8 +5,7 @@ const RESEND_API_URL = "https://api.resend.com/emails";
 /**
  * Talks to Resend's REST API directly via fetch rather than pulling in the
  * `resend` SDK package — the request shape is small and stable enough that
- * a new dependency isn't worth it (docs/ARCHITECTURE.md §1's "inexpensive,
- * provider-portable" principle; swapping providers later means changing
+ * a new dependency isn't worth it (swapping providers later means changing
  * this one file either way).
  */
 export class ResendEmailProvider implements EmailProvider {

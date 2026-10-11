@@ -1,1 +1,0 @@
-ALTER TYPE "public"."quote_status" ADD VALUE 'cancelled';

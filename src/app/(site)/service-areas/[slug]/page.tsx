@@ -56,7 +56,7 @@ export default async function ServiceAreaDetailPage({
   const areaJobs = await listPublishedPortfolioJobsForServiceArea(area.slug);
 
   // Falls back to the site default when this area has no CallRail number
-  // of its own — docs/PROJECT_SPEC.md §2.4.
+  // of its own.
   const trackingNumber = area.callrailTrackingNumber || settings.defaultCallrailTrackingNumber;
 
   const crumbs = [

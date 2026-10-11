@@ -1,1 +1,0 @@
-ALTER TABLE "app_settings" ADD COLUMN "reviews_page_enabled" boolean DEFAULT false NOT NULL;

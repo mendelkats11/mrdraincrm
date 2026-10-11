@@ -1,6 +1,6 @@
 import { type CountryCode, parsePhoneNumberFromString } from "libphonenumber-js";
 
-// Service areas are all in Saskatchewan (docs/PROJECT_SPEC.md §4) — CA is a
+// Service areas are all in Saskatchewan - CA is a
 // reasonable default for numbers entered without a country code.
 const DEFAULT_COUNTRY: CountryCode = "CA";
 

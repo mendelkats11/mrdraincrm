@@ -1,6 +1,5 @@
-// Provider-agnostic file storage interface — docs/ARCHITECTURE.md §11,
-// docs/IMPLEMENTATION_PLAN.md §9.3. Cloudflare R2 is the concrete
-// implementation (this phase); nothing outside src/lib/storage/ should ever
+// Provider-agnostic file storage interface. Cloudflare R2 is the concrete
+// implementation; nothing outside src/lib/storage/ should ever
 // import an R2/S3 SDK type directly, so swapping providers later is a
 // contained change.
 

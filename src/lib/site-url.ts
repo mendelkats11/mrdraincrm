@@ -1,12 +1,10 @@
 const DEFAULT_APP_URL = "http://app.localhost:3000";
 
 /**
- * The public marketing site's origin, derived from APP_URL rather than a
- * separate env var — the two hostnames are always "app." + everything else
- * (src/proxy.ts's isAppHost), so there's nothing to configure independently
- * without risking the two drifting apart. Server-only: reads process.env,
- * so callers that need this in a client component must resolve it in a
- * server component/action and pass the string down as a prop.
+ * The public site's origin, derived from the APP_URL env var (kept under its
+ * original name so the existing Hostinger configuration keeps working). A
+ * leading "app." host label - left over from the retired private app's
+ * subdomain - is stripped. Server-only: reads process.env.
  */
 export function getPublicSiteOrigin(): string {
   const appUrl = process.env.APP_URL || DEFAULT_APP_URL;

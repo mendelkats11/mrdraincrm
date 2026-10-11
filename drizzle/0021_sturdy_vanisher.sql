@@ -1,1 +1,0 @@
-ALTER TABLE "service_areas" ADD COLUMN "business_address" text;

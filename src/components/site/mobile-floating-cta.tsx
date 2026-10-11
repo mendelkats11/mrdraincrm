@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Phone, MessageSquareText } from "lucide-react";
 
 /**
- * docs/PROJECT_SPEC.md §2.4 — two clean floating buttons on mobile only
+ * Two clean floating buttons on mobile only
  * (hidden ≥sm, where the header's own Call Now/Get a Free Quote buttons
  * are already visible and don't need duplicating). `trackingNumber` is
  * resolved per-page by the caller (the site default from appSettings, or

@@ -6,10 +6,9 @@ export type { StorageProvider, UploadInput } from "./provider";
 let provider: StorageProvider | undefined;
 
 /**
- * Lazy singleton, mirroring src/lib/db/client.ts's getDb() — importing this
- * module must not throw just because R2 credentials aren't set yet (e.g.
- * during a build, or in tests that use a fake StorageProvider instead); the
- * error only surfaces when a caller actually tries to use it.
+ * Lazy singleton - importing this module must not throw just because R2
+ * credentials aren't set yet (e.g. during a build); the error only surfaces
+ * when a caller actually tries to use it.
  */
 export function getStorageProvider(): StorageProvider {
   if (!provider) {

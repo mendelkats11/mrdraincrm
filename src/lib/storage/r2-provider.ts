@@ -18,8 +18,7 @@ export interface R2Config {
 
 /**
  * Cloudflare R2 is S3-compatible, so the standard AWS SDK v3 S3 client
- * works against it unmodified — only the endpoint differs
- * (docs/IMPLEMENTATION_PLAN.md §5/§9.3). `region: "auto"` is R2's documented
+ * works against it unmodified - only the endpoint differs. `region: "auto"` is R2's documented
  * value; it has no real AWS region concept.
  */
 export class R2StorageProvider implements StorageProvider {

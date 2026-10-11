@@ -23,10 +23,6 @@ export const metadata: Metadata = {
   },
 };
 
-function getAppUrl(): string {
-  return process.env.APP_URL || "http://app.localhost:3000";
-}
-
 export default function SiteLayout({ children }: LayoutProps<"/">) {
   const schema = localBusinessSchema({
     businessName: siteSettings.businessName,
@@ -59,7 +55,6 @@ export default function SiteLayout({ children }: LayoutProps<"/">) {
         trackingNumber={siteSettings.defaultCallrailTrackingNumber}
         footerTagline={siteSettings.footerTagline}
         reviewsEnabled={siteSettings.reviewsPageEnabled}
-        appUrl={getAppUrl()}
         serviceAreas={serviceAreas.map((area) => ({
           slug: area.slug,
           businessAddress: area.businessAddress,

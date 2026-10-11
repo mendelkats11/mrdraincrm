@@ -1,26 +1,10 @@
 import { defineConfig } from "vitest/config";
-import react from "@vitejs/plugin-react";
 import path from "node:path";
 
 export default defineConfig({
-  plugins: [react()],
   test: {
-    environment: "jsdom",
-    setupFiles: ["./src/tests/setup.ts"],
-    include: ["src/tests/unit/**/*.test.{ts,tsx}", "src/tests/integration/**/*.test.{ts,tsx}"],
-    // Integration tests spin up a fresh embedded Postgres (PGlite) and
-    // apply real migrations — slower than a pure unit test, and slower
-    // still with many integration test files starting one concurrently
-    // per worker. hookTimeout is separate from testTimeout and defaults
-    // to 10s, which beforeEach(createTestDb) can exceed under that load.
-    testTimeout: 30_000,
-    hookTimeout: 30_000,
-    // Unbounded worker parallelism means one process per CPU core, each
-    // integration test file spinning up its own embedded PGlite Postgres —
-    // on an 8-16GB dev machine that's enough simultaneous Postgres
-    // instances to exhaust RAM. Capped low deliberately; this suite is not
-    // CPU-bound, it's memory-bound.
-    maxWorkers: 4,
+    environment: "node",
+    include: ["src/tests/unit/**/*.test.ts"],
   },
   resolve: {
     alias: {
